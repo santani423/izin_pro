@@ -1,3 +1,5 @@
+"use client";
+
 import { Eye, Users, FileText, MessageSquare, TrendingUp, ArrowRight, Clock } from "lucide-react";
 import AdminHeader from "@/components/admin/AdminHeader";
 import StatsCard from "@/components/admin/StatsCard";
@@ -41,10 +43,7 @@ const statusColor: Record<string, string> = {
 export default function DashboardPage() {
   return (
     <>
-      <AdminHeader
-        title="Dashboard"
-        subtitle="Selamat datang kembali, Super Admin!"
-      />
+      <AdminHeader title="Dashboard" subtitle="Selamat datang kembali, Super Admin!" />
 
       <div className="p-6 lg:p-8 space-y-6">
 
@@ -131,6 +130,7 @@ export default function DashboardPage() {
             ))}
           </div>
         </div>
+
       </div>
     </>
   );

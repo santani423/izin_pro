@@ -41,7 +41,7 @@ export default function AdminHeader({ title, subtitle }: AdminHeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 lg:px-6 bg-white/95 backdrop-blur-sm border-b border-gray-100">
+    <header className="sticky top-0 z-30 flex items-center justify-between h-16 md:h-[72px] px-6 lg:px-8 bg-white/95 backdrop-blur-sm border-b border-gray-100">
 
       {/* Kiri: hamburger (mobile) + judul */}
       <div className="flex items-center gap-3 min-w-0">
@@ -59,7 +59,7 @@ export default function AdminHeader({ title, subtitle }: AdminHeaderProps) {
       </div>
 
       {/* Kanan: search + notif + profil */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
 
         {/* Search */}
         <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl border border-gray-200 text-sm text-gray-400 hover:border-primary/30 hover:text-primary transition-colors min-w-[160px]">
