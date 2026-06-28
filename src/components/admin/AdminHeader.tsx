@@ -41,29 +41,29 @@ export default function AdminHeader({ title, subtitle }: AdminHeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between h-20 px-8 lg:px-12 bg-white/95 backdrop-blur-sm border-b border-gray-100">
+    <header className="sticky top-0 z-30 flex items-center justify-between h-16 md:h-[72px] px-6 lg:px-8 bg-white/95 backdrop-blur-sm border-b border-gray-100">
 
       {/* Kiri: hamburger (mobile) + judul */}
-      <div className="flex items-center gap-4 min-w-0">
+      <div className="flex items-center gap-3 min-w-0">
         <button
           onClick={toggle}
-          className="lg:hidden flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors flex-shrink-0"
+          className="lg:hidden flex items-center justify-center w-9 h-9 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors flex-shrink-0"
           aria-label="Buka menu"
         >
-          <Menu size={22} />
+          <Menu size={20} />
         </button>
         <div className="min-w-0">
-          <h1 className="text-xl font-bold text-gray-900 leading-none truncate">{title}</h1>
-          {subtitle && <p className="text-sm text-gray-400 mt-1 truncate hidden sm:block">{subtitle}</p>}
+          <h1 className="text-base font-bold text-gray-900 leading-none truncate">{title}</h1>
+          {subtitle && <p className="text-xs text-gray-400 mt-0.5 truncate hidden sm:block">{subtitle}</p>}
         </div>
       </div>
 
       {/* Kanan: search + notif + profil */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
 
         {/* Search */}
-        <button className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-400 hover:border-primary/30 hover:text-primary transition-colors min-w-[200px]">
-          <Search size={16} />
+        <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl border border-gray-200 text-sm text-gray-400 hover:border-primary/30 hover:text-primary transition-colors min-w-[160px]">
+          <Search size={14} />
           <span>Cari...</span>
           <span className="ml-auto text-xs bg-gray-100 px-1.5 py-0.5 rounded">⌘K</span>
         </button>
@@ -72,11 +72,11 @@ export default function AdminHeader({ title, subtitle }: AdminHeaderProps) {
         <div className="relative">
           <button
             onClick={() => setNotifOpen(!notifOpen)}
-            className="relative flex items-center justify-center w-10 h-10 rounded-xl border border-gray-200 text-gray-500 hover:border-primary/30 hover:text-primary transition-colors"
+            className="relative flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 text-gray-500 hover:border-primary/30 hover:text-primary transition-colors"
           >
-            <Bell size={18} />
+            <Bell size={16} />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center">
                 {unreadCount}
               </span>
             )}
@@ -107,17 +107,17 @@ export default function AdminHeader({ title, subtitle }: AdminHeaderProps) {
 
         {/* Profil user */}
         <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-2.5 pl-2 pr-4 py-2 rounded-xl hover:bg-gray-50 transition-colors outline-none">
-            <Avatar className="w-9 h-9">
-              <AvatarFallback className="bg-primary text-white text-sm font-bold">
+          <DropdownMenuTrigger className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl hover:bg-gray-50 transition-colors outline-none">
+            <Avatar className="w-7 h-7">
+              <AvatarFallback className="bg-primary text-white text-xs font-bold">
                 SA
               </AvatarFallback>
             </Avatar>
             <div className="hidden sm:block text-left">
-              <div className="text-sm font-semibold text-gray-800 leading-none">Super Admin</div>
-              <div className="text-xs text-gray-400 mt-0.5">admin@izinpro.co.id</div>
+              <div className="text-xs font-semibold text-gray-800 leading-none">Super Admin</div>
+              <div className="text-[10px] text-gray-400 mt-0.5">admin@izinpro.co.id</div>
             </div>
-            <ChevronDown size={14} className="text-gray-400" />
+            <ChevronDown size={13} className="text-gray-400" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48 rounded-2xl">
             <DropdownMenuGroup>
