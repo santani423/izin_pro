@@ -1,116 +1,123 @@
 "use client";
 
 import { useState } from "react";
-import { Play, X, Clock } from "lucide-react";
-import SectionWrapper from "@/components/shared/SectionWrapper";
-import { VIDEO_TESTIMONIALS } from "@/lib/constants";
-import type { VideoTestimonialItem } from "@/types";
+import { Play, X } from "lucide-react";
 
-/* ─── Modal Video ─── */
-function VideoModal({
-  video,
-  onClose,
-}: {
-  video: VideoTestimonialItem;
-  onClose: () => void;
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-      onClick={onClose}
-    >
-      <div
-        className="relative w-full max-w-2xl bg-white rounded-3xl overflow-hidden shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 z-10 flex items-center justify-center w-9 h-9 rounded-full bg-black/20 text-white hover:bg-black/40 transition-colors"
-        >
-          <X size={18} />
-        </button>
-        <div
-          className={`aspect-video bg-gradient-to-br ${video.gradient} flex items-center justify-center`}
-        >
-          <div className="text-center text-white/70">
-            <Play size={48} className="mx-auto mb-3 opacity-50" />
-            <p className="text-sm font-medium">{video.name}</p>
-          </div>
-        </div>
-        <div className="p-5">
-          <h3 className="font-bold text-gray-900">{video.name}</h3>
-          <p className="text-sm text-gray-500 mt-0.5">{video.role}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { SectionHeading } from "@/components/shared/SectionHeading";
+import { Reveal } from "@/components/shared/Reveal";
+import {
+  LANDING_VIDEO_TESTIMONIALS,
+  type LandingVideoTestimonial,
+} from "@/lib/landing";
+import { cn } from "@/lib/utils";
 
-/* ─── Section: Video Testimoni ─── */
+/* ─── Video Testimoni Klien — klik kartu membuka pop-up pemutar ─── */
 export default function VideoTestimonialsSection() {
-  const [activeVideo, setActiveVideo] = useState<VideoTestimonialItem | null>(null);
+  const [selected, setSelected] = useState<LandingVideoTestimonial | null>(
+    null,
+  );
 
   return (
-    <>
-      <SectionWrapper id="video-testimoni">
-        <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
-          <div className="text-center mb-10 reveal">
-            <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-2">
-              Video Testimoni
-            </p>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
-              Pengalaman Nyata Klien Kami
-            </h2>
-            <p className="text-gray-500 mt-3 max-w-lg mx-auto">
-              Dengarkan langsung cerita sukses dari para klien yang telah mempercayakan
-              perizinan bisnis mereka kepada IzinPro.
-            </p>
-          </div>
+    <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+      <SectionHeading
+        title="Video Testimoni Klien"
+        subtitle="Simak pengalaman langsung dari klien yang telah menggunakan layanan IzinPro."
+      />
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {VIDEO_TESTIMONIALS.map((video, i) => (
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {LANDING_VIDEO_TESTIMONIALS.map((video, index) => (
+          <Reveal key={video.id} delay={index * 0.08}>
+            <article className="group">
               <button
-                key={video.id}
-                onClick={() => setActiveVideo(video)}
-                className="reveal group relative rounded-2xl overflow-hidden aspect-[3/4] text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-                style={{ transitionDelay: `${i * 80}ms` }}
+                type="button"
+                aria-label={`Putar video: ${video.title}`}
+                onClick={() => setSelected(video)}
+                className="relative block w-full overflow-hidden rounded-xl"
               >
-                {/* Background gradient */}
+                {/* Thumbnail — gradient warna per video */}
                 <div
-                  className={`absolute inset-0 bg-gradient-to-br ${video.gradient}`}
+                  className={cn(
+                    "aspect-video w-full bg-gradient-to-br",
+                    video.gradient,
+                  )}
                 />
-                {/* Overlay gelap */}
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
-
-                {/* Tombol play */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white/20 group-hover:bg-white/30 backdrop-blur-sm transition-all group-hover:scale-110">
-                    <Play size={18} className="text-white ml-0.5" />
-                  </div>
-                </div>
-
-                {/* Durasi */}
-                <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-black/30 text-white text-xs">
-                  <Clock size={10} />
+                <span className="absolute inset-0 grid place-items-center bg-foreground/15 transition-colors group-hover:bg-foreground/25">
+                  <span className="grid size-11 place-items-center rounded-full bg-background/90 text-foreground shadow-md">
+                    <Play
+                      className="ml-0.5 size-5 fill-current"
+                      aria-hidden="true"
+                    />
+                  </span>
+                </span>
+                <Badge
+                  variant="secondary"
+                  className="absolute bottom-2 right-2 bg-foreground/80 text-[11px] font-semibold text-background"
+                >
                   {video.duration}
-                </div>
-
-                {/* Info */}
-                <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent">
-                  <div className="text-white text-xs font-semibold leading-tight">
-                    {video.name}
-                  </div>
-                  <div className="text-white/70 text-xs mt-0.5 leading-tight">{video.role}</div>
-                </div>
+                </Badge>
               </button>
-            ))}
-          </div>
-        </div>
-      </SectionWrapper>
+              <h3 className="mt-3 text-sm font-bold text-foreground">
+                {video.title}
+              </h3>
+              <p className="text-xs text-muted-foreground">{video.service}</p>
+            </article>
+          </Reveal>
+        ))}
+      </div>
 
-      {activeVideo && (
-        <VideoModal video={activeVideo} onClose={() => setActiveVideo(null)} />
-      )}
-    </>
+      {/* Pop-up pemutar video — placeholder gradient selama video asli belum ada */}
+      <Dialog open={selected !== null} onOpenChange={(open) => !open && setSelected(null)}>
+        <DialogContent
+          showCloseButton={false}
+          className="w-full max-w-[calc(100%-2rem)] gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-3xl"
+        >
+          {selected && (
+            <>
+              <DialogTitle className="sr-only">
+                {selected.title}
+              </DialogTitle>
+
+              {/* Area video — gradient sesuai kartu + play + nama di tengah */}
+              <div
+                className={cn(
+                  "relative flex aspect-video w-full flex-col items-center justify-center gap-3 bg-gradient-to-br",
+                  selected.gradient,
+                )}
+              >
+                <Play className="size-12 text-white/70" aria-hidden="true" />
+                <p className="text-sm font-medium text-white/90">
+                  {selected.name}
+                </p>
+
+                {/* Tombol tutup — lingkaran gelap di pojok kanan atas */}
+                <DialogClose
+                  aria-label="Tutup video"
+                  className="absolute right-4 top-4 grid size-10 place-items-center rounded-full bg-black/45 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
+                >
+                  <X className="size-5" aria-hidden="true" />
+                </DialogClose>
+              </div>
+
+              {/* Footer — nama & jabatan klien */}
+              <div className="bg-background px-6 py-5">
+                <p className="text-base font-bold text-foreground">
+                  {selected.name}
+                </p>
+                <p className="mt-0.5 text-sm text-muted-foreground">
+                  {selected.role}
+                </p>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </section>
   );
 }

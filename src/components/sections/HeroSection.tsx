@@ -1,202 +1,187 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, MessageCircle, Zap, Shield, Users } from "lucide-react";
+import { ArrowRight, BadgeCheck, CheckCircle2, Star } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { COMPANY_INFO } from "@/lib/constants";
+import { Card, CardContent } from "@/components/ui/card";
+import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
+import { HERO_HIGHLIGHTS, HERO_STATS, WHATSAPP_URL } from "@/lib/landing";
+import { cn } from "@/lib/utils";
 
-/* ─── Animasi counter angka ─── */
-function AnimatedCounter({
-  target,
-  suffix = "",
-  duration = 2000,
-}: {
-  target: number;
-  suffix?: string;
-  duration?: number;
-}) {
-  const [count, setCount] = useState(0);
-  const ref = useRef<HTMLSpanElement>(null);
-  const started = useRef(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !started.current) {
-          started.current = true;
-          const step = target / (duration / 16);
-          let current = 0;
-          const timer = setInterval(() => {
-            current = Math.min(current + step, target);
-            setCount(Math.floor(current));
-            if (current >= target) clearInterval(timer);
-          }, 16);
-        }
-      },
-      { threshold: 0.3 },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [target, duration]);
-
-  return (
-    <span ref={ref}>
-      {count.toLocaleString("id-ID")}
-      {suffix}
-    </span>
-  );
-}
-
-/* ─── Hero Section ─── */
+/* ─── Hero ─── */
 export default function HeroSection() {
+  const prefersReducedMotion = useReducedMotion();
+
+  const fadeUp = (delay: number) =>
+    prefersReducedMotion
+      ? {}
+      : {
+          initial: { opacity: 0, y: 20 },
+          animate: { opacity: 1, y: 0 },
+          transition: { duration: 0.5, delay, ease: "easeOut" as const },
+        };
+
   return (
     <section
       id="beranda"
-      className="relative flex items-center overflow-hidden bg-gradient-to-br from-[#f3fae8] via-white to-[#f3fae8]"
+      className="relative overflow-hidden bg-gradient-to-b from-muted/60 to-background"
     >
-      {/* Background pattern */}
-      <div
-        className="absolute inset-0 opacity-30"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 1px 1px, #5ba12b22 1px, transparent 0)",
-          backgroundSize: "32px 32px",
-        }}
-      />
+      <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 lg:grid-cols-2 lg:gap-8 lg:px-8 lg:py-20">
+        {/* Kolom kiri — teks */}
+        <div>
+          <motion.h1
+            {...fadeUp(0)}
+            className="text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:text-4xl lg:text-5xl"
+          >
+            Solusi Perizinan
+            <br />
+            <span className="text-primary">Bisnis Anda,</span>
+            <br />
+            Aman &amp; Terpercaya
+          </motion.h1>
 
-      {/* Dekorasi blob */}
-      <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/8 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-16 -left-16 w-72 h-72 bg-primary/6 rounded-full blur-3xl pointer-events-none" />
+          <motion.p
+            {...fadeUp(0.1)}
+            className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base"
+          >
+            IzinPro hadir untuk membantu bisnis Anda mengurus perizinan dengan
+            mudah, cepat, dan sesuai regulasi.
+          </motion.p>
 
-      <div className="w-full max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 py-14 lg:py-20 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          {/* Highlight pills */}
+          <motion.ul
+            {...fadeUp(0.2)}
+            className="mt-8 grid grid-cols-3 gap-3 sm:gap-4"
+          >
+            {HERO_HIGHLIGHTS.map(({ icon: Icon, title, subtitle }) => (
+              <li key={title} className="flex items-start gap-2.5">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-primary/30 text-primary">
+                  <Icon className="size-4" aria-hidden="true" />
+                </span>
+                <span className="text-xs font-semibold leading-snug text-foreground sm:text-sm">
+                  {title}
+                  <br />
+                  <span className="font-normal text-muted-foreground">
+                    {subtitle}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </motion.ul>
 
-          {/* ─── Konten Teks ─── */}
-          <div className="space-y-5">
-            <Badge
-              variant="secondary"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary/10 text-primary border-0 text-sm font-medium"
+          {/* CTA */}
+          <motion.div {...fadeUp(0.3)} className="mt-8 flex flex-wrap gap-3">
+            <Button asChild size="lg" className="rounded-lg font-semibold">
+              <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
+                Konsultasikan Gratis
+                <WhatsAppIcon className="size-4" />
+              </a>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="rounded-lg font-semibold"
             >
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              Terpercaya Sejak {COMPANY_INFO.foundedYear}
-            </Badge>
-
-            <h1 className="text-3xl sm:text-4xl lg:text-[2.6rem] xl:text-5xl font-extrabold tracking-tight text-gray-900 leading-[1.15]">
-              Solusi Perizinan
-              <br />
-              Bisnis Anda,
-              <br />
-              <span className="text-primary whitespace-nowrap">Aman &amp; Terpercaya</span>
-            </h1>
-
-            <p className="text-base text-gray-600 leading-relaxed max-w-lg">
-              Urus perizinan usaha dengan mudah, cepat, dan legal bersama tim profesional
-              IzinPro. Lebih dari 5.000 klien telah mempercayakan urusan perizinan mereka kepada
-              kami.
-            </p>
-
-            {/* Pills keunggulan */}
-            <div className="flex flex-wrap gap-2">
-              {[
-                { icon: Zap, text: "Proses Cepat & Efisien" },
-                { icon: Shield, text: "Legal & Resmi 100%" },
-                { icon: Users, text: "Tim Profesional" },
-              ].map(({ icon: Icon, text }) => (
-                <div
-                  key={text}
-                  className="flex items-center gap-2 px-3.5 py-2 bg-white rounded-xl border border-gray-200 shadow-sm text-sm font-medium text-gray-700 whitespace-nowrap"
-                >
-                  <Icon size={14} className="text-primary" />
-                  {text}
-                </div>
-              ))}
-            </div>
-
-            {/* CTA */}
-            <div className="flex flex-wrap gap-3 pt-1">
-              <Button
-                asChild
-                size="lg"
-                className="gap-2.5 rounded-xl shadow-lg shadow-primary/25 font-semibold px-7 py-3.5 h-auto text-sm"
-              >
-                <a
-                  href={`https://wa.me/${COMPANY_INFO.whatsapp}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <MessageCircle size={17} />
-                  Konsultasikan Gratis
-                </a>
-              </Button>
-              <Button
-                asChild
-                variant="outline"
-                size="lg"
-                className="gap-2 rounded-xl border-gray-200 font-semibold px-7 py-3.5 h-auto text-sm"
-              >
-                <Link href="/layanan">
-                  Lihat Layanan
-                  <ArrowRight size={15} />
-                </Link>
-              </Button>
-            </div>
-          </div>
-
-          {/* ─── Visual Hero ─── */}
-          <div className="relative flex justify-center lg:justify-end">
-            {/* Kartu utama — diperbesar dari max-w-sm */}
-            <div className="relative w-full max-w-md">
-              <div className="bg-gradient-to-br from-primary to-[#43791b] rounded-3xl p-10 text-white shadow-2xl shadow-primary/30">
-                <div className="flex items-center justify-center w-18 h-18 rounded-2xl bg-white/20 mb-6 mx-auto" style={{ width: 72, height: 72 }}>
-                  <svg width="36" height="36" viewBox="0 0 60 60" fill="none">
-                    <circle cx="30" cy="30" r="28" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />
-                    <path
-                      d="M20 30l7 7 13-14"
-                      stroke="white"
-                      strokeWidth="3.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-extrabold mb-1.5">{COMPANY_INFO.name}</div>
-                  <div className="text-white/80 text-sm">Platform Perizinan Bisnis #1 Indonesia</div>
-                  <div className="flex flex-wrap justify-center gap-2 mt-5">
-                    {["OSS Terintegrasi", "Bergaransi", "Transparan"].map((tag) => (
-                      <span
-                        key={tag}
-                        className="px-3.5 py-1 rounded-full bg-white/20 text-xs font-medium"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Floating card: Perizinan Selesai */}
-              <div className="absolute -bottom-5 -left-8 glass rounded-2xl shadow-xl p-4 border border-white/60 min-w-[150px]">
-                <div className="text-2xl font-extrabold text-gray-900">
-                  <AnimatedCounter target={5000} suffix="+" />
-                </div>
-                <div className="text-xs text-gray-500 mt-0.5">Perizinan Selesai</div>
-              </div>
-
-              {/* Floating card: Kepuasan */}
-              <div className="absolute -top-5 -right-5 glass rounded-2xl shadow-xl p-4 border border-white/60 min-w-[130px]">
-                <div className="text-yellow-400 text-sm mb-1">★★★★★</div>
-                <div className="text-2xl font-extrabold text-gray-900">99%</div>
-                <div className="text-xs text-gray-500 mt-0.5">Kepuasan Klien</div>
-              </div>
-            </div>
-          </div>
+              <Link href="/layanan">
+                Lihat Semua Layanan
+                <ArrowRight className="size-4" />
+              </Link>
+            </Button>
+          </motion.div>
         </div>
+
+        {/* Kolom kanan — gambar + floating stats */}
+        <motion.div {...fadeUp(0.2)} className="relative">
+          {/* Kartu hero — gradient hijau brand berisi identitas IzinPro */}
+          <div className="aspect-[4/3] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark shadow-sm">
+            <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
+              <span className="grid size-20 place-items-center rounded-3xl bg-white/15">
+                <CheckCircle2 className="size-9 text-white" aria-hidden="true" />
+              </span>
+              <p className="text-3xl font-extrabold tracking-tight text-white">
+                IzinPro
+              </p>
+              <p className="text-sm text-white/85">
+                Platform Perizinan Bisnis #1 Indonesia
+              </p>
+              <ul className="mt-1 flex flex-wrap justify-center gap-2">
+                {["OSS Terintegrasi", "Bergaransi", "Transparan"].map((tag) => (
+                  <li
+                    key={tag}
+                    className="rounded-full bg-white/15 px-3.5 py-1.5 text-xs font-medium text-white"
+                  >
+                    {tag}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Floating stat cards — mobile: grid 2 kolom di bawah kartu;
+              ≥sm: melayang di kiri bawah & kanan atas (sm:contents membuat
+              wrapper "hilang" sehingga posisi absolute mengacu ke kolom kanan) */}
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:contents">
+            {HERO_STATS.map((stat, index) => (
+              <motion.div
+                key={stat.value}
+                className={cn(
+                  "sm:absolute",
+                  index === 0
+                    ? "sm:-left-3 sm:bottom-8"
+                    : "sm:-right-3 sm:top-5",
+                )}
+                {...(prefersReducedMotion
+                  ? {}
+                  : {
+                      initial: { opacity: 0, x: index === 0 ? -32 : 32 },
+                      animate: { opacity: 1, x: 0 },
+                      transition: {
+                        duration: 0.5,
+                        delay: 0.5 + index * 0.15,
+                        ease: "easeOut" as const,
+                      },
+                    })}
+              >
+                <Card
+                  className="animate-float h-full w-full rounded-xl border-border/60 py-0 shadow-lg sm:h-auto sm:w-44"
+                  style={{
+                    animationDuration: `${4 + index * 1.5}s`,
+                    animationDelay: `${1 + index * 0.5}s`,
+                  }}
+                >
+                  <CardContent className="px-4 py-3">
+                  <p className="flex items-center gap-1.5 text-xl font-extrabold text-foreground">
+                    <span className="flex size-6 items-center justify-center rounded-md bg-primary/10 text-primary">
+                      <BadgeCheck className="size-3.5" aria-hidden="true" />
+                    </span>
+                    {stat.value}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {stat.label}
+                  </p>
+                  {stat.withStars && (
+                    <div
+                      className="mt-1 flex gap-0.5"
+                      aria-label="Rating 5 dari 5 bintang"
+                    >
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          className="size-3.5 fill-amber-400 text-amber-400"
+                          aria-hidden="true"
+                        />
+                      ))}
+                    </div>
+                  )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
       </div>
     </section>
   );

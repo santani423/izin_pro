@@ -1,69 +1,82 @@
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import SectionWrapper from "@/components/shared/SectionWrapper";
-import { PROMOS } from "@/lib/constants";
+import { Button } from "@/components/ui/button";
+import { SectionHeading } from "@/components/shared/SectionHeading";
+import { Reveal } from "@/components/shared/Reveal";
+import { LANDING_PROMOS, type LandingPromo } from "@/lib/landing";
+import { cn } from "@/lib/utils";
 
-/* ─── Section: Promo Spesial ─── */
+const VARIANT_STYLES: Record<
+  LandingPromo["variant"],
+  { card: string; eyebrow: string; button: string }
+> = {
+  discount: {
+    card: "bg-gradient-to-br from-primary to-brand-green-dark text-white",
+    eyebrow: "text-white/85",
+    button:
+      "bg-white/15 text-white ring-1 ring-white/40 hover:bg-white/25",
+  },
+  free: {
+    card: "bg-gradient-to-br from-neutral-900 to-neutral-700 text-white",
+    eyebrow: "text-brand-lime",
+    button: "bg-primary text-primary-foreground hover:bg-primary/90",
+  },
+  package: {
+    card: "bg-brand-surface text-foreground border border-border/60",
+    eyebrow: "text-primary",
+    button:
+      "bg-transparent text-primary ring-1 ring-primary hover:bg-primary/10",
+  },
+};
+
+/* ─── Promo Spesial ─── */
 export default function PromoSection() {
   return (
-    <SectionWrapper id="promo" alt>
-      <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
-        <div className="text-center mb-10 reveal">
-          <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-2">
-            Penawaran Terbatas
-          </p>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">Promo Spesial</h2>
-          <p className="text-gray-500 mt-3">
-            Dapatkan penawaran terbaik untuk layanan perizinan pilihan Anda. Terbatas!
-          </p>
-        </div>
+    <section id="promo" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+      <SectionHeading
+        title="Promo Spesial"
+        subtitle="Dapatkan penawaran terbaik untuk layanan perizinan pilihan Anda."
+      />
 
-        <div className="grid md:grid-cols-3 gap-5">
-          {PROMOS.map((promo, i) => (
-            <div
-              key={promo.id}
-              className={`reveal relative overflow-hidden rounded-3xl bg-gradient-to-br ${promo.gradient} p-7 text-white flex flex-col`}
-              style={{ transitionDelay: `${i * 100}ms` }}
-            >
-              {/* Dekorasi background */}
-              <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/10 -translate-y-1/2 translate-x-1/2" />
-              <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full bg-white/5 translate-y-1/2 -translate-x-1/2" />
-
-              {/* Konten */}
-              <div className="relative z-10 flex-1">
-                <span className="inline-block px-3 py-1 bg-white/20 rounded-full text-xs font-semibold mb-4">
-                  {promo.tag}
-                </span>
-                <div className="text-4xl font-extrabold leading-none">{promo.title}</div>
-                <div className="text-3xl font-extrabold mb-3">{promo.subtitle}</div>
-                <p className="text-white/80 text-sm leading-relaxed">{promo.description}</p>
-              </div>
-
-              <div className="relative z-10 mt-6">
-                {promo.ctaHref.startsWith("http") ? (
-                  <a
-                    href={promo.ctaHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-semibold transition-colors"
-                  >
-                    {promo.ctaLabel}
-                    <ArrowRight size={14} />
-                  </a>
-                ) : (
-                  <Link
-                    href={promo.ctaHref}
-                    className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-semibold transition-colors"
-                  >
-                    {promo.ctaLabel}
-                    <ArrowRight size={14} />
-                  </Link>
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+        {LANDING_PROMOS.map((promo, index) => {
+          const style = VARIANT_STYLES[promo.variant];
+          return (
+            <Reveal key={promo.id} delay={index * 0.1}>
+              <article
+                className={cn(
+                  "flex h-full min-h-44 flex-col justify-between rounded-xl p-6 shadow-sm",
+                  style.card,
                 )}
-              </div>
-            </div>
-          ))}
-        </div>
+              >
+                <div>
+                  <p
+                    className={cn(
+                      "text-xs font-bold uppercase tracking-widest",
+                      style.eyebrow,
+                    )}
+                  >
+                    {promo.eyebrow}
+                  </p>
+                  <h3 className="mt-1 text-3xl font-extrabold tracking-tight">
+                    {promo.title}
+                  </h3>
+                  <p className="mt-1.5 text-sm opacity-90">
+                    {promo.description}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  className={cn(
+                    "mt-5 w-fit rounded-md font-semibold shadow-none",
+                    style.button,
+                  )}
+                >
+                  {promo.ctaLabel}
+                </Button>
+              </article>
+            </Reveal>
+          );
+        })}
       </div>
-    </SectionWrapper>
+    </section>
   );
 }

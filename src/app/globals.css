@@ -58,6 +58,14 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+
+  /* Token landing page — bg-brand-lime, bg-brand-green-dark, bg-brand-surface, bg-footer */
+  --color-brand-lime: var(--brand-lime);
+  --color-brand-green-dark: var(--brand-green-dark);
+  --color-brand-surface: var(--brand-surface);
+  --color-footer: var(--footer);
+  --color-footer-foreground: var(--footer-foreground);
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -117,6 +125,13 @@
   --sidebar-accent-foreground: oklch(0.385 0.085 136);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.653 0.167 136);
+
+  /* ─── Token khusus landing page (desain homepage baru) ─── */
+  --brand-lime: oklch(0.765 0.155 136);       /* hijau logo */
+  --brand-green-dark: oklch(0.453 0.108 136); /* hijau tua CTA banner */
+  --brand-surface: oklch(0.982 0.016 136);    /* latar section hijau sangat muda */
+  --footer: oklch(0.19 0.02 250);             /* footer gelap */
+  --footer-foreground: oklch(0.75 0.01 250);
 }
 
 .dark {
@@ -151,6 +166,13 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.720 0.178 136);
+
+  /* ─── Token khusus landing page (desain homepage baru) ─── */
+  --brand-lime: oklch(0.765 0.155 136);
+  --brand-green-dark: oklch(0.385 0.085 136);
+  --brand-surface: oklch(0.22 0.015 136);
+  --footer: oklch(0.17 0.02 250);
+  --footer-foreground: oklch(0.72 0.01 250);
 }
 
 @layer base {
@@ -202,6 +224,22 @@
   animation: pulse-ring 2s ease-in-out infinite;
 }
 
+/* ─── Floating lembut (CSS murni — dikerjakan compositor, tanpa JS) ─── */
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+.animate-float {
+  animation: float-y 4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float {
+    animation: none;
+  }
+}
+
 /* ─── Section reveal via IntersectionObserver ─── */
 .reveal {
   opacity: 0;
@@ -219,4 +257,36 @@
   background: oklch(1 0 0 / 0.8);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+}
+
+/* ─── Scrollbar kustom — gradient hijau brand (Chrome/Edge/Safari) ─── */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--muted);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    var(--brand-lime),
+    var(--primary),
+    var(--brand-green-dark)
+  );
+  border-radius: 999px;
+  border: 2px solid var(--muted); /* celah tipis agar thumb terlihat pill */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  border-width: 1px; /* thumb tampak melebar saat hover */
+}
+
+/* Firefox tidak mendukung gradient scrollbar — fallback warna solid brand */
+@supports not selector(::-webkit-scrollbar) {
+  html {
+    scrollbar-color: var(--primary) var(--muted);
+  }
 }

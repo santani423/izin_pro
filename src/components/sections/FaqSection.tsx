@@ -2,74 +2,70 @@
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
-import SectionWrapper from "@/components/shared/SectionWrapper";
-import { FAQS } from "@/lib/constants";
 
-/* ─── Section: FAQ ─── */
+import { Reveal } from "@/components/shared/Reveal";
+import { FAQS } from "@/lib/constants";
+import { cn } from "@/lib/utils";
+
+/* ─── FAQ — Pertanyaan yang Sering Diajukan ─── */
 export default function FaqSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <SectionWrapper id="faq">
-      <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
-        <div className="text-center mb-10 reveal">
-          <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-2">
-            FAQ
-          </p>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
-            Pertanyaan yang Sering Diajukan
-          </h2>
-          <p className="text-gray-500 mt-3">
-            Temukan jawaban atas pertanyaan umum tentang layanan IzinPro.
-          </p>
-        </div>
+    <section id="faq" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+      {/* Heading center — khusus FAQ, berbeda dari pola rata kiri section lain */}
+      <div className="mx-auto mb-8 max-w-2xl text-center">
+        <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          Pertanyaan yang Sering Diajukan
+        </h2>
+        <p className="mt-2 text-sm text-muted-foreground sm:text-base">
+          Temukan jawaban atas pertanyaan umum tentang layanan IzinPro.
+        </p>
+      </div>
 
-        <div className="max-w-3xl mx-auto space-y-3">
-          {FAQS.map((faq, i) => (
-            /* Wrapper reveal dipisah agar React tidak overwrite class "visible"
-               saat className inner berubah karena state openIndex */
-            <div
-              key={i}
-              className="reveal"
-              style={{ transitionDelay: `${i * 60}ms` }}
-            >
+      <div className="mx-auto max-w-3xl space-y-3">
+        {FAQS.map((faq, index) => {
+          const isOpen = openIndex === index;
+          return (
+            <Reveal key={faq.question} delay={index * 0.05}>
               <div
                 className={cn(
-                  "rounded-2xl border bg-white overflow-hidden transition-colors duration-200",
-                  openIndex === i ? "border-primary/30 shadow-sm" : "border-gray-200",
+                  "overflow-hidden rounded-2xl border bg-card transition-colors",
+                  isOpen ? "border-primary/40 shadow-sm" : "border-border/60",
                 )}
               >
                 <button
-                  className="w-full flex items-center justify-between px-5 py-4 text-left"
-                  onClick={() => setOpenIndex(openIndex === i ? null : i)}
+                  type="button"
+                  aria-expanded={isOpen}
+                  onClick={() => setOpenIndex(isOpen ? null : index)}
+                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
                 >
                   <span
                     className={cn(
-                      "font-semibold text-sm leading-snug pr-4",
-                      openIndex === i ? "text-primary" : "text-gray-900",
+                      "text-sm font-bold leading-snug sm:text-base",
+                      isOpen ? "text-primary" : "text-foreground",
                     )}
                   >
                     {faq.question}
                   </span>
                   <ChevronDown
-                    size={18}
                     className={cn(
-                      "text-gray-400 flex-shrink-0 transition-transform duration-200",
-                      openIndex === i && "rotate-180 text-primary",
+                      "size-5 shrink-0 text-muted-foreground transition-transform",
+                      isOpen && "rotate-180 text-primary",
                     )}
+                    aria-hidden="true"
                   />
                 </button>
-                {openIndex === i && (
-                  <div className="px-5 pb-5">
-                    <p className="text-sm text-gray-600 leading-relaxed">{faq.answer}</p>
-                  </div>
+                {isOpen && (
+                  <p className="px-5 pb-5 text-sm leading-relaxed text-muted-foreground">
+                    {faq.answer}
+                  </p>
                 )}
               </div>
-            </div>
-          ))}
-        </div>
+            </Reveal>
+          );
+        })}
       </div>
-    </SectionWrapper>
+    </section>
   );
 }

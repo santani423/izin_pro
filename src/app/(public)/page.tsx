@@ -2,18 +2,17 @@ import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import HeroSection from "@/components/sections/HeroSection";
 import ServicesSection from "@/components/sections/ServicesSection";
-import AboutSection from "@/components/sections/AboutSection";
-import StatsSection from "@/components/sections/StatsSection";
 import PromoSection from "@/components/sections/PromoSection";
+import AboutSection from "@/components/sections/AboutSection";
 
 /* ─── Lazy load sections below the fold ─── */
-const BlogSection = dynamic(() => import("@/components/sections/BlogSection"));
+const ArticlesSection = dynamic(() => import("@/components/sections/ArticlesSection"));
+const LocationSection = dynamic(() => import("@/components/sections/LocationSection"));
 const TestimonialsSection = dynamic(() => import("@/components/sections/TestimonialsSection"));
 const VideoTestimonialsSection = dynamic(() => import("@/components/sections/VideoTestimonialsSection"));
 const ClientsSection = dynamic(() => import("@/components/sections/ClientsSection"));
 const FaqSection = dynamic(() => import("@/components/sections/FaqSection"));
-const ContactSection = dynamic(() => import("@/components/sections/ContactSection"));
-const CtaBannerSection = dynamic(() => import("@/components/sections/CtaBannerSection"));
+const CtaSection = dynamic(() => import("@/components/sections/CtaSection"));
 
 export const metadata: Metadata = {
   title: "IzinPro — Solusi Perizinan Bisnis Terpercaya di Indonesia",
@@ -24,29 +23,29 @@ export const metadata: Metadata = {
   },
 };
 
-/* ─── Halaman Beranda ─── */
+/* ─── Halaman Beranda (desain baru) ─── */
 export default function HomePage() {
   return (
     <>
       {/* 1. Hero */}
       <HeroSection />
 
-      {/* 2. Layanan */}
+      {/* 2. Daftar Layanan */}
       <ServicesSection />
 
-      {/* 3. Tentang Kami */}
-      <AboutSection />
-
-      {/* 4. Kenapa Kami / Statistik */}
-      <StatsSection />
-
-      {/* 5. Promo */}
+      {/* 3. Promo Spesial */}
       <PromoSection />
 
-      {/* 6. Artikel */}
-      <BlogSection />
+      {/* 4. Tentang IzinPro */}
+      <AboutSection />
 
-      {/* 7. Testimoni */}
+      {/* 5. Artikel Terbaru */}
+      <ArticlesSection />
+
+      {/* 6. Lokasi Kami */}
+      <LocationSection />
+
+      {/* 7. Testimoni Klien */}
       <TestimonialsSection />
 
       {/* 8. Video Testimoni */}
@@ -58,11 +57,8 @@ export default function HomePage() {
       {/* 10. FAQ */}
       <FaqSection />
 
-      {/* 11. Kontak & Lokasi */}
-      <ContactSection />
-
-      {/* 12. CTA Banner */}
-      <CtaBannerSection />
+      {/* 11. CTA Banner */}
+      <CtaSection />
     </>
   );
 }

@@ -1,121 +1,164 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useState } from "react";
+import { useReducedMotion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
-import SectionWrapper from "@/components/shared/SectionWrapper";
-import { TESTIMONIALS } from "@/lib/constants";
 
-/* ─── Section: Testimoni Klien ─── */
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { SectionHeading } from "@/components/shared/SectionHeading";
+import { LANDING_TESTIMONIALS, type LandingTestimonial } from "@/lib/landing";
+import { cn } from "@/lib/utils";
+
+const PAGE_SIZE = 4; // jumlah kartu per slide di desktop (sesuai desain)
+const AUTO_SLIDE_MS = 5000;
+
+/* Bagi testimoni menjadi halaman-halaman berisi PAGE_SIZE kartu */
+function chunk(items: LandingTestimonial[], size: number) {
+  const pages: LandingTestimonial[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    pages.push(items.slice(i, i + size));
+  }
+  return pages;
+}
+
+const PAGES = chunk(LANDING_TESTIMONIALS, PAGE_SIZE);
+
+/* ─── Testimoni Klien — carousel dengan prev/next + auto-slide ─── */
 export default function TestimonialsSection() {
-  const [current, setCurrent] = useState(0);
-  const total = TESTIMONIALS.length;
+  const [page, setPage] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
 
-  const next = useCallback(() => setCurrent((c) => (c + 1) % total), [total]);
-  const prev = () => setCurrent((c) => (c - 1 + total) % total);
+  const prev = () => setPage((p) => (p - 1 + PAGES.length) % PAGES.length);
+  const next = () => setPage((p) => (p + 1) % PAGES.length);
 
-  /* Auto-play setiap 5 detik */
+  /* Auto-slide — berhenti saat di-hover atau user memilih reduced motion */
   useEffect(() => {
-    const timer = setInterval(next, 5000);
+    if (paused || prefersReducedMotion || PAGES.length <= 1) return;
+    const timer = setInterval(next, AUTO_SLIDE_MS);
     return () => clearInterval(timer);
-  }, [next]);
-
-  /* Hitung indeks yang ditampilkan (1 mobile, 2 tablet, 3 desktop) */
-  const getVisible = () => {
-    return [
-      TESTIMONIALS[current % total],
-      TESTIMONIALS[(current + 1) % total],
-      TESTIMONIALS[(current + 2) % total],
-    ];
-  };
+  }, [paused, prefersReducedMotion]);
 
   return (
-    <SectionWrapper id="testimoni" alt>
-      <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
-        <div className="text-center mb-10 reveal">
-          <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-2">
-            Testimoni
-          </p>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">Kata Klien Kami</h2>
-          <p className="text-gray-500 mt-3">
-            Kepercayaan klien adalah prioritas utama kami. Ini yang mereka katakan.
-          </p>
-        </div>
+    <section id="testimoni" className="bg-brand-surface">
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+      <SectionHeading
+        title="Testimoni Klien"
+        subtitle="Kepercayaan dan kepuasan klien adalah prioritas kami."
+      />
 
-        {/* Slider */}
-        <div className="reveal overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {getVisible().map((t, i) => (
-              <div
-                key={`${t.id}-${current}-${i}`}
-                className={`bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex flex-col transition-all duration-300 ${
-                  i === 2 ? "hidden lg:flex" : i === 1 ? "hidden md:flex" : "flex"
-                }`}
-              >
-                {/* Quote mark */}
-                <div className="text-6xl font-serif text-primary/15 leading-none select-none mb-2">
-                  "
-                </div>
-
-                {/* Rating */}
-                <div className="flex items-center gap-0.5 mb-3">
-                  {Array.from({ length: t.rating }).map((_, j) => (
-                    <Star key={j} size={14} className="fill-amber-400 text-amber-400" />
-                  ))}
-                </div>
-
-                {/* Teks */}
-                <p className="text-sm text-gray-700 leading-relaxed flex-1">{t.content}</p>
-
-                {/* Author */}
-                <div className="flex items-center gap-3 mt-5 pt-4 border-t border-gray-200">
-                  <div
-                    className={`flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br ${t.avatarColor} text-white text-xs font-bold flex-shrink-0`}
-                  >
-                    {t.initials}
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold text-gray-900">{t.name}</div>
-                    <div className="text-xs text-gray-500">
-                      {t.role}, {t.company}
+      {/* Viewport carousel — py-1 (+px-1 di tiap halaman) agar border kartu tepi tidak terpotong overflow-hidden */}
+      <div
+        className="overflow-hidden py-1"
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+      >
+        <div
+          className="flex transition-transform duration-500 ease-out"
+          style={{ transform: `translateX(-${page * 100}%)` }}
+        >
+          {PAGES.map((testimonials, pageIndex) => (
+            <div
+              key={pageIndex}
+              className="grid w-full shrink-0 grid-cols-1 gap-5 px-1 sm:grid-cols-2 lg:grid-cols-4"
+              aria-hidden={page !== pageIndex}
+            >
+              {testimonials.map((testimonial) => (
+                <Card
+                  key={testimonial.id}
+                  className="h-full rounded-xl border-border/60 py-0"
+                >
+                  <CardContent className="flex h-full flex-col px-5 py-5">
+                    <div
+                      className="flex gap-0.5"
+                      aria-label={`Rating ${testimonial.rating} dari 5 bintang`}
+                    >
+                      {Array.from({ length: testimonial.rating }).map((_, i) => (
+                        <Star
+                          key={i}
+                          className="size-4 fill-primary text-primary"
+                          aria-hidden="true"
+                        />
+                      ))}
                     </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Kontrol slider */}
-        <div className="flex items-center justify-center gap-4 mt-8">
-          <button
-            onClick={prev}
-            className="flex items-center justify-center w-10 h-10 rounded-full border border-gray-200 hover:border-primary hover:text-primary text-gray-400 transition-colors"
-          >
-            <ChevronLeft size={18} />
-          </button>
+                    <blockquote className="mt-3 flex-1 text-sm leading-relaxed text-foreground">
+                      {testimonial.quote}
+                    </blockquote>
 
-          <div className="flex items-center gap-1.5">
-            {TESTIMONIALS.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrent(i)}
-                className={`rounded-full transition-all duration-300 ${
-                  i === current
-                    ? "w-6 h-2 bg-primary"
-                    : "w-2 h-2 bg-gray-200 hover:bg-gray-300"
-                }`}
-              />
-            ))}
-          </div>
-
-          <button
-            onClick={next}
-            className="flex items-center justify-center w-10 h-10 rounded-full border border-gray-200 hover:border-primary hover:text-primary text-gray-400 transition-colors"
-          >
-            <ChevronRight size={18} />
-          </button>
+                    <figcaption className="mt-5 flex items-center gap-3">
+                      <Avatar className="size-9">
+                        <AvatarFallback className="bg-primary/10 text-xs font-bold text-primary">
+                          {testimonial.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .slice(0, 2)
+                            .join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-sm font-bold text-foreground">
+                          {testimonial.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {testimonial.role}
+                        </p>
+                      </div>
+                    </figcaption>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ))}
         </div>
       </div>
-    </SectionWrapper>
+
+      {/* Navigasi: prev + dots + next */}
+      <div className="mt-8 flex items-center justify-center gap-4">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={prev}
+          aria-label="Testimoni sebelumnya"
+          className="rounded-full"
+        >
+          <ChevronLeft className="size-4" />
+        </Button>
+
+        <div
+          className="flex gap-2"
+          role="tablist"
+          aria-label="Navigasi halaman testimoni"
+        >
+          {PAGES.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              role="tab"
+              aria-selected={page === i}
+              aria-label={`Halaman testimoni ${i + 1}`}
+              onClick={() => setPage(i)}
+              className={cn(
+                "size-2 rounded-full transition-colors",
+                page === i ? "bg-primary" : "bg-border hover:bg-primary/40",
+              )}
+            />
+          ))}
+        </div>
+
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={next}
+          aria-label="Testimoni berikutnya"
+          className="rounded-full"
+        >
+          <ChevronRight className="size-4" />
+        </Button>
+      </div>
+      </div>
+    </section>
   );
 }
