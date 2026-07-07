@@ -53,14 +53,14 @@ export default function HeroSection() {
           {/* Highlight pills */}
           <motion.ul
             {...fadeUp(0.2)}
-            className="mt-8 grid grid-cols-3 gap-3 sm:gap-4"
+            className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4"
           >
             {HERO_HIGHLIGHTS.map(({ icon: Icon, title, subtitle }) => (
-              <li key={title} className="flex items-start gap-2.5">
+              <li key={title} className="flex items-center gap-2.5">
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-primary/30 text-primary">
                   <Icon className="size-4" aria-hidden="true" />
                 </span>
-                <span className="text-xs font-semibold leading-snug text-foreground sm:text-sm">
+                <span className="text-xs font-semibold leading-snug whitespace-nowrap text-foreground sm:text-sm">
                   {title}
                   <br />
                   <span className="font-normal text-muted-foreground">
@@ -71,23 +71,27 @@ export default function HeroSection() {
             ))}
           </motion.ul>
 
-          {/* CTA */}
-          <motion.div {...fadeUp(0.3)} className="mt-8 flex flex-wrap gap-3">
-            <Button asChild size="lg" className="rounded-lg font-semibold">
+          {/* CTA — 1 baris di mobile (flex-1 berbagi lebar), ukuran normal ≥sm */}
+          <motion.div {...fadeUp(0.3)} className="mt-8 flex gap-2 sm:gap-3">
+            <Button
+              asChild
+              size="lg"
+              className="flex-1 justify-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold sm:flex-none sm:gap-2 sm:px-5 sm:text-sm"
+            >
               <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
                 Konsultasikan Gratis
-                <WhatsAppIcon className="size-4" />
+                <WhatsAppIcon className="size-3.5 sm:size-4" />
               </a>
             </Button>
             <Button
               asChild
               size="lg"
               variant="outline"
-              className="rounded-lg font-semibold"
+              className="flex-1 justify-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold sm:flex-none sm:gap-2 sm:px-5 sm:text-sm"
             >
               <Link href="/layanan">
                 Lihat Semua Layanan
-                <ArrowRight className="size-4" />
+                <ArrowRight className="size-3.5 sm:size-4" />
               </Link>
             </Button>
           </motion.div>
