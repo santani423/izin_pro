@@ -1,0 +1,259 @@
+====================================================
+DOKUMENTASI BUSINESS FLOW — IzinPro CMS
+Versi  : 1.2.0
+Tanggal: 2026-07-08
+====================================================
+
+DESKRIPSI BISNIS
+----------------
+IzinPro adalah layanan jasa perizinan bisnis yang membantu
+pengusaha dalam mengurus dokumen legal perusahaan, mulai dari
+pendirian PT/CV, NIB/OSS, PKP & NPWP, hingga izin usaha khusus.
+
+Website ini berfungsi sebagai:
+  1. Company profile digital yang menarik (konversi prospek)
+  2. Kanal komunikasi utama via WhatsApp & form kontak
+  3. Platform publikasi artikel/blog (SEO + edukasi)
+  4. Admin CMS untuk mengelola seluruh konten website
+
+====================================================
+ALUR BISNIS UTAMA — PENGUNJUNG / CALON KLIEN
+====================================================
+
+TAHAP 1 — DISCOVERY (Temukan IzinPro)
+  Sumber traffic pengunjung:
+    - Google Search (SEO — target keyword: "jasa perizinan bisnis")
+    - Google Ads (paid traffic)
+    - Referral (share link dari klien yang puas)
+    - Langsung (direct traffic — sudah kenal brand)
+
+  Halaman landing pengunjung baru:
+    - Homepage (/)              → mayoritas traffic
+    - Halaman Layanan (/layanan/[slug]) → traffic SEO keyword spesifik
+    - Blog (/blog/[slug])       → traffic SEO artikel informatif
+
+TAHAP 2 — CONSIDERATION (Pertimbangan)
+  Pengunjung melihat homepage dengan urutan section (v1.2.0):
+    1. Hero            → headline + kartu identitas brand gradient hijau +
+                          angka kepercayaan mengambang (5.000+ klien, 99% puas)
+    2. Layanan         → apa saja yang bisa dibantu (5 layanan utama)
+    3. Promo           → penawaran spesial yang sedang berlaku
+    4. Tentang Kami    → siapa IzinPro, kredibilitas + video profil (pop-up)
+    5. Artikel         → edukasi seputar perizinan (kategori + views)
+    6. Lokasi & Kontak → alamat kantor + tombol buka Google Maps
+    7. Testimoni       → ulasan klien (carousel prev/next + auto-slide)
+    8. Video Testimoni → testimoni lebih nyata & meyakinkan (klik → pop-up)
+    9. Klien Kami      → logo klien ternama (social proof, marquee auto-slide)
+    10. FAQ            → jawaban atas pertanyaan umum
+    11. CTA Banner     → ajakan konsultasi terakhir sebelum footer
+
+TAHAP 3 — CONVERSION (Konversi ke Prospek)
+  Titik konversi (entry point):
+    A. Tombol WhatsApp (WhatsApp Floating Action Button)
+       - Tersedia di semua halaman, selalu terlihat (pojok kanan bawah)
+       - Melebar jadi pill dengan teks "Mulai Konsultasi Gratis" saat
+         di-hover / fokus keyboard — sejak v1.2.0
+       - Link langsung ke chat WhatsApp: wa.me/6282280007821
+       - Pesan default: "Halo IzinPro, saya ingin konsultasi..."
+
+    B. Tombol CTA di berbagai section
+       - "Konsultasi Gratis" — hero section, CTA banner
+       - "Hubungi Kami" — halaman layanan, detail layanan
+       - Semua CTA link ke WhatsApp (nomor yang sama)
+
+    C. Form Kontak (/kontak)
+       - Nama, email, telepon, subjek, pesan
+       - Diproses oleh admin via inbox CMS
+       - Email notifikasi ke admin saat ada inquiry baru (fase backend)
+
+TAHAP 4 — HANDLING (Penanganan Prospek)
+  Setelah pengunjung menghubungi IzinPro:
+    - Tim sales handle via WhatsApp / telepon
+    - Konsultasi gratis mengenai kebutuhan klien
+    - Penawaran harga & paket layanan
+    - Closing & pembayaran DP
+
+  Jika via form kontak:
+    - Admin terima notifikasi di CMS dashboard
+    - Admin tindak lanjut via WhatsApp / email / telepon
+
+TAHAP 5 — FULFILLMENT (Pengerjaan)
+  Setelah deal:
+    - Tim IzinPro proses dokumen perizinan klien
+    - Update progress ke klien via WhatsApp
+    - Dokumen selesai → diserahkan ke klien
+
+TAHAP 6 — RETENTION (Pertahankan Klien)
+  Strategi retensi:
+    - Konten blog edukatif (klien kembali baca artikel)
+    - Update promo periodik (klien tahu ada layanan baru)
+    - Testimony klien puas → dipublikasikan di website
+
+====================================================
+ALUR KONTEN ADMIN — PENGELOLA WEBSITE
+====================================================
+
+SIAPA YANG PAKAI ADMIN PANEL:
+  - Super Admin  → akses penuh semua fitur
+  - Admin        → kelola konten, lihat inquiry
+  - Editor       → hanya kelola blog & media
+  - Viewer       → hanya baca dashboard (read-only)
+
+ALUR PENGELOLAAN KONTEN BLOG:
+
+  Admin buat artikel baru
+      ↓
+  Isi judul, konten (rich text), gambar cover, kategori, tag
+      ↓
+  Atur status: Draft → Review → Published
+      ↓
+  Artikel tayang di /blog/[slug] (auto SEO metadata)
+      ↓
+  Sitemap.xml update otomatis (Google index)
+
+ALUR PENGELOLAAN MEDIA:
+
+  Upload gambar (drag & drop di /admin/media)
+      ↓
+  Sharp.js otomatis:
+    - Convert ke WebP
+    - Generate 3 ukuran: thumbnail (150px), medium (600px), large (1200px)
+  Simpan path di database, file di folder /public/uploads/
+      ↓
+  Gambar siap digunakan di editor konten
+
+ALUR PENGELOLAAN INQUIRY (Form Kontak):
+
+  Pengunjung submit form di /kontak
+      ↓
+  Data tersimpan di tabel contact_submissions
+      ↓
+  Email notifikasi dikirim ke admin
+      ↓
+  Admin buka /admin/dashboard → lihat inquiry baru
+      ↓
+  Admin tindak lanjut via WhatsApp / email
+      ↓
+  Status inquiry update: Baru → Diproses → Selesai
+
+ALUR PENGELOLAAN LAYANAN:
+
+  Admin buka /admin/layanan
+      ↓
+  Tambah / edit / hapus layanan
+      ↓
+  Toggle aktif/nonaktif per layanan
+      ↓
+  Layanan aktif otomatis tampil di website publik
+
+====================================================
+ALUR DATA — WEBSITE PUBLIK
+====================================================
+
+HOMEPAGE LOAD:
+  Browser request /
+      ↓
+  Next.js SSG: HTML sudah di-generate saat build
+      ↓
+  Served dari CDN / cache langsung (super cepat)
+      ↓
+  JavaScript hydrate untuk interaktivitas (counter, slider, FAQ)
+
+HALAMAN LAYANAN DETAIL (/layanan/[slug]):
+  Browser request /layanan/pt-baru
+      ↓
+  Next.js SSG: halaman sudah di-build (generateStaticParams)
+      ↓
+  HTML statis di-serve (Google bisa index konten ini)
+
+HALAMAN BLOG (/blog/[slug]):
+  Browser request /blog/tips-memilih-jasa-pengurusan-pt
+      ↓
+  Next.js SSG: artikel sudah di-build
+      ↓
+  HTML statis di-serve (SEO optimal)
+
+FORM KONTAK (fase backend):
+  User isi form + submit
+      ↓
+  Next.js Server Action POST /api/contact
+      ↓
+  Validasi data (Zod schema)
+      ↓
+  Simpan ke tabel contact_submissions (Prisma → MariaDB)
+      ↓
+  Kirim email notifikasi ke admin
+      ↓
+  Response: sukses / gagal dikembalikan ke user
+
+====================================================
+ALUR ANALYTICS (fase backend)
+====================================================
+
+Setiap halaman publik dibuka:
+  Halaman render di browser
+      ↓
+  Cek sessionStorage (sudah di-track session ini?)
+    YA  → stop (tidak tambah view ganda per session)
+    TIDAK → lanjut
+      ↓
+  Kirim beacon ke /api/analytics/track
+    Payload: { url, referrer, user_agent, timestamp }
+      ↓
+  API endpoint cek User-Agent (bot/crawler? → skip)
+      ↓
+  Cek cookie unique visitor (baru vs returning)
+      ↓
+  INSERT ke tabel page_views
+      ↓
+  UPDATE tabel daily_stats (agregasi harian)
+
+Dashboard analytics tampilkan:
+  - Card: pengunjung hari ini, page views, artikel terpopuler, inquiry baru
+  - Chart: tren kunjungan 7 / 30 / 90 hari
+  - Tabel: top halaman by views
+  - Sumber traffic (referrer breakdown)
+
+====================================================
+STRUKTUR MENU NAVIGASI WEBSITE
+====================================================
+
+HEADER NAVBAR (v1.2.0):
+  Logo IzinPro
+  ├── Beranda
+  ├── Layanan ▾ (dropdown pill — desktop: card rounded + bullet dot hijau
+  │              per item; mobile: accordion buka/tutup)
+  │   ├── Pendirian PT
+  │   ├── NIB (Nomor Induk Berusaha)
+  │   ├── Izin Usaha
+  │   ├── Izin Komersial & Operasional
+  │   └── Perizinan Lainnya
+  ├── Tentang Kami
+  ├── Blog
+  ├── Kontak
+  └── [Konsultasikan Gratis] (CTA button → WhatsApp)
+
+FOOTER (5 kolom):
+  Kolom 1: Brand (logo) + deskripsi singkat + 5 ikon sosial media
+           (Instagram, Facebook, LinkedIn, X, YouTube — inline SVG custom)
+  Kolom 2: Layanan Kami (Pendirian PT, NIB, Izin Usaha, Izin Komersial,
+           Perizinan Lainnya)
+  Kolom 3: Informasi (Tentang Kami, Artikel, Testimoni, Promo, Karir)
+  Kolom 4: Bantuan (FAQ, Syarat & Ketentuan, Kebijakan Privasi, Hubungi Kami)
+  Kolom 5: Hubungi Kami (telepon, email, alamat)
+
+====================================================
+INFORMASI KONTAK BISNIS
+====================================================
+
+Nama Perusahaan : IzinPro
+WhatsApp        : +62 822-8000-7821 (link aktif)
+Email           : izinpro.co.id@gmail.com
+Alamat          : Wisma Laena, Jl. KH Abdullah Syafei No.7 Lantai 7,
+                  Tebet, Jakarta Selatan 12860
+Jam Operasional : Senin - Jumat, 08.00 - 17.00 WIB
+Domain target   : https://izinpro.co.id (belum live — masih rencana)
+Demo/Staging    : https://izinpro-cms.vercel.app (LIVE — deploy production
+                  Vercel sejak v1.2.0, dipakai untuk review klien)
+
+====================================================

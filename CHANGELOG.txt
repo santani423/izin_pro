@@ -1,0 +1,474 @@
+====================================================
+CHANGELOG — IzinPro CMS Project
+====================================================
+
+Format: [YYYY-MM-DD] Versi — Deskripsi
+====================================================
+
+[2026-07-08] v1.2.0 — Homepage Redesign dari Prototype + Deploy Production
+----------------------------------------------------
+STATUS   : COMPLETED — live di https://izinpro-cms.vercel.app
+PROJECT  : izinpro-cms/
+SUMBER   : Prototype UI/UX di-convert dari gambar desain klien (via claude.ai)
+           + hasil kode referensi di Downloads/izinpro (Next.js standalone)
+
+LATAR BELAKANG:
+  ~ Klien memberikan gambar prototype UI/UX (7 file PNG: Homepage, Layanan,
+    Promo, Tentang, Artikel, Testimoni, Kontak)
+  ~ Prototype di-convert jadi kode React via claude.ai, lalu diintegrasikan
+    ke project ini dan disesuaikan dengan stack + konvensi yang sudah ada
+  ~ Revisi visual dilakukan iteratif section-per-section berdasarkan
+    feedback langsung dibandingkan gambar prototype
+
+DATA LAYER (BARU):
+  + src/lib/landing.ts — data khusus homepage baru (NAV_LINKS, HERO_HIGHLIGHTS,
+    HERO_STATS, LANDING_SERVICES, LANDING_PROMOS, LANDING_ARTICLES,
+    LANDING_TESTIMONIALS, LANDING_VIDEO_TESTIMONIALS, LANDING_CLIENTS,
+    FOOTER_COLUMNS, CONTACT_INFO, WHATSAPP_URL)
+  ~ Dipisah dari constants.ts karena nama export tabrakan dengan data yang
+    sudah dipakai halaman lain & admin (SERVICES, TESTIMONIALS, PROMOS, dst.)
+  ~ CONTACT_INFO di landing.ts derivasi dari COMPANY_INFO (satu sumber data)
+
+KOMPONEN SHARED (BARU):
+  + Reveal.tsx        — wrapper scroll-reveal via framer-motion whileInView
+  + SectionHeading.tsx — heading section rata kiri + link "Lihat Semua" opsional
+  + VideoDialog.tsx   — thumbnail video + pop-up pemutar (iframe hanya
+    dirender saat dialog terbuka, video auto-stop saat ditutup)
+  + WhatsAppIcon.tsx  — SVG WhatsApp (tidak tersedia di versi lucide-react ini)
+
+NAVBAR & FOOTER — REVISI TOTAL:
+  ~ Nav items disederhanakan: Beranda, Layanan, Tentang Kami, Blog, Kontak
+  ~ Dropdown "Layanan" desktop jadi trigger pill (border+bg hijau saat aktif/
+    terbuka) dengan dropdown card rounded-2xl + bullet dot hijau per item
+  ~ Dropdown "Layanan" mobile jadi accordion buka/tutup (sebelumnya submenu
+    statis selalu terbuka — tidak responsive)
+  ~ Footer: logo asli + ikon sosial media custom inline SVG (Instagram,
+    Facebook, LinkedIn, X, YouTube — tidak ada di lucide-react versi ini)
+  ~ WhatsAppFab: ukuran diperbesar (size-16), expand jadi pill dengan teks
+    "Mulai Konsultasi Gratis" saat hover/focus (transisi max-width, CSS-only)
+
+HOMEPAGE — SECTION DIROMBAK TOTAL:
+  ~ Urutan baru: Hero → Layanan → Promo → Tentang → Artikel → Lokasi →
+    Testimoni → Video Testimoni → Klien → FAQ → CTA Banner
+  ~ HeroSection: kartu hero gradient hijau (brand-lime → primary →
+    brand-green-dark) berisi identitas brand + 2 floating stat card
+    (5.000+ / 99%) dengan animasi floating CSS murni (bukan framer loop
+    — hemat resource) + entrance framer sekali jalan; responsive:
+    grid 2 kolom di mobile, melayang absolute di ≥sm (pola sm:contents)
+  ~ ServicesSection & PromoSection: placeholder gambar diganti gradient
+    hijau brand (bukan abu-abu polos)
+  ~ ArticlesSection (baru, gantikan BlogSection di homepage): kartu dengan
+    badge kategori, meta views + tanggal, excerpt, gradient thumbnail
+    beda warna per artikel
+  ~ AboutSection: video placeholder diganti VideoDialog (klik → pop-up
+    pemutar video profil IzinPro)
+  ~ LocationSection (baru, gantikan ContactSection di homepage): kartu
+    Google Maps dengan pin animasi bounce + ping ring, tombol "Buka di
+    Google Maps"
+  ~ TestimonialsSection: dari grid statis jadi carousel — tombol prev/next,
+    dots, auto-slide 5 detik (pause on hover), data ditambah 4→8 testimoni
+  ~ VideoTestimonialsSection: klik kartu membuka pop-up pemutar (Dialog +
+    gradient placeholder + nama/jabatan klien)
+  ~ ClientsSection: 8 logo klien ASLI (bank bjb, Alfamart, Telkom Indonesia,
+    Trive Invest, JNE, Sinarmas, WIKA, Maybank) menggantikan placeholder
+    teks — marquee auto-slide tanpa henti, pause on hover, fade di tepi
+  ~ FaqSection: ditulis ulang total (data FAQS tetap dari constants.ts),
+    heading + accordion center-aligned, item pertama default terbuka
+  ~ CtaSection (baru, gantikan CtaBannerSection di homepage): gradient
+    hijau (primary → brand-green-dark)
+
+DESIGN SYSTEM — TOKEN BARU:
+  + --brand-lime, --brand-green-dark, --brand-surface, --footer,
+    --footer-foreground (light & dark mode) di globals.css
+  + Section background selang-seling: putih (default) / hijau muda
+    (bg-brand-surface) di AboutSection & TestimonialsSection sebagai
+    jeda visual, tanpa mengganggu section yang kartunya sudah bergradient
+  + Custom scrollbar gradient hijau (::-webkit-scrollbar, fallback warna
+    solid untuk Firefox via @supports not selector)
+
+BUG FIX SELAMA REVISI:
+  ~ Trigger dropdown/sheet pakai prop `asChild` (pola Radix) — diganti ke
+    prop `render` karena shadcn/ui v4 project ini berbasis @base-ui/react
+  ~ Ikon brand sosmed (Youtube, dll.) tidak ada di lucide-react versi
+    project — diganti inline SVG custom
+  ~ Border kartu testimoni terpotong di tepi carousel akibat overflow-hidden
+    — fix dengan padding py-1/px-1 di viewport & tiap slide
+  ~ Animasi floating kartu statistik hero awalnya pakai framer-motion
+    repeat:Infinity (berat, jalan via JS tiap frame) — diganti CSS
+    keyframes murni (dikerjakan compositor, hampir tanpa biaya)
+
+DEPLOY:
+  ~ Build production: 0 error, semua halaman ter-generate normal
+  ~ Push ke GitHub: MUHIM24/cms-corporate (branch master)
+  ~ Deploy manual via Vercel CLI (vercel --prod) — project sudah linked
+    (prj_bs57QXEHQjuOO3csqzWAfbuSpYDZ), status READY, live di alias
+    https://izinpro-cms.vercel.app
+
+FILE BARU (ringkasan):
+  + src/lib/landing.ts
+  + src/components/shared/Reveal.tsx
+  + src/components/shared/SectionHeading.tsx
+  + src/components/shared/VideoDialog.tsx
+  + src/components/shared/WhatsAppIcon.tsx
+  + src/components/sections/ArticlesSection.tsx
+  + src/components/sections/LocationSection.tsx
+  + src/components/sections/CtaSection.tsx
+  + public/images/izinpro-logo.png
+  + public/images/clients/*.{png,webp,jpg} (8 logo klien)
+
+CATATAN:
+  ~ Section lama BlogSection, StatsSection, ContactSection, TrustedBySection
+    TIDAK LAGI dipakai di homepage (sudah diganti versi baru), tapi file-nya
+    masih ada di codebase (unused, belum dihapus)
+  ~ CtaBannerSection TETAP dipakai di halaman lain (tentang-kami, layanan,
+    layanan/[slug], blog/[slug]) — bukan orphan
+  ~ FaqSection ditimpa total (versi lama belum pernah dipasang di homepage
+    manapun sebelumnya, jadi aman ditimpa)
+
+====================================================
+
+[2026-06-27] v1.0.0-frontend — Full Frontend Next.js + Admin Panel
+----------------------------------------------------
+STATUS   : COMPLETED — dev server running at localhost:3000
+PROJECT  : izinpro-cms/ (subfolder)
+STACK    : Next.js 16.2.9 · TypeScript · Tailwind CSS v4 · shadcn/ui v4
+
+ARSITEKTUR BARU:
+  ~ Proyek dipindah dari single-file HTML ke full Next.js App Router
+  ~ Route group (public) untuk halaman publik dengan shared layout
+  ~ Route /admin untuk panel CMS dengan layout sidebar terpisah
+  ~ TypeScript strict mode di semua file
+  ~ Tailwind v4: CSS variables + OKLCH color system (tidak pakai tailwind.config)
+  ~ shadcn/ui v4: basis komponen @base-ui/react (bukan Radix UI)
+
+HALAMAN PUBLIK (7 halaman):
+  + Beranda (/) — 12 section lengkap, full animated
+  + Tentang Kami (/tentang-kami) — visi misi, nilai, tim, stats
+  + Layanan (/layanan) — daftar layanan dengan fitur
+  + Detail Layanan (/layanan/[slug]) — SSG, generateStaticParams
+  + Blog (/blog) — list dengan search + filter kategori (UI only)
+  + Detail Blog (/blog/[slug]) — artikel lengkap + related posts
+  + Kontak (/kontak) — form kontak dengan simulasi submit async
+
+SECTION HOMEPAGE (12 section):
+  + HeroSection        — gradient BG, dot pattern, animated counter, glassmorphism cards
+  + TrustedBySection   — infinite marquee CSS animation, hover to pause
+  + ServicesSection    — 5 service cards, hover lift, bottom border animation
+  + AboutSection       — split layout, video modal popup
+  + StatsSection       — 4 stat cards, IntersectionObserver animated counter
+  + PromoSection       — 3 gradient promo cards + decorative circles
+  + BlogSection        — 4 article cards dengan category badge
+  + TestimonialsSection — auto-play slider 5s, prev/next, dots
+  + VideoTestimonialsSection — grid video thumbnail, click buka modal
+  + FaqSection         — accordion dengan useState open/close
+  + ContactSection     — info kontak + animated map pin
+  + CtaBannerSection   — full-width green gradient CTA
+
+ADMIN PANEL (8 halaman):
+  + /admin → redirect ke /admin/dashboard
+  + /admin/dashboard  — stats grid, recent inquiries, top pages, quick actions
+  + /admin/blog       — tabel artikel, search, filter, CRUD buttons (statis)
+  + /admin/media      — media library, grid/list toggle, drag-drop upload (UI)
+  + /admin/layanan    — daftar layanan dengan Switch aktif/nonaktif
+  + /admin/testimoni  — grid testimoni dengan Switch enable/disable
+  + /admin/settings   — Tabs (Umum, Kontak, Sosmed, SEO) simulasi save
+  + /admin/pages      — tabel halaman statis CRUD (statis)
+
+KOMPONEN SHARED:
+  + Navbar      — sticky, blur on scroll, dropdown desktop, slide-out mobile
+  + Footer      — 5 kolom, social icons, contact info
+  + WhatsAppFab — floating button + pulse animation + tooltip
+  + BackToTop   — muncul setelah 400px scroll
+  + SectionWrapper — IntersectionObserver untuk scroll-reveal staggered
+
+SEO OPTIMASI:
+  + generateMetadata() per halaman (title, description, OG, Twitter Card)
+  + JSON-LD structured data (Organization schema)
+  + sitemap.ts — auto-generate sitemap.xml (static + dynamic routes)
+  + robots.ts  — blokir /admin/ dan /api/ dari crawler
+  + Canonical URLs + SSG untuk semua halaman publik
+
+DESIGN SYSTEM BARU:
+  Primary  : oklch(0.627 0.194 149.58) = #16a34a (green-600)
+  Brand    : --brand-50 sampai --brand-950 dalam format OKLCH
+  Font     : Plus Jakarta Sans (Google Fonts via next/font)
+  Animasi  : fadeUp, marquee, pulse-ring (custom keyframes)
+  Glassmorphism: .glass utility class (backdrop-blur + bg-white/10)
+  Scroll reveal: .reveal / .reveal.visible via IntersectionObserver
+
+BUILD RESULT:
+  ✓ TypeScript: 0 errors
+  ✓ 29 halaman ter-generate (SSG)
+  ✓ Compiled in 4.3s
+
+TECHNICAL NOTES:
+  ~ shadcn v4 tidak support asChild — fix: patch Button dengan @radix-ui/react-slot
+  ~ DropdownMenuTrigger base-ui tidak support asChild — fix: hapus asChild,
+    tambah className & children langsung ke trigger component
+  ~ npm tidak boleh nama pakai spasi/kapital — project dibuat di subfolder izinpro-cms/
+
+====================================================
+
+[2026-06-28] v1.1.0 — Frontend Revisi + Admin Enhancement
+----------------------------------------------------
+STATUS   : COMPLETED
+PROJECT  : izinpro-cms/
+
+PERUBAHAN DESIGN SYSTEM:
+  ~ Primary color diupdate ke grass green
+    oklch(0.627 0.194 149) #16a34a (emerald) → oklch(0.653 0.167 136) #5ba12b
+    Hue bergeser 149° → 136° (lebih hangat, brand perizinan)
+  ~ Seluruh brand palette diregenerasi --brand-50 s/d --brand-900 di hue 136°
+  ~ themeColor di viewport + semua hardcoded hex (#16a34a, #15803d, dll.) diupdate
+  ~ @keyframes pulse-ring diupdate ke warna primer baru
+
+HALAMAN PUBLIK — REVISI:
+  ~ HeroSection: badge padding diperbesar (px-5 py-2.5); pill cards pakai
+    flex-wrap gap-2 + whitespace-nowrap agar satu baris di desktop,
+    boleh wrap di mobile
+  ~ TrustedBySection dihapus sepenuhnya, diganti ClientsSection —
+    placeholder logo grid (5 kolom, aspect 3/2) ditaruh setelah
+    VideoTestimonialsSection
+  ~ Background selang-seling diperbaiki dari VideoTestimonialsSection ke bawah:
+      ClientsSection       → alt (abu)
+      FaqSection           → dihapus alt (putih)
+      ContactSection       → ditambah alt (abu)
+  ~ ServicesSection — 6 layanan baru ditambahkan ke SERVICES di constants.ts:
+      PT Perorangan (Legalitas Usaha)
+      CV & Firma (Legalitas Usaha)
+      PMA / Penanaman Modal Asing (Corporate)
+      NPWP Badan & PKP (Perpajakan)
+      Pendaftaran Merek (HKI)
+      Virtual Office (Corporate)
+    Grid berubah dari 3 kolom menjadi 4 kolom (xl:grid-cols-4)
+    11 ikon baru diimport dari lucide-react
+  ~ Blog: field readTime dihapus dari BlogPost interface,
+    diganti views: string; ikon Clock → Eye di semua card
+    (BlogSection, /blog, /blog/[slug], admin/blog)
+  ~ types/index.ts: BlogPost.readTime → BlogPost.views
+
+HALAMAN /layanan — FITUR BARU:
+  + ServicesCatalog.tsx (client component) — search bar rounded-full +
+    category filter pills (Semua / Legalitas Usaha / Perizinan /
+    Perpajakan / HKI / Corporate)
+  + useMemo untuk filter performa, CATEGORY_MAP slug → kategori
+  + Empty state dengan tombol reset filter
+  + Results counter "Menampilkan X layanan"
+  + Category badge di kanan atas tiap service card
+  + page.tsx: SectionWrapper noPadding + py-10 md:py-14 untuk kurangi spacing
+
+HALAMAN /tentang-kami — REVISI:
+  ~ Team cards diubah dari horizontal kecil ke vertikal dengan area foto
+    placeholder (silhouette body + badge inisial gradient)
+  ~ StatsSection dihapus dari halaman tentang-kami
+
+SKELETON & LAZY LOADING (BARU):
+  + src/components/skeletons/BlogCardSkeleton.tsx
+      BlogCardSkeleton — skeleton blog card biasa
+      BlogFeaturedSkeleton — skeleton featured card halaman /blog
+  + src/components/skeletons/ServiceCardSkeleton.tsx
+      ServiceCardSkeleton — skeleton service card
+      SearchFilterSkeleton — skeleton search bar + category pills
+  + src/app/(public)/blog/loading.tsx — Next.js route loading state
+  + src/app/(public)/layanan/loading.tsx — Next.js route loading state
+  ~ Landing page (page.tsx): 7 section below-fold diubah ke next/dynamic
+    (BlogSection, TestimonialsSection, VideoTestimonialsSection,
+     ClientsSection, FaqSection, ContactSection, CtaBannerSection)
+  ~ ServicesCatalog dibungkus <Suspense> dengan skeleton fallback
+
+ADMIN PANEL — SPACING KONSISTEN:
+  ~ Semua halaman admin (blog, layanan, tim, promo, faq, testimoni,
+    media, pages, settings): outer wrapper ditambahkan space-y-6
+  ~ Explicit mb-5 / mb-6 pada toolbar row dihapus (space-y-6 handles it)
+  ~ Media page: mb-5 pada drag-drop area juga dihapus
+  → Semua halaman kini konsisten 24px antar section, mengikuti pola dashboard
+
+ADMIN PANEL — AUTH (BARU):
+  + src/app/admin/login/page.tsx
+      Form login email + password, show/hide password
+      Validasi credentials demo (admin@izinpro.co.id / admin123)
+      Loading state + error feedback inline
+      Hint akun demo, link ke register
+  + src/app/admin/register/page.tsx
+      Form registrasi: nama, email, password, konfirmasi password
+      Password strength indicator (Lemah/Cukup/Kuat)
+      Match indicator untuk konfirmasi password
+      Validasi minimal 6 karakter
+  ~ src/app/admin/layout.tsx diubah menjadi client component:
+      Auth guard via sessionStorage.getItem("admin-auth")
+      Redirect ke /admin/login jika belum auth
+      Loading spinner saat cek auth
+      Auth pages (login/register) render tanpa sidebar
+      AdminSidebarProvider hanya wrap panel yang sudah terauth
+
+ADMIN PANEL — RESPONSIVE SIDEBAR (BARU):
+  + src/contexts/AdminSidebarContext.tsx — React context open/toggle/close
+  ~ AdminSidebar.tsx — responsive drawer:
+      Desktop (lg+): sticky, selalu visible, bagian flex layout normal
+      Mobile (<lg): fixed drawer, slide dari kiri (translate-x -100% → 0)
+      transition-transform duration-300 ease-in-out
+      Tombol X di header sidebar (hidden lg:hidden) untuk close
+      onClick={close} di setiap nav link — auto-close setelah navigasi
+  ~ AdminHeader.tsx — hamburger + logout:
+      Tombol Menu (lg:hidden) di kiri header, trigger toggle context
+      Logout: sessionStorage.removeItem("admin-auth") + router.replace login
+      Subtitle truncate + hidden sm:block untuk mobile
+
+FILE BARU (ringkasan):
+  + src/contexts/AdminSidebarContext.tsx
+  + src/components/sections/ClientsSection.tsx
+  + src/components/services/ServicesCatalog.tsx
+  + src/components/skeletons/BlogCardSkeleton.tsx
+  + src/components/skeletons/ServiceCardSkeleton.tsx
+  + src/app/admin/login/page.tsx
+  + src/app/admin/register/page.tsx
+  + src/app/(public)/blog/loading.tsx
+  + src/app/(public)/layanan/loading.tsx
+
+====================================================
+
+[2026-06-27] v0.1.2 — Mobile Responsive Fix
+----------------------------------------------------
+STATUS   : RELEASED
+FILES    : index.html, assets/css/style.css, assets/js/main.js
+
+DIPERBAIKI:
+  ~ Mobile menu — selector diubah dari `.mob-menu a` ke `.mob-link`
+    agar lebih presisi dan tidak bentrok dengan sub-item
+  ~ Dropdown "Layanan" di mobile kini menjadi accordion (tap to expand)
+    dengan animasi max-height dan ikon panah berputar
+  ~ Dropdown "Layanan" di desktop kini support click/touch (tablet),
+    tidak hanya CSS hover
+  ~ Tombol "Konsultasikan Gratis" di hero responsif pada layar < 480px:
+    stacked vertikal, full-width, tidak overflow
+
+DITAMBAHKAN:
+  + Fungsi closeMobileMenu() terpusat di JS agar reusable
+  + Sub-link accordion (.mob-sub-link) dengan indikator garis hijau kiri
+  + CSS .dd-menu.dd-open untuk support click-based dropdown desktop
+  + Responsive rule @media 480px: hero-btns flex-direction column
+
+====================================================
+
+[2026-06-27] v0.1.1 — Refactor: Pemisahan CSS & JS + Rebranding Warna
+----------------------------------------------------
+STATUS   : RELEASED
+FILES    : index.html (baru), assets/css/style.css (baru), assets/js/main.js (baru)
+
+DIUBAH:
+  ~ Single file izinpro_demo.html dipecah menjadi struktur template
+    terpisah layaknya template premium (Envato-style):
+      index.html          → HTML murni, tanpa CSS/JS inline
+      assets/css/style.css → semua styling (29 KB)
+      assets/js/main.js    → semua interaktivitas (6 KB)
+  ~ Primary color diubah dari #16a34a (emerald) ke #5ba12b (grass green)
+    Alasan: lebih hangat, otoritatif, cocok untuk brand jasa perizinan
+  ~ Seluruh palet hijau diregenerasi dari basis #5ba12b:
+      --g9: #1b3309  --g8: #2e5511  --g7: #43791b  --g6: #5ba12b (primary)
+      --g5: #72ba38  --g4: #93d057  --g1: #ddf0b5  --g0: #f3fae8
+  ~ CSS shadow & rgba yang hardcoded #16a34a diupdate ke rgba(91,161,43,...)
+  ~ JS direfactor: wrapped dalam IIFE, fungsi diberi nama deskriptif,
+    openModal / closeModal diekspos ke window scope
+
+DESIGN SYSTEM (BARU):
+  Primary     : #5ba12b
+  Dark Green  : #43791b, #2e5511, #1b3309
+  Light Green : #f3fae8, #ddf0b5
+  Text        : #1a2814 (green-biased near-black)
+  Neutral     : #4a5a50 (green-biased grey)
+  Amber       : #f59e0b (rating stars)
+
+====================================================
+
+[2026-06-26] v0.1.0 — Frontend Demo (Client Presentation)
+----------------------------------------------------
+STATUS   : RELEASED
+FILE     : izinpro_demo.html
+UKURAN   : 73 KB (single file, no dependencies)
+
+DITAMBAHKAN:
+  + Navbar sticky dengan backdrop blur saat scroll
+  + Dropdown menu "Layanan" dengan 5 sub-item
+  + Hamburger menu untuk mobile
+  + Hero section: split layout, headline besar, floating stat cards
+  + Animated counter (5.000+, 99%, dll.) on scroll
+  + Marquee logo klien (Trusted By) — 10 klien
+  + Section Layanan: 5 service cards dengan hover effect
+  + Section Tentang Kami: about text + video modal
+  + Section Kenapa Kami: 4 stat cards
+  + Section Promo: 3 promo cards (diskon 25%, gratis konsultasi, paket hemat)
+  + Section Artikel: 4 article cards dengan gradient image & kategori
+  + Section Testimoni: slider otomatis 6 testimoni, prev/next, dots
+  + Section Video Testimoni: grid 5 video, popup modal saat diklik
+  + Section Klien Kami: 10 logo klien
+  + Section Kontak & Lokasi: info kontak + animated map pin
+  + CTA Banner: full-width green gradient + 2 tombol aksi
+  + Footer: 5 kolom, social media links, copyright
+  + WhatsApp Floating Button + pulse animation (link aktif)
+  + Back to Top button (muncul setelah 400px scroll)
+  + Scroll reveal animation (fade up per section)
+  + Active nav link highlight saat scroll
+  + Video modal popup player
+  + Full mobile responsive
+
+DESIGN SYSTEM:
+  Primary     : #16a34a
+  Dark Green  : #15803d, #166534, #0d4a24
+  Light Green : #f0fdf4, #dcfce7
+  Text        : #0f1a13 (green-biased near-black)
+  Neutral     : #4a5a50 (green-biased grey)
+  Amber       : #f59e0b (rating stars)
+
+TEKNOLOGI:
+  - HTML5, CSS3 (custom, no framework)
+  - Vanilla JavaScript (no external library)
+  - IntersectionObserver API (scroll animations & counters)
+  - CSS Grid + Flexbox (layout)
+  - CSS Custom Properties (design tokens)
+  - CSS Animation + Keyframes
+
+CATATAN:
+  - Single file HTML, tidak butuh server untuk dibuka
+  - Tidak ada koneksi ke backend/database (demo only)
+  - Semua link WhatsApp mengarah ke 0822-8000-7821
+  - Gambar menggunakan CSS gradient sebagai placeholder
+
+====================================================
+
+[2026-06-26] v0.0.1 — Inisialisasi Project & Diskusi
+----------------------------------------------------
+STATUS   : DONE
+FILE     : diskusi_cms_corporate.txt
+
+  + Perbandingan Laravel+Vue vs Next.js → pilih Next.js
+  + Penentuan stack: Next.js + Prisma + MariaDB + Redis
+  + Keputusan hosting: Rumahweb Shared Hosting Medium
+  + Arsitektur deployment: 1 proses Node.js via Passenger
+  + Perancangan modul CMS (4 fase)
+  + Desain sistem analytics custom tracker
+  + Filter bot: 3 lapis (client-side, UA blacklist, dedup)
+  + Keputusan: unique visitor via cookie, referrer tracking aktif
+  + Analisis referensi UI/UX (IzinPro) + saran peningkatan
+  + Struktur section halaman optimal untuk konversi
+  + High-level database schema (20+ tabel)
+
+====================================================
+ROADMAP
+====================================================
+
+v0.1.x  → [SELESAI] Frontend demo HTML (feedback klien)
+v1.0.0  → [SELESAI] Frontend Next.js lengkap + Admin panel statis
+v1.1.0  → [SELESAI] Revisi frontend + Admin login/register + Responsive sidebar
+v1.2.0  → [SELESAI] Homepage redesign dari prototype klien + Deploy Vercel production
+v1.3.0  → Revisi lanjutan berdasarkan feedback klien
+v2.0.0  → Database schema + Prisma setup + MariaDB
+v2.1.0  → Authentication (Better Auth) + session management
+v2.2.0  → Admin panel fungsional — CRUD blog, layanan, media
+v2.3.0  → Media library + image processing (Sharp.js + WebP)
+v2.4.0  → Contact form → inbox database (inquiry management)
+v2.5.0  → SEO manager per halaman + sitemap dinamis
+v2.6.0  → Analytics dashboard (custom tracker + page_views table)
+v3.0.0  → Production ready + deploy ke Rumahweb
+v3.1.0  → Email notifikasi inquiry + export CSV
+
+====================================================

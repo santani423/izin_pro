@@ -1,0 +1,503 @@
+====================================================
+DISKUSI: CMS CORPORATE - FULL STACK JAVASCRIPT
+Tanggal: 2026-06-26
+====================================================
+
+TUJUAN PROJECT
+--------------
+Membangun CMS untuk corporate (company profile) dengan:
+- UI/UX yang bagus dan profesional
+- SEO yang kuat
+- Full-stack JavaScript
+- Database MySQL/MariaDB
+- Scope besar (scalable)
+
+====================================================
+PERBANDINGAN AWAL (dari claude.ai)
+====================================================
+
+Laravel + Vue.js VS Next.js
+- Next.js lebih unggul untuk SEO karena SSR/SSG built-in
+- Vue.js biasa (SPA) = SEO buruk karena render di client
+- Kalau tetap Vue, minimal pakai Nuxt.js
+
+SSR vs SSG vs CSR
+- SSR  : Render tiap ada request (cocok untuk konten dinamis)
+- SSG  : Render sekali saat build/deploy (cocok untuk company profile)
+- CSR  : Render di browser (SEO buruk, hindari untuk public page)
+
+====================================================
+STACK FINAL (SUDAH DIPUTUSKAN)
+====================================================
+
+Layer            | Teknologi
+-----------------|----------------------------------
+Framework        | Next.js 14 (App Router) — full-stack
+Styling          | Tailwind CSS + shadcn/ui
+Backend          | Next.js API Routes + Server Actions
+ORM              | Prisma
+Database         | MariaDB (dari Rumahweb, MySQL-compatible)
+Cache            | Redis (dari Rumahweb)
+Auth             | Better Auth
+Rich Text Editor | Tiptap
+Image Processing | Sharp.js (auto resize + convert WebP)
+Storage Gambar   | Folder /uploads di server (bukan BLOB di DB)
+Deploy           | Rumahweb Shared Hosting (frontend + backend)
+Domain           | Beli di Rumahweb
+
+CATATAN PENTING:
+- Gambar TIDAK disimpan sebagai BLOB di database
+- Simpan PATH/URL gambar di DB, file asli di folder /uploads
+- Auto generate 3 ukuran: thumbnail (150px), medium (600px), large (1200px)
+- Semua gambar dikonversi ke WebP otomatis saat upload
+
+====================================================
+HOSTING — RUMAHWEB SHARED HOSTING MEDIUM
+====================================================
+
+Fitur relevan yang tersedia:
+- Node.js support (via Passenger)
+- SSH access
+- Redis Object Cache
+- Unlimited Storage
+- Unlimited MariaDB Databases
+- AccelerateWP
+
+Arsitektur deployment:
+  domain.com          → Website publik (Next.js SSG/SSR)
+  domain.com/admin    → CMS admin panel
+  domain.com/api      → API Routes (backend)
+
+Semua dalam 1 proses Node.js (efisien untuk shared hosting).
+
+====================================================
+BACKEND — API ROUTES + SERVER ACTIONS
+====================================================
+
+Pendekatan kombinasi:
+- Server Actions → operasi dari admin panel (create, update, delete)
+- API Routes     → endpoint publik untuk halaman SSG/SSR
+
+Contoh REST API:
+  GET    /api/posts        → ambil semua artikel
+  POST   /api/posts        → buat artikel baru
+  GET    /api/posts/[id]   → detail artikel
+  PUT    /api/posts/[id]   → update artikel
+  DELETE /api/posts/[id]   → hapus artikel
+
+====================================================
+MODUL & FITUR CMS
+====================================================
+
+FASE 1 — CORE
+  - Authentication & Role (Super Admin, Admin, Editor, Viewer)
+  - Media Library (upload, WebP convert, resize, folder)
+  - Site Settings (nama, logo, favicon, kontak, sosmed)
+  - Pages management (halaman statis)
+  - Blog / News management
+
+FASE 2 — CORPORATE CONTENT
+  - Team Members (foto, nama, jabatan, departemen)
+  - Services (layanan perusahaan)
+  - Portfolio / Projects
+  - Testimonials
+  - Partners / Clients (logo mitra)
+  - Banner / Slider
+  - FAQ
+  - Navigation Builder (menu header & footer, drag & drop)
+
+FASE 3 — SEO & KOMUNIKASI
+  - SEO Manager per halaman (meta, OG image, canonical, robots)
+  - Sitemap.xml otomatis
+  - Schema markup JSON-LD
+  - Contact form + Inbox inquiry
+  - Email notifikasi ke admin (inquiry baru)
+  - Export inquiry ke CSV
+
+FASE 4 — ENHANCEMENT
+  - Audit Log (siapa ubah apa & kapan)
+  - Content Versioning (rollback konten)
+  - Scheduled Publish
+  - Analytics Dashboard (lihat bawah)
+
+PRINSIP SISTEM:
+  - Soft delete (semua tabel pakai deleted_at)
+  - Status konten: draft → review → published → archived
+  - Sort order untuk konten yang perlu urutan manual
+  - Slug otomatis dari judul
+
+====================================================
+ANALYTICS DASHBOARD (CUSTOM TRACKER)
+====================================================
+
+Keputusan:
+  - Pakai custom tracker (self-hosted, data di DB sendiri)
+  - TIDAK pakai GA4 (untuk saat ini)
+  - Unique visitor tracking via COOKIE
+  - Referrer tracking PERLU
+  - Device tracking → nanti
+
+Tabel database:
+  page_views   → raw data setiap kunjungan
+  daily_stats  → agregasi harian (agar query dashboard cepat)
+
+Tiga lapis filter bot:
+  1. Client-side tracking → bot tanpa JS otomatis tidak ter-track
+  2. User-Agent blacklist → filter di API endpoint
+     (googlebot, bingbot, scrapy, curl, selenium, dll.)
+  3. Deduplication via sessionStorage → refresh tidak tambah views
+
+Alur tracking:
+  Pengunjung buka halaman
+      ↓
+  Cek sessionStorage (sudah di-track session ini?)
+      YA  → stop
+      TIDAK → lanjut
+      ↓
+  Kirim ke /api/analytics/track via sendBeacon
+      ↓
+  API cek User-Agent (bot? → skip)
+      ↓
+  Simpan ke page_views + update daily_stats
+
+Tampilan dashboard:
+  - Cards: pengunjung hari ini, page views, artikel terpopuler, inquiry baru
+  - Grafik: tren kunjungan 7/30/90 hari
+  - Tabel: top halaman & artikel by views
+  - Sumber traffic (referrer breakdown)
+
+====================================================
+STRUKTUR FOLDER PROJECT
+====================================================
+
+corporate-cms/
+├── app/
+│   ├── (public)/           → Halaman website publik
+│   │   ├── page.tsx        → Homepage
+│   │   ├── about/
+│   │   ├── blog/
+│   │   └── contact/
+│   ├── admin/              → CMS admin panel
+│   │   ├── dashboard/
+│   │   ├── pages/
+│   │   ├── media/
+│   │   └── settings/
+│   └── api/                → Backend API Routes
+│       ├── auth/
+│       ├── posts/
+│       ├── upload/
+│       ├── analytics/
+│       └── pages/
+├── prisma/
+│   └── schema.prisma
+├── public/
+│   └── uploads/            → Gambar hasil upload
+└── lib/
+    ├── db.ts               → Prisma client
+    ├── sharp.ts            → Image processing
+    └── redis.ts            → Cache client
+
+====================================================
+TABEL DATABASE (HIGH LEVEL)
+====================================================
+
+users               → admin users + role
+roles               → super_admin, admin, editor, viewer
+permissions         → akses per modul per role
+
+pages               → halaman statis
+posts               → artikel/blog
+categories          → kategori artikel
+tags                → tag artikel
+post_tags           → pivot posts & tags
+
+media               → file/gambar (path, ukuran, tipe)
+team_members        → profil tim
+services            → layanan perusahaan
+portfolios          → proyek/portfolio
+testimonials        → testimoni klien
+partners            → logo mitra/klien
+banners             → hero & slider
+faqs                → FAQ
+
+contact_submissions → inbox form kontak
+menus               → header & footer menu
+menu_items          → item dalam menu (nested)
+
+site_settings       → pengaturan global (key-value)
+audit_logs          → log semua aktivitas
+
+page_views          → raw analytics data
+daily_stats         → agregasi analytics harian
+
+====================================================
+UI/UX — REFERENSI & ANALISIS
+====================================================
+
+Referensi yang diberikan: IzinPro (izinpro.co.id)
+Jenis: Corporate service (perizinan bisnis)
+Warna utama: Hijau & putih
+
+YANG SUDAH BAGUS DI REFERENSI:
+  - Struktur halaman lengkap & logis
+  - CTA jelas di setiap section
+  - Social proof kuat (stats, testimoni, logo klien)
+  - Video testimoni (bagus untuk trust)
+  - WhatsApp floating button
+  - Google Maps terintegrasi
+  - Warna konsisten & profesional
+
+YANG PERLU DITINGKATKAN:
+  - Hero section kurang "wow", terlalu flat
+  - Promo section tidak konsisten secara visual
+  - Typography kurang hierarki yang kuat
+  - Tidak ada animasi / micro-interaction
+  - Card design terasa agak lama (2022-era)
+  - Mobile experience perlu dioptimalkan
+
+====================================================
+UI/UX — REFERENSI MODERN YANG DISARANKAN
+====================================================
+
+Website referensi untuk inspirasi upgrade:
+  - linear.app    → tipografi kuat, animasi halus, layout bersih
+  - vercel.com    → hero modern, gradient elegan
+  - stripe.com    → hierarki visual sempurna
+  - framer.com    → micro-interaction kelas dunia
+  - lemon.io      → corporate service, clean, conversion-focused
+
+====================================================
+UI/UX — SARAN PENINGKATAN PER SECTION
+====================================================
+
+HERO SECTION:
+  Sekarang  : Teks + foto + stats card biasa
+  Upgrade ke:
+    - Gradient background subtle (putih → hijau muda)
+    - Animated counter untuk angka statistik (0 → 5000+)
+    - Floating card dengan shadow & blur (glassmorphism)
+    - Headline lebih besar, font weight lebih bold
+    - Subtle background pattern/grid
+
+SERVICE CARDS:
+  Sekarang  : Icon + teks flat biasa
+  Upgrade ke:
+    - Hover effect: card naik + shadow lebih dalam
+    - Icon berwarna dengan background rounded
+    - Border gradient saat hover
+    - Animated arrow pada "Selengkapnya"
+
+TESTIMONIAL:
+  Sekarang  : Carousel teks biasa
+  Upgrade ke:
+    - Masonry layout (Pinterest-style)
+    - Avatar lebih besar dengan verified badge
+    - Quote mark dekoratif besar di background
+    - Rating stars dengan animasi fill
+
+SECTION UMUM:
+  - Subtle entrance animation (fade up saat scroll)
+  - Section divider dengan wave/curve shape
+  - Consistent spacing lebih lega (lebih banyak whitespace)
+
+====================================================
+UI/UX — STRUKTUR SECTION HALAMAN UTAMA
+====================================================
+
+Urutan optimal untuk konversi:
+
+  1.  Navbar        → sticky, blur background saat scroll
+  2.  Hero          → headline + stats + CTA utama
+  3.  Trusted By    → logo klien (social proof awal!) *dipindah ke atas
+  4.  Layanan       → service cards dengan hover effect
+  5.  Tentang Kami  → about + video
+  6.  Kenapa Kami   → USP / keunggulan (angka & ikon)
+  7.  Promo         → banner promo
+  8.  Artikel       → blog preview
+  9.  Testimoni     → text + video testimoni
+  10. Lokasi        → kontak + maps
+  11. CTA Banner    → ajakan konsultasi
+  12. Footer        → navigasi + sosmed + info
+
+CATATAN: "Trusted By" (logo klien) dipindah setelah Hero
+agar user langsung percaya sejak awal — terbukti meningkatkan konversi.
+
+====================================================
+UI/UX — KONEKSI KE CMS (SECTION YANG HARUS BISA DIEDIT)
+====================================================
+
+  Hero        → headline, subtext, stats, gambar, CTA
+  Layanan     → CRUD service cards
+  Promo       → CRUD banner promo
+  Artikel     → Blog management
+  Testimoni   → CRUD testimoni text + video URL
+  Klien       → CRUD logo klien (Trusted By)
+  Lokasi      → edit kontak & embed maps URL
+  Footer      → edit navigasi & info footer
+
+====================================================
+FRONTEND DEMO (FASE 1) — STATUS
+====================================================
+
+File   : izinpro_demo.html (73 KB, single file)
+Lokasi : C:\Users\ILHAM-HIM\Downloads\WORKSHOP\IZIN PRO\
+Status : SELESAI (telah direfactor ke Next.js di fase berikutnya)
+
+====================================================
+FRONTEND NEXT.JS (FASE 2) — STATUS
+====================================================
+
+Project : izinpro-cms/
+Lokasi  : C:\Users\ILHAM-HIM\Downloads\WORKSHOP\IZIN PRO\izinpro-cms\
+Status  : SELESAI — build sukses, live production di Vercel
+          (lihat update v1.2.0 di bagian bawah dokumen ini)
+
+STACK AKTUAL YANG DIPAKAI:
+  Framework  : Next.js 16.2.9 (App Router) — catatan: versi lebih baru dari plan awal v14
+  Styling    : Tailwind CSS v4 (CSS variables + OKLCH, tanpa tailwind.config)
+  UI Library : shadcn/ui v4 (berbasis @base-ui/react — BUKAN Radix UI seperti versi lama)
+  TypeScript : Strict mode
+  Font       : Plus Jakarta Sans (Google Fonts via next/font/google)
+  Animasi    : Framer Motion + CSS keyframes custom
+  State mgmt : React useState / useEffect (built-in, cukup untuk fase ini)
+  Forms      : React Hook Form + Zod (sudah terinstall, belum digunakan penuh)
+  Themes     : next-themes (sudah terinstall, dark mode ready)
+
+CATATAN TEKNIS PENTING:
+  ~ shadcn v4 pakai @base-ui/react (bukan @radix-ui) — asChild tidak support default
+    → Fix: patch src/components/ui/button.tsx dengan @radix-ui/react-slot
+    → Fix: hapus asChild dari DropdownMenuTrigger, pindah className ke trigger langsung
+  ~ Tailwind v4 tidak pakai tailwind.config.js/ts — semua token via CSS @theme di globals.css
+  ~ Brand color OKLCH: oklch(0.627 0.194 149.58) = #16a34a
+  ~ Next.js 16.x memiliki breaking changes dari v14 — baca docs di node_modules/next/dist/docs/
+
+BUILD RESULT:
+  ✓ TypeScript: 0 errors, 0 warnings
+  ✓ 29 halaman di-generate (SSG)
+  ✓ Build time: 4.3s
+
+HALAMAN PUBLIK TERSEDIA (snapshot per 2026-06-27 — lihat "UPDATE v1.2.0"
+di bagian bawah dokumen untuk struktur homepage terkini):
+  /                          → Homepage (12 sections)
+  /tentang-kami              → About page
+  /layanan                   → Daftar layanan
+  /layanan/[slug]            → Detail layanan (5 slug: pt-baru, cv-baru, nib-oss, pkp-npwp, izin-usaha)
+  /blog                      → Daftar artikel
+  /blog/[slug]               → Detail artikel (6 artikel)
+  /kontak                    → Halaman kontak
+
+ADMIN PANEL TERSEDIA:
+  /admin                     → Redirect ke dashboard
+  /admin/dashboard           → Overview stats + inquiries + top pages
+  /admin/blog                → Manajemen artikel
+  /admin/media               → Media library
+  /admin/layanan             → Manajemen layanan
+  /admin/testimoni           → Manajemen testimoni
+  /admin/settings            → Pengaturan situs
+  /admin/pages               → Manajemen halaman statis
+
+SEO TERIMPLEMENTASI:
+  [x] generateMetadata() per halaman (title, description, Open Graph, Twitter Card)
+  [x] JSON-LD Organization schema di homepage
+  [x] sitemap.xml auto-generate (static + dynamic dari services & blog)
+  [x] robots.txt auto-generate (blokir /admin/, /api/)
+  [x] Canonical URL per halaman
+  [x] SSG (Static Site Generation) untuk semua halaman publik
+  [x] lang="id" di root layout
+  [x] themeColor #16a34a di viewport config
+  [x] Plus Jakarta Sans optimized via next/font (no layout shift)
+
+MOCK DATA (src/lib/constants.ts):
+  COMPANY_INFO : nama, WhatsApp (6282280007821), email, alamat (Wisma Laena), jam operasional
+  SERVICES     : 5 layanan (PT Baru, CV Baru, NIB/OSS, PKP & NPWP, Izin Usaha Khusus)
+  TESTIMONIALS : 6 testimoni teks
+  VIDEO_TESTIMONIALS : 5 video testimoni
+  BLOG_POSTS   : 6 artikel
+  STATS        : 4 angka statistik (5000+ klien, 99% puas, 50+ layanan, 10+ tahun)
+  PROMOS       : 3 promo aktif
+  CLIENTS      : 10 logo klien
+  FAQS         : 6 pertanyaan umum
+  TEAM_MEMBERS : 6 anggota tim
+
+====================================================
+STACK FINAL DIPERBARUI (SUDAH DIPUTUSKAN)
+====================================================
+
+Layer            | Teknologi                          | Status
+-----------------|------------------------------------|--------
+Framework        | Next.js 16.x (App Router)          | [x] DONE
+Styling          | Tailwind CSS v4 + shadcn/ui v4     | [x] DONE
+TypeScript       | Strict mode                        | [x] DONE
+Font             | Plus Jakarta Sans                  | [x] DONE
+SEO              | Metadata API + JSON-LD + sitemap   | [x] DONE
+Backend          | Next.js API Routes + Server Actions| [ ] TODO
+ORM              | Prisma                             | [ ] TODO
+Database         | MariaDB (Rumahweb, MySQL-compat)   | [ ] TODO
+Cache            | Redis (Rumahweb)                   | [ ] TODO
+Auth             | Better Auth                        | [ ] TODO
+Rich Text Editor | Tiptap                             | [ ] TODO
+Image Processing | Sharp.js (WebP convert + resize)   | [ ] TODO
+Deploy (demo)    | Vercel                             | [x] DONE — izinpro-cms.vercel.app
+Deploy (prod)    | Rumahweb Shared Hosting            | [ ] TODO
+
+====================================================
+PENDING / NEXT STEPS (update 2026-07-08)
+====================================================
+
+  [x] Build frontend Next.js lengkap (SELESAI)
+  [x] Admin panel statis + mock data (SELESAI)
+  [x] Admin login/register + responsive sidebar (SELESAI, v1.1.0)
+  [x] SEO optimasi (SELESAI)
+  [x] Deploy ke Vercel untuk demo ke klien (SELESAI, v1.2.0 —
+      https://izinpro-cms.vercel.app)
+  [x] Homepage di-redesign total dari prototype UI/UX klien (SELESAI, v1.2.0
+      — lihat detail lengkap di bagian "UPDATE v1.2.0" di bawah)
+  [ ] Review demo bersama klien & collect feedback (berjalan iteratif —
+      revisi visual homepage sejauh ini sudah lewat siklus ini per section)
+  [ ] Revisi tampilan lanjutan sesuai feedback klien berikutnya
+  [ ] Setup Prisma + MariaDB (development phase)
+  [ ] Implementasi backend — API Routes + Server Actions
+  [ ] Implementasi auth sungguhan — Better Auth (saat ini admin masih
+      pakai sessionStorage demo, BUKAN aman untuk production)
+  [ ] Tim, deadline, konten final belum dibahas
+  [ ] Device tracking analytics
+
+====================================================
+UPDATE v1.2.0 (2026-07-08) — HOMEPAGE REDESIGN DARI PROTOTYPE
+====================================================
+
+RINGKASAN:
+  Klien memberikan 7 gambar prototype UI/UX (Homepage, Layanan, Promo,
+  Tentang, Artikel, Testimoni, Kontak). Prototype di-convert ke kode
+  React via claude.ai, hasilnya diintegrasikan ke project izinpro-cms
+  dan disesuaikan dengan stack + konvensi yang sudah berjalan (Next.js
+  16, Tailwind v4, shadcn/ui v4 berbasis @base-ui/react).
+
+  Setelah integrasi awal, dilakukan revisi visual iteratif section demi
+  section berdasarkan perbandingan langsung dengan gambar prototype —
+  mencakup navbar (dropdown pill + accordion mobile), hero (kartu brand
+  gradient hijau + floating stat card), kartu layanan/promo/artikel
+  (placeholder gradient hijau, bukan abu-abu polos), video pop-up player
+  di section Tentang & Video Testimoni, carousel testimoni dengan
+  auto-slide, marquee logo klien ASLI (8 logo: bank bjb, Alfamart,
+  Telkom Indonesia, Trive Invest, JNE, Sinarmas, WIKA, Maybank), FAQ
+  accordion center-aligned, dan CTA banner gradient.
+
+  Detail teknis lengkap (file baru, komponen, fix bug) ada di CHANGELOG.txt
+  entry [2026-07-08] v1.2.0.
+
+STATUS DEPLOY:
+  Build production sukses (0 error) → push ke GitHub
+  (MUHIM24/cms-corporate, branch master) → deploy manual via
+  `vercel --prod` → LIVE di https://izinpro-cms.vercel.app
+
+CATATAN UNTUK FASE BACKEND SELANJUTNYA:
+  ~ Data section homepage baru ada di src/lib/landing.ts (terpisah dari
+    src/lib/constants.ts yang dipakai halaman lain + admin) — saat
+    migrasi ke database, kedua file ini perlu direkonsiliasi jadi satu
+    sumber data (kemungkinan lewat tabel yang sama, field yang sama)
+  ~ Section lama (BlogSection, StatsSection, ContactSection,
+    TrustedBySection) sudah tidak dipakai di homepage tapi belum
+    dihapus dari codebase — bisa dibersihkan saat refactor backend
+
+====================================================
