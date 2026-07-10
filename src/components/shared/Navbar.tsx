@@ -64,42 +64,21 @@ export default function Navbar() {
               link.children ? (
                 <li key={link.label}>
                   <DropdownMenu>
-                    {/* Pill terbelah: klik label → navigasi, klik chevron → sub-menu */}
-                    <div
+                    <DropdownMenuTrigger
                       className={cn(
-                        "inline-flex items-center rounded-full border transition-colors",
-                        "has-data-popup-open:border-primary/50 has-data-popup-open:bg-primary/5",
+                        "group inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium outline-none transition-colors hover:text-primary",
+                        "data-popup-open:border-primary/50 data-popup-open:bg-primary/5 data-popup-open:text-primary",
                         isActive(link.href)
-                          ? "border-primary/50 bg-primary/5"
-                          : "border-transparent",
+                          ? "border-primary/50 bg-primary/5 font-semibold text-primary"
+                          : "border-transparent text-foreground/80",
                       )}
                     >
-                      <Link
-                        href={link.href}
-                        className={cn(
-                          "py-2 pl-4 text-sm font-medium transition-colors hover:text-primary",
-                          isActive(link.href)
-                            ? "font-semibold text-primary"
-                            : "text-foreground/80",
-                        )}
-                      >
-                        {link.label}
-                      </Link>
-                      <DropdownMenuTrigger
-                        aria-label={`Buka sub-menu ${link.label}`}
-                        className={cn(
-                          "group/trigger py-2 pl-1.5 pr-3.5 outline-none transition-colors hover:text-primary data-popup-open:text-primary",
-                          isActive(link.href)
-                            ? "text-primary"
-                            : "text-foreground/80",
-                        )}
-                      >
-                        <ChevronDown
-                          className="size-4 transition-transform group-data-popup-open/trigger:rotate-180"
-                          aria-hidden="true"
-                        />
-                      </DropdownMenuTrigger>
-                    </div>
+                      {link.label}
+                      <ChevronDown
+                        className="size-4 transition-transform group-data-popup-open:rotate-180"
+                        aria-hidden="true"
+                      />
+                    </DropdownMenuTrigger>
                     <DropdownMenuContent
                       align="start"
                       sideOffset={12}
@@ -172,46 +151,32 @@ export default function Navbar() {
               <ul className="flex flex-col gap-1.5">
                 {NAV_LINKS.map((link) =>
                   link.children ? (
-                    /* Item dengan sub-menu — klik label navigasi, klik chevron buka/tutup */
+                    /* Item dengan sub-menu — dropdown buka/tutup */
                     <li key={link.label}>
-                      <div
+                      <button
+                        type="button"
+                        aria-expanded={mobileDropdown === link.label}
+                        onClick={() =>
+                          setMobileDropdown(
+                            mobileDropdown === link.label ? null : link.label,
+                          )
+                        }
                         className={cn(
-                          "flex items-center rounded-lg transition-colors",
+                          "flex w-full items-center justify-between rounded-lg px-4 py-3 text-sm font-medium transition-colors",
                           mobileDropdown === link.label
                             ? "bg-primary/5 text-primary"
-                            : "text-foreground/90 hover:bg-accent",
+                            : "text-foreground/90 hover:bg-accent hover:text-primary",
                         )}
                       >
-                        <Link
-                          href={link.href}
-                          onClick={() => setMobileOpen(false)}
+                        {link.label}
+                        <ChevronDown
                           className={cn(
-                            "flex-1 rounded-lg py-3 pl-4 text-sm font-medium transition-colors hover:text-primary",
-                            isActive(link.href) && "text-primary",
+                            "size-4 transition-transform",
+                            mobileDropdown === link.label && "rotate-180",
                           )}
-                        >
-                          {link.label}
-                        </Link>
-                        <button
-                          type="button"
-                          aria-expanded={mobileDropdown === link.label}
-                          aria-label={`Buka sub-menu ${link.label}`}
-                          onClick={() =>
-                            setMobileDropdown(
-                              mobileDropdown === link.label ? null : link.label,
-                            )
-                          }
-                          className="rounded-lg py-3 pl-3 pr-4 transition-colors hover:text-primary"
-                        >
-                          <ChevronDown
-                            className={cn(
-                              "size-4 transition-transform",
-                              mobileDropdown === link.label && "rotate-180",
-                            )}
-                            aria-hidden="true"
-                          />
-                        </button>
-                      </div>
+                          aria-hidden="true"
+                        />
+                      </button>
                       {mobileDropdown === link.label && (
                         <ul className="ml-4 mt-1 border-l border-border pl-4">
                           {link.children.map((child) => (
