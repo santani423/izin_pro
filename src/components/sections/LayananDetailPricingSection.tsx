@@ -22,26 +22,31 @@ export default function LayananDetailPricingSection({
         <h2 className="text-center text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-left">
           {packages.title}
         </h2>
-        <div className="mt-8 grid grid-cols-1 items-start gap-5 sm:grid-cols-3">
+        <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-3">
           {packages.items.map((pkg, index) => {
             const waMessage = encodeURIComponent(
               `Halo IzinPro, saya tertarik dengan ${pkg.name} (${pkg.price}) untuk layanan ${title}.`,
             );
             return (
-              <Reveal key={pkg.name} delay={index * 0.08}>
+              <Reveal
+                key={pkg.name}
+                delay={index * 0.08}
+                className="relative h-full"
+              >
+                {/* Badge di luar Card agar tidak terpotong overflow-hidden */}
+                {pkg.popular && (
+                  <span className="absolute -top-3 right-4 z-10 rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-amber-950 shadow-sm">
+                    Paling Populer
+                  </span>
+                )}
                 <Card
                   className={cn(
-                    "relative h-full gap-0 rounded-xl py-0",
+                    "h-full gap-0 rounded-xl py-0",
                     pkg.popular
                       ? "border-transparent bg-gradient-to-b from-primary to-brand-green-dark text-white shadow-lg"
                       : "border-border/60",
                   )}
                 >
-                  {pkg.popular && (
-                    <span className="absolute -top-3 right-4 rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-amber-950 shadow-sm">
-                      Paling Populer
-                    </span>
-                  )}
                   <CardContent className="flex h-full flex-col px-5 py-6">
                     <h3
                       className={cn(
