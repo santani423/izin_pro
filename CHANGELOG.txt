@@ -5,6 +5,150 @@ CHANGELOG — IzinPro CMS Project
 Format: [YYYY-MM-DD] Versi — Deskripsi
 ====================================================
 
+[2026-07-11] v1.3.0 (IN PROGRESS) — Redesign Halaman Publik dari Prototype UI/UX
+----------------------------------------------------
+STATUS   : IN PROGRESS — 2 dari 9 halaman selesai (/layanan, /layanan/[slug])
+PROJECT  : izinpro-cms/
+SUMBER   : Gambar prototype UI/UX per halaman dari klien, di-convert ke kode
+           via Claude Code dengan format prompt standar (lihat bawah)
+
+RENCANA HALAMAN (kesepakatan dengan klien):
+  [x] Daftar Layanan        /layanan            — redesign total, route tetap
+  [x] Detail Layanan        /layanan/[slug]     — redesign total, slug tetap
+  [ ] Promo                 /promo              — halaman baru
+  [ ] Tentang IzinPro       /tentang-kami       — redesign total
+  [ ] Artikel               /blog               — redesign total
+  [ ] Detail Artikel        /blog/[slug]        — redesign total
+  [ ] Testimoni Klien       /testimoni          — halaman baru
+  [ ] Kontak                /kontak             — redesign total
+  [ ] Tracking Perizinan    /tracking           — halaman baru (mock data,
+                                                  masih frontend-only)
+
+HALAMAN /layanan — REDESIGN TOTAL:
+  + LayananHeroSection      — breadcrumb Beranda>Layanan, h1 "Daftar Layanan",
+    foto placeholder gradient (hidden di <lg)
+  + LayananHighlightsSection — bar 5 keunggulan, kartu putih menimpa bawah
+    hero (-mt-10), grid 1/2/5 kolom
+  + LayananCatalogSection   — client component: filter kategori (pills,
+    scroll horizontal di mobile) + grid 12 kartu layanan (1/2/4 kolom)
+  + LayananConsultSection   — banner hijau muda: CTA WhatsApp + telepon +
+    jam operasional (dari COMPANY_INFO, satu sumber data)
+  ~ CTA penutup reuse CtaSection homepage
+  + src/lib/layanan.ts      — data 12 layanan, 5 kategori, 5 highlight
+    (pola landing.ts, terpisah dari constants.ts)
+  + 7 layanan BARU ditambahkan ke SERVICES di constants.ts agar link detail
+    hidup & masuk sitemap: perizinan-lokasi, sertifikasi, perizinan-impor,
+    izin-industri, lingkungan-hidup, perizinan-konstruksi,
+    perubahan-pembaruan-izin (total SERVICES: 11 → 18)
+  - ServicesCatalog.tsx & ServiceCardSkeleton.tsx dihapus (orphan setelah
+    redesign), loading.tsx ditulis ulang sesuai layout baru
+
+HALAMAN /layanan/[slug] — REDESIGN TOTAL (TEMPLATE DATA-DRIVEN):
+  ~ 3 design dari klien (Pendirian PT, NIB, Izin Usaha) strukturnya sama,
+    beda konten → dibangun sebagai SATU template + konten per slug
+  + src/lib/layanan-detail.ts — interface LayananDetail + konten lengkap
+    3 slug (hero, stats, apa-itu, keuntungan, jenis izin, proses 5 langkah,
+    3 paket harga, dokumen, waktu pengerjaan, testimoni, FAQ, teks CTA)
+  + getLayananDetail(slug)  — fallback otomatis untuk 15 slug lain dari
+    SERVICES (hero + checklist fitur + proses generik + testimoni & FAQ
+    umum; section paket DISEMBUNYIKAN karena harga belum ada — tidak
+    mengarang data harga)
+  + 8 section component baru (LayananDetail*Section):
+      Hero          — breadcrumb, kicker, judul + tagline hijau, 4 highlight,
+                      CTA WA, foto + 2 kartu statistik mengambang
+      About         — "Apa itu X?" 2 varian: gambar+badge (PT) atau kartu
+                      hijau gambar+checklist (NIB/Izin Usaha)
+      Benefits      — grid 5 kartu keuntungan/manfaat (opsional)
+      Types         — jenis izin usaha, grid 6 kartu + link (opsional)
+      Process       — 5 langkah bernomor dengan ikon
+      Pricing       — 3 paket (tengah "Paling Populer" gradient hijau) +
+                      kartu Dokumen yang Diperlukan + Waktu Pengerjaan;
+                      tombol paket → WA dengan pesan berisi nama paket
+      Testimonials  — 4 kartu testimoni + kartu "Butuh Bantuan?"
+      Faq           — accordion grid 1/2/3 kolom (pola FaqSection)
+  ~ CtaSection digeneralisasi: props title/subtitle opsional (default =
+    teks homepage) → CTA penutup bisa custom per layanan
+  ~ generateMetadata per slug: "{title} — {tagline}" + canonical
+
+NAVBAR — MENU LAYANAN BISA DIKLIK:
+  ~ Pill menu ber-dropdown dibelah dua: klik label → navigasi /layanan,
+    klik chevron → buka sub-menu (desktop & mobile sheet)
+  ~ Lint error lama react-hooks/set-state-in-effect dibereskan: penutupan
+    mobile menu saat navigasi pindah dari useEffect ke pola
+    "adjust state during render"
+
+BUG FIX:
+  ~ CtaSection: tombol "Konsultasikan Gratis Sekarang" overflow di mobile
+    — dibuat w-full + text-xs di mobile, normal di >=sm
+
+FORMAT PROMPT DEVELOP HALAMAN (standar, dipakai untuk semua halaman v1.3.0):
+----------------------------------------------------
+  Saya ingin Anda men-develop halaman **[NAMA HALAMAN]** di route **[/route]**
+  berdasarkan gambar design UI/UX yang saya lampirkan. Convert design tersebut
+  menjadi kode, dengan mengikuti konvensi yang sudah dipakai di landing page
+  (homepage) project ini.
+
+  [LAMPIRKAN GAMBAR DESIGN]
+
+  ## Acuan utama (pelajari dulu sebelum menulis kode)
+  - src/app/(public)/page.tsx — pola penyusunan halaman: page hanya merangkai
+    section components + export metadata.
+  - src/components/sections/HeroSection.tsx dan ServicesSection.tsx — pola
+    penulisan section component (struktur, styling, responsive).
+  - src/lib/landing.ts — pola pemisahan data konten dari komponen.
+  - AGENTS.md — baca docs Next.js di node_modules/next/dist/docs/.
+
+  ## Aturan yang wajib diikuti
+  Struktur file:
+  1. Page di src/app/(public)/[route]/page.tsx — HANYA metadata + rangkaian
+     section components.
+  2. Tiap section design = satu file di src/components/sections/ bernama
+     [NamaHalaman][NamaSection]Section.tsx. Reuse section existing bila cocok.
+  3. Konten dipisah ke src/lib/ dengan interface TypeScript (pola landing.ts).
+     Jangan hardcode data di JSX. Hindari konflik export dengan constants.ts.
+  SEO friendly:
+  4. Export metadata: title + description bahasa Indonesia +
+     alternates.canonical (https://izinpro.co.id[/route]).
+  5. Tepat SATU <h1> per halaman; <h2> judul section; <h3> judul kartu.
+  6. Semantic HTML: <section>, aria-hidden untuk ikon dekoratif,
+     role="img" + aria-label untuk visual non-img.
+  7. Default Server Component; "use client" hanya untuk yang butuh
+     interaktivitas, sekecil mungkin.
+  Responsive (mobile-first):
+  8. Container section: mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8.
+  9. Grid mulai 1 kolom: grid-cols-1 sm:grid-cols-2 lg:grid-cols-[N].
+  10. Tombol CTA mobile: w-full justify-center px-2.5 text-xs →
+      sm:w-auto sm:px-5 sm:text-sm (pola HeroSection/CtaSection).
+  11. Tidak boleh ada overflow di viewport 320-390px; teks panjang wrap.
+  Styling & komponen:
+  12. Pakai shadcn/ui existing + shared: SectionHeading, Reveal, WhatsAppIcon.
+      Ikon lucide-react.
+  13. Warna pakai token existing (primary, brand-green-dark, brand-lime,
+      brand-surface, muted-foreground). JANGAN hardcode hex baru.
+  14. Gambar tanpa aset → placeholder gradient hijau brand
+      (from-brand-lime via-primary to-brand-green-dark) + aria-label.
+  15. Komentar bahasa Indonesia gaya /* ─── Nama Bagian ─── */.
+  Performance:
+  16. Section below-the-fold pakai dynamic() di page.
+  17. Animasi masuk pakai Reveal, stagger delay={index * 0.08}.
+  Verifikasi:
+  18. Dev server compile bersih, route 200, cek responsive poin 11.
+
+  ## Catatan khusus halaman ini
+  [Diisi per halaman — mis. "menggantikan halaman lama, route tetap"]
+----------------------------------------------------
+  Catatan pemakaian: dalam sesi Claude Code yang sama, cukup upload gambar
+  + sebut nama halamannya; prompt full di atas dipakai saat memulai sesi baru.
+
+VERIFIKASI:
+  ~ ESLint & tsc --noEmit bersih
+  ~ Semua route 200 (termasuk slug fallback), konten ter-render server-side
+    (SEO aman meski ada client component)
+  ~ Halaman detail lama tetap kompatibel: generateStaticParams dari SERVICES,
+    18 slug semuanya hidup
+
+====================================================
+
 [2026-07-08] v1.2.0 — Homepage Redesign dari Prototype + Deploy Production
 ----------------------------------------------------
 STATUS   : COMPLETED — live di https://izinpro-cms.vercel.app
@@ -460,7 +604,8 @@ v0.1.x  → [SELESAI] Frontend demo HTML (feedback klien)
 v1.0.0  → [SELESAI] Frontend Next.js lengkap + Admin panel statis
 v1.1.0  → [SELESAI] Revisi frontend + Admin login/register + Responsive sidebar
 v1.2.0  → [SELESAI] Homepage redesign dari prototype klien + Deploy Vercel production
-v1.3.0  → Revisi lanjutan berdasarkan feedback klien
+v1.3.0  → [IN PROGRESS] Redesign 9 halaman publik dari prototype UI/UX klien
+          (selesai: /layanan, /layanan/[slug])
 v2.0.0  → Database schema + Prisma setup + MariaDB
 v2.1.0  → Authentication (Better Auth) + session management
 v2.2.0  → Admin panel fungsional — CRUD blog, layanan, media
