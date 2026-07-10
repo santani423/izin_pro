@@ -768,12 +768,40 @@ export const TYPE_ICONS: LucideIcon[] = [
   Stethoscope,
 ];
 
+/* ─── Harga paket fallback per slug ───
+ * PLACEHOLDER — belum dikonfirmasi klien; ganti dengan harga resmi di sini.
+ * Urutan: [Basic, Standard, Premium].
+ */
+const FALLBACK_PRICES: Record<string, [string, string, string]> = {
+  "izin-komersial": ["Rp 2.500.000", "Rp 4.000.000", "Rp 6.000.000"],
+  "perizinan-lainnya": ["Rp 1.500.000", "Rp 3.000.000", "Rp 5.000.000"],
+  "pt-perorangan": ["Rp 1.500.000", "Rp 2.500.000", "Rp 4.000.000"],
+  "cv-firma": ["Rp 3.000.000", "Rp 4.500.000", "Rp 6.000.000"],
+  pma: ["Rp 8.000.000", "Rp 12.000.000", "Rp 18.000.000"],
+  "npwp-badan-pkp": ["Rp 750.000", "Rp 1.500.000", "Rp 2.500.000"],
+  "pendaftaran-merk": ["Rp 2.500.000", "Rp 4.000.000", "Rp 6.000.000"],
+  "virtual-office": ["Rp 1.000.000", "Rp 2.000.000", "Rp 3.500.000"],
+  "perizinan-lokasi": ["Rp 2.000.000", "Rp 3.500.000", "Rp 5.000.000"],
+  sertifikasi: ["Rp 3.000.000", "Rp 5.000.000", "Rp 8.000.000"],
+  "perizinan-impor": ["Rp 3.500.000", "Rp 5.500.000", "Rp 8.000.000"],
+  "izin-industri": ["Rp 3.000.000", "Rp 5.000.000", "Rp 7.500.000"],
+  "lingkungan-hidup": ["Rp 2.500.000", "Rp 4.000.000", "Rp 6.500.000"],
+  "perizinan-konstruksi": ["Rp 4.000.000", "Rp 6.500.000", "Rp 10.000.000"],
+  "perubahan-pembaruan-izin": ["Rp 1.000.000", "Rp 2.000.000", "Rp 3.500.000"],
+};
+
 /* ─── Fallback untuk slug tanpa konten khusus ───
  * Dibangun dari SERVICES agar semua halaman detail tetap konsisten.
  */
 function buildFallbackDetail(slug: string): LayananDetail | null {
   const service = SERVICES.find((s) => s.slug === slug);
   if (!service) return null;
+
+  const [basicPrice, standardPrice, premiumPrice] = FALLBACK_PRICES[slug] ?? [
+    "Rp 1.500.000",
+    "Rp 3.000.000",
+    "Rp 5.000.000",
+  ];
 
   return {
     slug,
@@ -826,6 +854,56 @@ function buildFallbackDetail(slug: string): LayananDetail | null {
           description: "Perizinan selesai & dokumen diserahkan.",
         },
       ],
+    },
+    packages: {
+      title: `Pilih Paket ${service.title}`,
+      items: [
+        {
+          name: "Paket Basic",
+          price: basicPrice,
+          features: [
+            "Konsultasi & Analisa Kebutuhan",
+            `Pengurusan ${service.title}`,
+            "Pendampingan Proses",
+          ],
+        },
+        {
+          name: "Paket Standard",
+          price: standardPrice,
+          features: [
+            "Konsultasi & Analisa Kebutuhan",
+            `Pengurusan ${service.title}`,
+            "Pengecekan & Persiapan Dokumen",
+            "Proses Lebih Cepat",
+          ],
+          popular: true,
+        },
+        {
+          name: "Paket Premium",
+          price: premiumPrice,
+          features: [
+            "Konsultasi & Analisa Kebutuhan",
+            `Pengurusan ${service.title}`,
+            "Pendampingan Penuh",
+            "Prioritas Pengerjaan",
+            "Garansi Selesai",
+          ],
+        },
+      ],
+      documents: {
+        title: "Dokumen yang Diperlukan (Umum)",
+        items: [
+          "KTP Penanggung Jawab",
+          "NPWP Pribadi / Badan",
+          "Alamat & Domisili Usaha",
+          "Email Aktif & No. Telepon",
+          "Dokumen Legalitas Terkait (jika ada)",
+        ],
+      },
+      duration: {
+        value: "3 – 7 Hari Kerja",
+        note: "(tergantung kelengkapan data)",
+      },
     },
     testimonials: {
       items: TESTIMONIALS.slice(0, 4).map((t) => ({
