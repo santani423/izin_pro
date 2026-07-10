@@ -243,6 +243,125 @@ export const SERVICES: ServiceItem[] = [
       "Paket Fleksibel",
     ],
   },
+  {
+    id: "12",
+    slug: "perizinan-lokasi",
+    title: "Perizinan Lokasi",
+    description:
+      "Membantu pengurusan izin lokasi usaha dengan mudah dan cepat sesuai tata ruang wilayah.",
+    icon: "map-pin",
+    color: "#0284c7",
+    bgColor: "#f0f9ff",
+    features: [
+      "Analisis Tata Ruang",
+      "Izin Lokasi via OSS",
+      "Persetujuan KKPR",
+      "Koordinasi Instansi Daerah",
+      "Konsultasi Gratis",
+    ],
+  },
+  {
+    id: "13",
+    slug: "sertifikasi",
+    title: "Sertifikasi",
+    description:
+      "Pengurusan sertifikasi resmi untuk meningkatkan kepercayaan dan daya saing bisnis Anda.",
+    icon: "badge-check",
+    color: "#5ba12b",
+    bgColor: "#f3fae8",
+    features: [
+      "Sertifikasi SNI",
+      "Sertifikat Halal",
+      "ISO & SMK3",
+      "Sertifikat Laik Fungsi",
+      "Pendampingan Audit",
+    ],
+  },
+  {
+    id: "14",
+    slug: "perizinan-impor",
+    title: "Perizinan Impor",
+    description:
+      "Layanan perizinan impor barang untuk mendukung kelancaran kegiatan bisnis Anda.",
+    icon: "ship",
+    color: "#0891b2",
+    bgColor: "#ecfeff",
+    features: [
+      "Angka Pengenal Impor (API)",
+      "NIB Kepabeanan",
+      "Persetujuan Impor",
+      "Registrasi Bea Cukai",
+      "Konsultasi Gratis",
+    ],
+  },
+  {
+    id: "15",
+    slug: "izin-industri",
+    title: "Izin Industri",
+    description:
+      "Membantu pengurusan izin usaha industri sesuai regulasi yang berlaku.",
+    icon: "factory",
+    color: "#d97706",
+    bgColor: "#fffbeb",
+    features: [
+      "Izin Usaha Industri (IUI)",
+      "Verifikasi Teknis",
+      "Pendaftaran SIINas",
+      "Laporan Kegiatan Industri",
+      "Konsultasi Gratis",
+    ],
+  },
+  {
+    id: "16",
+    slug: "lingkungan-hidup",
+    title: "Lingkungan Hidup",
+    description:
+      "Perizinan lingkungan untuk mendukung bisnis yang berkelanjutan dan taat regulasi.",
+    icon: "leaf",
+    color: "#0f766e",
+    bgColor: "#f0fdfa",
+    features: [
+      "SPPL",
+      "UKL-UPL",
+      "AMDAL",
+      "Persetujuan Lingkungan",
+      "Konsultasi Gratis",
+    ],
+  },
+  {
+    id: "17",
+    slug: "perizinan-konstruksi",
+    title: "Perizinan Konstruksi",
+    description:
+      "Pengurusan izin konstruksi untuk kelancaran proyek bangunan Anda.",
+    icon: "hard-hat",
+    color: "#ea580c",
+    bgColor: "#fff7ed",
+    features: [
+      "PBG (Pengganti IMB)",
+      "SLF (Sertifikat Laik Fungsi)",
+      "SBU Konstruksi",
+      "IUJK",
+      "Konsultasi Gratis",
+    ],
+  },
+  {
+    id: "18",
+    slug: "perubahan-pembaruan-izin",
+    title: "Perubahan & Pembaruan Izin",
+    description:
+      "Layanan perubahan atau pembaruan data izin usaha Anda agar legalitas tetap valid.",
+    icon: "refresh",
+    color: "#7c3aed",
+    bgColor: "#f5f3ff",
+    features: [
+      "Perubahan Akta Perusahaan",
+      "Update Data OSS",
+      "Perpanjangan Izin",
+      "Perubahan KBLI",
+      "Konsultasi Gratis",
+    ],
+  },
 ];
 
 /* ─── Testimoni ─── */
