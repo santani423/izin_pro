@@ -1,10 +1,28 @@
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, CheckCircle2, MessageCircle, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import CtaBannerSection from "@/components/sections/CtaBannerSection";
-import { SERVICES, COMPANY_INFO } from "@/lib/constants";
+
+import LayananDetailHeroSection from "@/components/sections/LayananDetailHeroSection";
+import LayananDetailAboutSection from "@/components/sections/LayananDetailAboutSection";
+import LayananDetailBenefitsSection from "@/components/sections/LayananDetailBenefitsSection";
+import LayananDetailTypesSection from "@/components/sections/LayananDetailTypesSection";
+import { SERVICES } from "@/lib/constants";
+import { getLayananDetail } from "@/lib/layanan-detail";
+
+/* ─── Lazy load sections below the fold ─── */
+const LayananDetailProcessSection = dynamic(
+  () => import("@/components/sections/LayananDetailProcessSection"),
+);
+const LayananDetailPricingSection = dynamic(
+  () => import("@/components/sections/LayananDetailPricingSection"),
+);
+const LayananDetailTestimonialsSection = dynamic(
+  () => import("@/components/sections/LayananDetailTestimonialsSection"),
+);
+const LayananDetailFaqSection = dynamic(
+  () => import("@/components/sections/LayananDetailFaqSection"),
+);
+const CtaSection = dynamic(() => import("@/components/sections/CtaSection"));
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -16,122 +34,59 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const service = SERVICES.find((s) => s.slug === slug);
-  if (!service) return { title: "Layanan Tidak Ditemukan" };
+  const detail = getLayananDetail(slug);
+  if (!detail) return { title: "Layanan Tidak Ditemukan" };
 
   return {
-    title: service.title,
-    description: service.description,
+    title: `${detail.title} — ${detail.tagline}`,
+    description: detail.description,
+    alternates: {
+      canonical: `https://izinpro.co.id/layanan/${slug}`,
+    },
   };
 }
 
-const steps = [
-  "Konsultasi awal gratis via WhatsApp",
-  "Analisis kebutuhan perizinan Anda",
-  "Persiapan & verifikasi dokumen",
-  "Pengajuan ke instansi terkait",
-  "Monitoring proses secara berkala",
-  "Perizinan selesai & dikirimkan",
-];
-
-/* ─── Halaman Detail Layanan ─── */
+/* ─── Halaman Detail Layanan (desain baru) ─── */
 export default async function LayananDetailPage({ params }: Props) {
   const { slug } = await params;
-  const service = SERVICES.find((s) => s.slug === slug);
-  if (!service) notFound();
-
-  const waMessage = encodeURIComponent(
-    `Halo IzinPro, saya ingin konsultasi tentang layanan ${service.title}.`,
-  );
+  const detail = getLayananDetail(slug);
+  if (!detail) notFound();
 
   return (
     <>
-      {/* ─── Hero ─── */}
-      <section
-        className="relative py-20 overflow-hidden"
-        style={{
-          background: `linear-gradient(135deg, ${service.bgColor}, white)`,
-        }}
-      >
-        <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
-          <Link
-            href="/layanan"
-            className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-primary mb-6 transition-colors"
-          >
-            <ArrowLeft size={15} />
-            Kembali ke Layanan
-          </Link>
-          <div className="max-w-3xl">
-            <div
-              className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-5"
-              style={{ backgroundColor: service.bgColor, border: `2px solid ${service.color}33` }}
-            >
-              <ArrowRight size={28} style={{ color: service.color }} />
-            </div>
-            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">
-              {service.title}
-            </h1>
-            <p className="text-lg text-gray-600 leading-relaxed">{service.description}</p>
-            <div className="flex flex-wrap gap-3 mt-6">
-              <Button asChild className="gap-2 rounded-xl">
-                <a
-                  href={`https://wa.me/${COMPANY_INFO.whatsapp}?text=${waMessage}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <MessageCircle size={16} />
-                  Konsultasi Sekarang
-                </a>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* 1. Hero + breadcrumb + statistik */}
+      <LayananDetailHeroSection detail={detail} />
 
-      {/* ─── Konten ─── */}
-      <section className="py-16">
-        <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
-          <div className="grid lg:grid-cols-2 gap-12">
-            {/* Fitur */}
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Yang Anda Dapatkan</h2>
-              <ul className="space-y-3">
-                {service.features.map((f) => (
-                  <li key={f} className="flex items-center gap-3">
-                    <div
-                      className="flex items-center justify-center w-8 h-8 rounded-xl flex-shrink-0"
-                      style={{ backgroundColor: service.bgColor }}
-                    >
-                      <CheckCircle2 size={16} style={{ color: service.color }} />
-                    </div>
-                    <span className="text-gray-700">{f}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+      {/* 2. Apa itu layanan ini */}
+      <LayananDetailAboutSection about={detail.about} />
 
-            {/* Alur proses */}
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Alur Proses</h2>
-              <ol className="space-y-4">
-                {steps.map((step, i) => (
-                  <li key={i} className="flex items-start gap-4">
-                    <div
-                      className="flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold flex-shrink-0 text-white"
-                      style={{ backgroundColor: service.color }}
-                    >
-                      {i + 1}
-                    </div>
-                    <span className="text-gray-600 text-sm leading-relaxed pt-0.5">{step}</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* 3. Keuntungan / manfaat (opsional) */}
+      {detail.benefits && (
+        <LayananDetailBenefitsSection benefits={detail.benefits} />
+      )}
 
-      <CtaBannerSection />
+      {/* 4. Jenis layanan yang ditangani (opsional) */}
+      {detail.types && <LayananDetailTypesSection types={detail.types} />}
+
+      {/* 5. Alur proses */}
+      <LayananDetailProcessSection process={detail.process} />
+
+      {/* 6. Paket harga + dokumen + waktu pengerjaan (opsional) */}
+      {detail.packages && (
+        <LayananDetailPricingSection
+          title={detail.title}
+          packages={detail.packages}
+        />
+      )}
+
+      {/* 7. Testimoni klien */}
+      <LayananDetailTestimonialsSection testimonials={detail.testimonials} />
+
+      {/* 8. FAQ seputar layanan */}
+      <LayananDetailFaqSection faqs={detail.faqs} />
+
+      {/* 9. CTA Banner */}
+      <CtaSection title={detail.cta?.title} subtitle={detail.cta?.subtitle} />
     </>
   );
 }

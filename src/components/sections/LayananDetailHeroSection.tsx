@@ -1,0 +1,124 @@
+import Link from "next/link";
+import { ChevronRight, Star } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
+import { COMPANY_INFO } from "@/lib/constants";
+import type { LayananDetail } from "@/lib/layanan-detail";
+
+/* ─── Hero detail layanan — breadcrumb, judul, highlight & kartu statistik ─── */
+export default function LayananDetailHeroSection({
+  detail,
+}: {
+  detail: LayananDetail;
+}) {
+  const waMessage = encodeURIComponent(
+    `Halo IzinPro, saya ingin konsultasi tentang layanan ${detail.title}.`,
+  );
+
+  return (
+    <section className="bg-brand-surface">
+      <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:px-8">
+        <div>
+          {/* Breadcrumb */}
+          <nav
+            aria-label="Breadcrumb"
+            className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground"
+          >
+            <Link href="/" className="transition-colors hover:text-primary">
+              Beranda
+            </Link>
+            <ChevronRight className="size-3.5" aria-hidden="true" />
+            <Link
+              href="/layanan"
+              className="transition-colors hover:text-primary"
+            >
+              Layanan
+            </Link>
+            <ChevronRight className="size-3.5" aria-hidden="true" />
+            <span className="font-medium text-foreground">{detail.title}</span>
+          </nav>
+
+          <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-primary">
+            {detail.kicker}
+          </p>
+          <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
+            {detail.title}
+            <span className="mt-1 block text-primary">{detail.tagline}</span>
+          </h1>
+          <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
+            {detail.description}
+          </p>
+
+          {/* Highlight pills */}
+          <ul className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {detail.highlights.map(({ icon: Icon, label }) => (
+              <li key={label} className="flex items-center gap-2.5">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-primary/30 text-primary">
+                  <Icon className="size-4" aria-hidden="true" />
+                </span>
+                <span className="text-sm font-semibold leading-snug text-foreground">
+                  {label}
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          {/* Tombol — lebar penuh & teks kecil di mobile, ukuran normal ≥sm */}
+          <Button
+            asChild
+            size="lg"
+            className="mt-8 w-full justify-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold sm:w-auto sm:gap-2 sm:px-5 sm:text-sm"
+          >
+            <a
+              href={`https://wa.me/${COMPANY_INFO.whatsapp}?text=${waMessage}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Konsultasikan Sekarang
+              <WhatsAppIcon className="size-3.5 sm:size-4" />
+            </a>
+          </Button>
+        </div>
+
+        {/* Foto + kartu statistik mengambang */}
+        <div className="relative">
+          <div
+            role="img"
+            aria-label={`Ilustrasi layanan ${detail.title}`}
+            className="aspect-[16/10] w-full rounded-2xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark"
+          />
+          <div className="mt-4 flex flex-wrap gap-4 lg:absolute lg:-right-2 lg:bottom-6 lg:mt-0 lg:flex-col">
+            {detail.stats.map(({ icon: Icon, value, label, withStars }) => (
+              <div
+                key={label}
+                className="flex-1 rounded-xl border border-border/60 bg-background px-4 py-3 shadow-sm lg:flex-none"
+              >
+                <p className="flex items-center gap-2 text-lg font-extrabold text-foreground">
+                  <Icon className="size-5 text-primary" aria-hidden="true" />
+                  {value}
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
+                {withStars && (
+                  <p
+                    className="mt-1 flex gap-0.5"
+                    role="img"
+                    aria-label="Rating 5 dari 5 bintang"
+                  >
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star
+                        key={i}
+                        className="size-3.5 fill-amber-400 text-amber-400"
+                        aria-hidden="true"
+                      />
+                    ))}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
