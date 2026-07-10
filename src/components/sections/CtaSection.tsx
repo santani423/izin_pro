@@ -24,14 +24,15 @@ export default function CtaSection() {
           </div>
         </div>
 
+        {/* Tombol — lebar penuh & teks kecil di mobile, ukuran normal ≥sm */}
         <Button
           asChild
           size="lg"
-          className="shrink-0 rounded-lg bg-white font-semibold text-brand-green-dark hover:bg-white/90"
+          className="w-full shrink-0 justify-center gap-1.5 rounded-lg bg-white px-2.5 text-xs font-semibold text-brand-green-dark hover:bg-white/90 sm:w-auto sm:gap-2 sm:px-5 sm:text-sm"
         >
           <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
             Konsultasikan Gratis Sekarang
-            <WhatsAppIcon className="size-4 text-primary" />
+            <WhatsAppIcon className="size-3.5 text-primary sm:size-4" />
           </a>
         </Button>
       </div>
