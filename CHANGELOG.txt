@@ -70,12 +70,13 @@ HALAMAN /layanan/[slug] — REDESIGN TOTAL (TEMPLATE DATA-DRIVEN):
     teks homepage) → CTA penutup bisa custom per layanan
   ~ generateMetadata per slug: "{title} — {tagline}" + canonical
 
-NAVBAR — MENU LAYANAN BISA DIKLIK:
-  ~ Pill menu ber-dropdown dibelah dua: klik label → navigasi /layanan,
-    klik chevron → buka sub-menu (desktop & mobile sheet)
+NAVBAR:
+  ~ [DIBATALKAN] Sempat diubah: klik label "Layanan" → navigasi /layanan,
+    klik chevron → sub-menu. Direvert ke perilaku awal (klik = buka
+    dropdown saja) atas permintaan klien
   ~ Lint error lama react-hooks/set-state-in-effect dibereskan: penutupan
     mobile menu saat navigasi pindah dari useEffect ke pola
-    "adjust state during render"
+    "adjust state during render" (tetap dipertahankan setelah revert)
 
 BUG FIX:
   ~ CtaSection: tombol "Konsultasikan Gratis Sekarang" overflow di mobile
