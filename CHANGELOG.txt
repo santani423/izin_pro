@@ -8,8 +8,8 @@ Format: [YYYY-MM-DD] Versi — Deskripsi
 [2026-07-11] v1.3.0 — Redesign Halaman Publik dari Prototype UI/UX
 ----------------------------------------------------
 STATUS   : COMPLETED & DEPLOYED — 9 dari 9 halaman + revisi review; live di
-           https://izinpro-cms.vercel.app (deploy 2026-07-11, commit 17c2a7a,
-           master & development sinkron)
+           https://izinpro-cms.vercel.app (deploy terakhir 2026-07-11,
+           commit 4a723ed, master & development sinkron)
 PROJECT  : izinpro-cms/
 SUMBER   : Gambar prototype UI/UX per halaman dari klien, di-convert ke kode
            via Claude Code dengan format prompt standar (lihat bawah);
@@ -257,11 +257,23 @@ REVISI PASCA-BATCH (feedback review klien, 2026-07-11 — commit 0212b5c & 17c2a
     Perizinan" → /tracking (Link internal, ikon PackageSearch), desktop &
     mobile; jalur konsultasi WA tetap ada di hero/CTA/footer/kontak
 
-DEPLOY PRODUCTION (2026-07-11):
-  ~ vercel --prod dari commit 17c2a7a → READY, alias izinpro-cms.vercel.app
+REVISI LANJUTAN /tracking & NAVBAR (2026-07-11, setelah deploy pertama):
+  ~ Navbar CTA "Konsultasikan Gratis" → "Tracking Perizinan" (/tracking)
+    sudah masuk deploy pertama; input nomor order direvisi beberapa iterasi
+    berdasar cek di HP asli (production): h-11 → h-14 mobile → FINAL revisi
+    manual user: h-10 w-full pl-4 pr-4 text-sm, konsisten semua breakpoint
+    (commit 4a723ed)
+  ~ PELAJARAN: user menguji lewat URL production di HP — perubahan lokal
+    tidak terlihat sebelum deploy ulang; alternatif cek cepat via LAN
+    http://<ip-laptop>:3000
+
+DEPLOY PRODUCTION (2026-07-11, 3x deploy):
+  ~ vercel --prod: 17c2a7a (batch + revisi) → 3e46895 → 4a723ed (final)
+    semua READY, alias izinpro-cms.vercel.app
   ~ Build: Next.js 16.2.9 Turbopack, 51 halaman statis (18 slug layanan,
-    6 artikel), TypeScript check lolos, build 30 detik (pakai cache)
-  ~ Smoke test production: /, /testimoni, /tracking, /kontak, /promo → 200
+    6 artikel), TypeScript check lolos, build ±30 detik (pakai cache)
+  ~ Smoke test production: /, /testimoni, /tracking, /kontak, /promo → 200;
+    class input tracking final terverifikasi di HTML live
 
 VERIFIKASI:
   ~ ESLint & tsc --noEmit bersih (seluruh batch 9 halaman)
