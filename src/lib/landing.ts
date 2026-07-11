@@ -37,7 +37,9 @@ export const NAV_LINKS: NavLink[] = [
     ],
   },
   { label: "Tentang Kami", href: "/tentang-kami" },
-  { label: "Blog", href: "/blog" },
+  { label: "Artikel", href: "/blog" },
+  { label: "Testimoni", href: "/testimoni" },
+  { label: "Promo", href: "/promo" },
   { label: "Kontak", href: "/kontak" },
 ];
 
@@ -410,9 +412,9 @@ export const FOOTER_COLUMNS: FooterColumn[] = [
     links: [
       { label: "Tentang Kami", href: "/tentang-kami" },
       { label: "Artikel", href: "/blog" },
-      { label: "Testimoni", href: "/#testimoni" },
-      { label: "Promo", href: "/#promo" },
-      { label: "Karir", href: "/karir" },
+      { label: "Testimoni", href: "/testimoni" },
+      { label: "Promo", href: "/promo" },
+      { label: "Tracking Perizinan", href: "/tracking" },
     ],
   },
   {

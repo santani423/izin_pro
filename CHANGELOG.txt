@@ -5,24 +5,97 @@ CHANGELOG — IzinPro CMS Project
 Format: [YYYY-MM-DD] Versi — Deskripsi
 ====================================================
 
-[2026-07-11] v1.3.0 (IN PROGRESS) — Redesign Halaman Publik dari Prototype UI/UX
+[2026-07-11] v1.3.0 — Redesign Halaman Publik dari Prototype UI/UX
 ----------------------------------------------------
-STATUS   : IN PROGRESS — 2 dari 9 halaman selesai (/layanan, /layanan/[slug])
+STATUS   : COMPLETED (belum di-push/deploy) — 9 dari 9 halaman selesai
 PROJECT  : izinpro-cms/
 SUMBER   : Gambar prototype UI/UX per halaman dari klien, di-convert ke kode
-           via Claude Code dengan format prompt standar (lihat bawah)
+           via Claude Code dengan format prompt standar (lihat bawah);
+           /tracking tanpa design — dirancang sendiri
 
 RENCANA HALAMAN (kesepakatan dengan klien):
   [x] Daftar Layanan        /layanan            — redesign total, route tetap
   [x] Detail Layanan        /layanan/[slug]     — redesign total, slug tetap
-  [ ] Promo                 /promo              — halaman baru
-  [ ] Tentang IzinPro       /tentang-kami       — redesign total
-  [ ] Artikel               /blog               — redesign total
-  [ ] Detail Artikel        /blog/[slug]        — redesign total
-  [ ] Testimoni Klien       /testimoni          — halaman baru
-  [ ] Kontak                /kontak             — redesign total
-  [ ] Tracking Perizinan    /tracking           — halaman baru (mock data,
+  [x] Promo                 /promo              — halaman baru
+  [x] Tentang IzinPro       /tentang-kami       — redesign total
+  [x] Artikel               /blog               — redesign total
+  [x] Detail Artikel        /blog/[slug]        — redesign total
+  [x] Testimoni Klien       /testimoni          — halaman baru
+  [x] Kontak                /kontak             — redesign total
+  [x] Tracking Perizinan    /tracking           — halaman baru (mock data,
                                                   masih frontend-only)
+
+KOMPONEN SHARED BARU (dipakai lintas halaman batch ini):
+  + PageHero.tsx      — hero halaman dalam seragam: breadcrumb, judul
+    (ReactNode, sebagian kata bisa hijau), kicker, deskripsi, slot children,
+    foto placeholder; prop overlap utk bar yang menimpa hero
+  + HighlightsBar.tsx — bar keunggulan generik (icon+label, grid 1/2/5)
+  ~ CtaSection: tambah prop buttonLabel (default tetap)
+  ~ LayananDetailProcessSection: kolom dinamis 4/5 sesuai jumlah langkah
+
+HALAMAN /promo (BARU):
+  + 3 kartu paket promo (badge Most Popular/Best Value/Limited Time, harga
+    coret + chip hemat, kartu tengah gelap bg-footer) — data lib/promo.ts
+  + Countdown diskon real-time ke akhir bulan (client, tick via rAF+interval,
+    anti hydration-mismatch) — container hijau tipis, label center, kotak
+    angka putih (revisi klien)
+  + Kenapa Pilih Promo (5 kartu), Cara Mendapatkan Promo (4 langkah + panah,
+    reuse ProcessSection), banner konsultasi (foto kiri), CTA custom
+
+HALAMAN /tentang-kami (REDESIGN TOTAL):
+  + TentangAboutSection (foto + badge 5.000+, kicker, 2 paragraf, 3 stat)
+  + Nilai-Nilai (5 kartu), Visi & Misi (2 kartu bg-brand-surface),
+    Tim Profesional (4 kartu + ikon LinkedIn) — data lib/tentang.ts
+  ~ Ikon Linkedin TIDAK ADA di lucide-react versi project (sempat 500 di
+    semua route) — diganti inline SVG custom, konsisten dgn catatan v1.2.0
+
+HALAMAN /blog (REDESIGN TOTAL):
+  + BlogCatalogSection (client): search fungsional, sidebar kategori dengan
+    jumlah dihitung dari BLOG_POSTS, topik populer (klik = isi pencarian),
+    form newsletter (simulasi), sort Terbaru/Terlama, pagination fungsional
+  + lib/blog.ts — kategori terhitung + estimasi "menit baca" deterministik
+  - BlogCardSkeleton.tsx dihapus (orphan), loading.tsx ditulis ulang
+
+HALAMAN /blog/[slug] (REDESIGN TOTAL — TEMPLATE DATA-DRIVEN):
+  + lib/blog-detail.ts — blok konten polimorfik (text/cards/steps/info/faq);
+    artikel NIB berisi konten lengkap sesuai design (syarat 6 kartu, 6
+    langkah OSS, biaya GRATIS & waktu 1-3 hari, FAQ), artikel lain fallback
+  + Hero: chip highlight, penulis Tim IzinPro, tanggal + menit baca
+  + Sidebar: Daftar Isi (anchor scroll-mt), kartu bantuan, Artikel Terkait
+
+HALAMAN /testimoni (BARU):
+  + Bar 4 statistik, grid testimoni + filter kategori fungsional (data
+    lib/testimoni.ts dgn kategori per testimoni), reuse
+    VideoTestimonialsSection & ClientsSection homepage, CTA default
+
+HALAMAN /kontak (REDESIGN TOTAL):
+  + Form react-hook-form + zod (nama/email/WA/layanan dari SERVICES/pesan),
+    simulasi submit + panel sukses inline; sidebar 4 kanal kontak berlink
+  + Bar 4 kartu info kontak, reuse LocationSection, FAQ (+/-) + kartu
+    "Masih Punya Pertanyaan?" — data lib/kontak.ts
+
+HALAMAN /tracking (BARU — DESAIN SENDIRI, TANPA MOCKUP KLIEN):
+  + Input nomor order + tombol Lacak → kartu Detail Order (layanan, tanggal,
+    estimasi, badge Selesai/Dalam Proses) + timeline 5 tahap (selesai =
+    centang hijau, berjalan = ring pulse "Sedang Berjalan"; horizontal di
+    desktop, vertikal di mobile)
+  + MOCK DATA di lib/tracking.ts (IZN-2025-0001/0002/0003 + tombol demo);
+    ganti lookup dgn API saat backend v2.x tersedia
+  + State "tidak ditemukan" + tombol bantuan WhatsApp; section cara kerja
+
+NAVBAR / FOOTER / SITEMAP:
+  ~ NAV_LINKS: Beranda, Layanan (dropdown), Tentang Kami, Artikel,
+    Testimoni, Promo, Kontak (sesuai navbar di semua design)
+  ~ Footer kolom Informasi: + Testimoni, Promo, Tracking Perizinan
+  ~ sitemap.ts: + /promo, /testimoni, /tracking
+
+REVISI LANJUTAN DETAIL LAYANAN (feedback klien):
+  ~ Panah putus-putus antar langkah alur proses (>=lg saja)
+  ~ Kartu paket: badge "Paling Populer" tak lagi terpotong (dipindah keluar
+    Card yang overflow-hidden), tinggi kartu seragam, breakpoint md
+  ~ Semua 15 slug fallback kini punya bagian Pilih Paket — HARGA MASIH
+    PLACEHOLDER di FALLBACK_PRICES (lib/layanan-detail.ts), ganti dgn harga
+    resmi klien di satu tempat itu
 
 HALAMAN /layanan — REDESIGN TOTAL:
   + LayananHeroSection      — breadcrumb Beranda>Layanan, h1 "Daftar Layanan",
@@ -142,11 +215,17 @@ FORMAT PROMPT DEVELOP HALAMAN (standar, dipakai untuk semua halaman v1.3.0):
   + sebut nama halamannya; prompt full di atas dipakai saat memulai sesi baru.
 
 VERIFIKASI:
-  ~ ESLint & tsc --noEmit bersih
-  ~ Semua route 200 (termasuk slug fallback), konten ter-render server-side
-    (SEO aman meski ada client component)
+  ~ ESLint & tsc --noEmit bersih (seluruh batch 9 halaman)
+  ~ Semua route 200 (termasuk slug fallback & 2 slug artikel), konten kunci
+    ter-render server-side (SEO aman meski ada client component)
   ~ Halaman detail lama tetap kompatibel: generateStaticParams dari SERVICES,
     18 slug semuanya hidup
+
+CATATAN KONTEN PLACEHOLDER (perlu konfirmasi klien sebelum production):
+  ~ Harga paket fallback detail layanan (FALLBACK_PRICES, layanan-detail.ts)
+  ~ Data tracking masih mock (MOCK_ORDERS, tracking.ts)
+  ~ Isi artikel non-NIB pakai fallback generik (blog-detail.ts)
+  ~ Form kontak & newsletter masih simulasi (belum ada backend)
 
 ====================================================
 
@@ -605,8 +684,9 @@ v0.1.x  → [SELESAI] Frontend demo HTML (feedback klien)
 v1.0.0  → [SELESAI] Frontend Next.js lengkap + Admin panel statis
 v1.1.0  → [SELESAI] Revisi frontend + Admin login/register + Responsive sidebar
 v1.2.0  → [SELESAI] Homepage redesign dari prototype klien + Deploy Vercel production
-v1.3.0  → [IN PROGRESS] Redesign 9 halaman publik dari prototype UI/UX klien
-          (selesai: /layanan, /layanan/[slug])
+v1.3.0  → [SELESAI] Redesign 9 halaman publik dari prototype UI/UX klien
+          (semua halaman selesai; belum di-push/deploy, konten placeholder
+          menunggu konfirmasi klien)
 v2.0.0  → Database schema + Prisma setup + MariaDB
 v2.1.0  → Authentication (Better Auth) + session management
 v2.2.0  → Admin panel fungsional — CRUD blog, layanan, media
