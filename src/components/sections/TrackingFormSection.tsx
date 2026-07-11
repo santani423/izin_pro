@@ -55,7 +55,7 @@ export default function TrackingFormSection() {
               onChange={(e) => setInput(e.target.value.toUpperCase())}
               placeholder="Contoh: IZN-2025-0001"
               aria-label="Nomor order perizinan"
-              className="h-11 flex-1 rounded-lg border border-border/60 bg-background px-4 text-sm font-semibold tracking-wide outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+              className="h-10 w-full flex-1 rounded-lg border border-border/60 bg-background px-3 text-sm font-semibold tracking-wide outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
             {/* Tombol — lebar penuh di mobile, ukuran normal ≥sm */}
             <Button

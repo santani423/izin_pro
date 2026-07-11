@@ -7,7 +7,9 @@ Format: [YYYY-MM-DD] Versi — Deskripsi
 
 [2026-07-11] v1.3.0 — Redesign Halaman Publik dari Prototype UI/UX
 ----------------------------------------------------
-STATUS   : COMPLETED (belum di-push/deploy) — 9 dari 9 halaman selesai
+STATUS   : COMPLETED & DEPLOYED — 9 dari 9 halaman + revisi review; live di
+           https://izinpro-cms.vercel.app (deploy 2026-07-11, commit 17c2a7a,
+           master & development sinkron)
 PROJECT  : izinpro-cms/
 SUMBER   : Gambar prototype UI/UX per halaman dari klien, di-convert ke kode
            via Claude Code dengan format prompt standar (lihat bawah);
@@ -214,6 +216,53 @@ FORMAT PROMPT DEVELOP HALAMAN (standar, dipakai untuk semua halaman v1.3.0):
   Catatan pemakaian: dalam sesi Claude Code yang sama, cukup upload gambar
   + sebut nama halamannya; prompt full di atas dipakai saat memulai sesi baru.
 
+REVISI PASCA-BATCH (feedback review klien, 2026-07-11 — commit 0212b5c & 17c2a7a):
+  /promo:
+  ~ Teks banner countdown diperbesar (judul text-xl/2xl, deskripsi text-base,
+    ikon size-14) — sebelumnya terlalu kecil dibanding kartunya
+  ~ Banner konsultasi pakai foto tim asli (public/images/promo-konsultasi.png,
+    PNG transparan, margin bawah negatif agar "berdiri" di tepi banner)
+  /tentang-kami:
+  ~ Judul about dipecah 2 baris — "Legalitas Bisnis Anda" (hijau) turun ke
+    baris kedua (span block)
+  ~ Kartu Visi: ilustrasi skyline full-bleed nempel tepi bawah kartu
+    (tentang-skyline-v3.png; area transparan PNG di-crop via System.Drawing
+    karena bikin celah); teks visi & misi indent sejajar judul (>=sm)
+  ~ Badge LinkedIn tim: bg biru terang #0a9bff + ikon putih (hover biru pekat)
+  /blog:
+  ~ Dropdown sort Terbaru/Terlama: select native → komponen Select shadcn/
+    Base UI (pemakaian pertama ui/select.tsx); PENTING: alignItemWithTrigger
+    ={false} agar popup muncul DI BAWAH trigger, default Base UI menimpa
+  /blog/[slug]:
+  ~ Blok cards & steps kini dukung field icon opsional (LucideIcon) —
+    artikel NIB: 6 ikon syarat + 6 ikon langkah unik sesuai mockup
+    (CATATAN: ikon "Home" tidak ada di lucide versi project, pakai "House")
+  ~ Panah putus-putus antar langkah OSS (>=lg, pola LayananDetailProcess)
+  /kontak:
+  ~ Form + info kontak dibungkus panel abu rounded-3xl; kanal kontak jadi
+    kartu putih terpisah (ikon hijau besar, chevron hijau) — data kontak.ts
+    dipecah value (tebal) + note (abu)
+  ~ FAQ dirombak: panel abu, judul di dalam panel, plus hijau, kartu bantuan
+    horizontal (headset besar + foto tim kanan-bawah, hanya >=xl)
+  ~ Section lokasi baru KontakLocationSection: embed Google Maps asli
+    (output=embed, tanpa API key) + kartu alamat putih; kartu float hanya
+    >=lg top-56 (embed <~1000px pakai layout mobile → kartu bawaan Google
+    tinggi & ketimpa), di bawah lg kartu menumpuk setelah peta
+  Homepage:
+  ~ LocationSection: kartu gradient + pin animasi diganti embed Google Maps,
+    tombol "Buka di Google Maps" mengambang di bawah peta (juga tampil
+    di /kontak versi lama — sekarang hanya homepage yang pakai ini)
+  Navbar:
+  ~ CTA "Konsultasikan Gratis" (WhatsApp) diganti tombol "Tracking
+    Perizinan" → /tracking (Link internal, ikon PackageSearch), desktop &
+    mobile; jalur konsultasi WA tetap ada di hero/CTA/footer/kontak
+
+DEPLOY PRODUCTION (2026-07-11):
+  ~ vercel --prod dari commit 17c2a7a → READY, alias izinpro-cms.vercel.app
+  ~ Build: Next.js 16.2.9 Turbopack, 51 halaman statis (18 slug layanan,
+    6 artikel), TypeScript check lolos, build 30 detik (pakai cache)
+  ~ Smoke test production: /, /testimoni, /tracking, /kontak, /promo → 200
+
 VERIFIKASI:
   ~ ESLint & tsc --noEmit bersih (seluruh batch 9 halaman)
   ~ Semua route 200 (termasuk slug fallback & 2 slug artikel), konten kunci
@@ -221,7 +270,7 @@ VERIFIKASI:
   ~ Halaman detail lama tetap kompatibel: generateStaticParams dari SERVICES,
     18 slug semuanya hidup
 
-CATATAN KONTEN PLACEHOLDER (perlu konfirmasi klien sebelum production):
+CATATAN KONTEN PLACEHOLDER (SUDAH LIVE di production — perlu konfirmasi klien):
   ~ Harga paket fallback detail layanan (FALLBACK_PRICES, layanan-detail.ts)
   ~ Data tracking masih mock (MOCK_ORDERS, tracking.ts)
   ~ Isi artikel non-NIB pakai fallback generik (blog-detail.ts)
@@ -685,8 +734,8 @@ v1.0.0  → [SELESAI] Frontend Next.js lengkap + Admin panel statis
 v1.1.0  → [SELESAI] Revisi frontend + Admin login/register + Responsive sidebar
 v1.2.0  → [SELESAI] Homepage redesign dari prototype klien + Deploy Vercel production
 v1.3.0  → [SELESAI] Redesign 9 halaman publik dari prototype UI/UX klien
-          (semua halaman selesai; belum di-push/deploy, konten placeholder
-          menunggu konfirmasi klien)
+          + revisi review + deploy production (live di izinpro-cms.vercel.app;
+          konten placeholder masih menunggu konfirmasi klien)
 v2.0.0  → Database schema + Prisma setup + MariaDB
 v2.1.0  → Authentication (Better Auth) + session management
 v2.2.0  → Admin panel fungsional — CRUD blog, layanan, media
