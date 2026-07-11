@@ -14,6 +14,13 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { BLOG_POSTS } from "@/lib/constants";
 import { BLOG_TOPICS, getBlogCategories, getReadTime } from "@/lib/blog";
@@ -191,15 +198,22 @@ export default function BlogCatalogSection() {
             <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
               Artikel Terbaru
             </h2>
-            <select
+            <Select
+              items={{ terbaru: "Terbaru", terlama: "Terlama" }}
               value={sortNewest ? "terbaru" : "terlama"}
-              onChange={(e) => setSortNewest(e.target.value === "terbaru")}
-              aria-label="Urutkan artikel"
-              className="h-9 rounded-lg border border-border/60 bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary"
+              onValueChange={(value) => setSortNewest(value === "terbaru")}
             >
-              <option value="terbaru">Terbaru</option>
-              <option value="terlama">Terlama</option>
-            </select>
+              <SelectTrigger
+                aria-label="Urutkan artikel"
+                className="h-9 min-w-32 rounded-lg border-border/60 bg-background pl-3 font-medium hover:border-primary/40 focus-visible:border-primary focus-visible:ring-primary/20"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent alignItemWithTrigger={false} align="end">
+                <SelectItem value="terbaru">Terbaru</SelectItem>
+                <SelectItem value="terlama">Terlama</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {visible.length === 0 ? (

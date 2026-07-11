@@ -64,7 +64,7 @@ export default function TentangTeamSection() {
                 <a
                   href="#"
                   aria-label={`LinkedIn ${name}`}
-                  className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                  className="flex size-8 shrink-0 items-center justify-center rounded-md bg-[#0a9bff] text-white transition-colors hover:bg-[#0a66c2]"
                 >
                   <LinkedinIcon className="size-4" />
                 </a>

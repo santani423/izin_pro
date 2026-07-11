@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Phone } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -13,12 +14,16 @@ export default function PromoConsultSection() {
   return (
     <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
       <div className="grid grid-cols-1 items-center gap-8 overflow-hidden rounded-2xl bg-brand-surface px-6 py-8 sm:px-10 lg:grid-cols-[auto_1fr]">
-        {/* Placeholder foto tim — gradient hijau brand */}
-        <div
-          role="img"
-          aria-label="Foto tim IzinPro siap membantu Anda"
-          className="hidden aspect-[4/3] w-72 rounded-xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark lg:block"
-        />
+        {/* Foto tim — PNG transparan, rata bawah agar terlihat berdiri di banner */}
+        <div className="relative -mb-8 hidden aspect-[3/2] w-80 self-end lg:block">
+          <Image
+            src="/images/promo-konsultasi.png"
+            alt="Tim IzinPro siap membantu Anda"
+            fill
+            sizes="320px"
+            className="object-contain object-bottom"
+          />
+        </div>
 
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">

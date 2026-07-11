@@ -30,7 +30,7 @@ export default function TentangAboutSection() {
         </p>
         <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           IzinPro, Partner Tepat untuk{" "}
-          <span className="text-primary">Legalitas Bisnis Anda</span>
+          <span className="block text-primary">Legalitas Bisnis Anda</span>
         </h2>
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
           IzinPro adalah penyedia jasa perizinan usaha terpercaya di Indonesia

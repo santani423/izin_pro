@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { CheckCircle2, Eye, Target } from "lucide-react";
 
 import { TENTANG_MISSION, TENTANG_VISION } from "@/lib/tentang";
@@ -14,15 +15,20 @@ export default function TentangVisiMisiSection() {
           </span>
           <h2 className="text-lg font-bold text-foreground">Visi Kami</h2>
         </div>
-        <p className="mt-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
+        <p className="mt-4 text-sm leading-relaxed text-muted-foreground sm:ml-[3.25rem] sm:text-base">
           {TENTANG_VISION}
         </p>
-        {/* Placeholder ilustrasi gedung */}
-        <div
-          role="img"
-          aria-label="Ilustrasi gedung perkantoran"
-          className="mt-6 aspect-[16/7] w-full rounded-xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark"
-        />
+        {/* Ilustrasi skyline gedung — full-bleed nempel tepi bawah kartu */}
+        <div className="-mx-6 -mb-6 mt-auto pt-6">
+          <Image
+            src="/images/tentang-skyline-v3.png"
+            alt="Ilustrasi gedung perkantoran"
+            width={864}
+            height={240}
+            sizes="(min-width: 768px) 50vw, 100vw"
+            className="w-full"
+          />
+        </div>
       </div>
 
       {/* Misi */}
@@ -33,7 +39,7 @@ export default function TentangVisiMisiSection() {
           </span>
           <h2 className="text-lg font-bold text-foreground">Misi Kami</h2>
         </div>
-        <ul className="mt-4 space-y-3.5">
+        <ul className="mt-4 space-y-3.5 sm:ml-[3.25rem]">
           {TENTANG_MISSION.map((item) => (
             <li key={item} className="flex items-start gap-2.5">
               <CheckCircle2

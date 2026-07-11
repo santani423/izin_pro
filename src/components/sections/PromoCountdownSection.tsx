@@ -53,15 +53,15 @@ export default function PromoCountdownSection() {
     <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-6 rounded-2xl border border-primary/30 bg-background px-6 py-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
         <div className="flex items-center gap-4">
-          <span className="flex size-12 shrink-0 items-center justify-center rounded-full border border-primary/30 text-primary">
-            <BadgePercent className="size-6" aria-hidden="true" />
+          <span className="flex size-14 shrink-0 items-center justify-center rounded-full border border-primary/30 text-primary">
+            <BadgePercent className="size-7" aria-hidden="true" />
           </span>
           <div>
-            <h2 className="text-base font-bold text-foreground sm:text-lg">
+            <h2 className="text-xl font-bold text-foreground sm:text-2xl">
               Diskon Spesial{" "}
               <span className="text-primary">Konsultasi Gratis</span>
             </h2>
-            <p className="mt-1 max-w-md text-sm text-muted-foreground">
+            <p className="mt-2 max-w-xl text-base text-muted-foreground">
               Dapatkan diskon hingga 25% untuk setiap layanan pilihan Anda.
               Promo terbatas bulan ini!
             </p>
