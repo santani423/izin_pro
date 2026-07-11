@@ -11,6 +11,10 @@ const CONTACT_ITEMS = [
   { icon: Clock, label: "Jam Operasional", value: CONTACT_INFO.hours },
 ];
 
+/* Embed Google Maps tanpa API key (mode output=embed) */
+const MAPS_EMBED_URL =
+  "https://www.google.com/maps?q=Wisma+Laena+Jl+KH+Abdullah+Syafei+No+7+Jakarta+Selatan&z=15&output=embed";
+
 /* ─── Lokasi & Kontak ─── */
 export default function LocationSection() {
   return (
@@ -48,29 +52,21 @@ export default function LocationSection() {
           </address>
         </Reveal>
 
-        {/* Kanan — kartu lokasi dengan tombol Google Maps */}
+        {/* Kanan — kartu peta embed Google Maps */}
         <Reveal delay={0.15}>
-          <div className="flex min-h-96 flex-col items-center justify-center gap-4 rounded-2xl bg-gradient-to-br from-brand-surface via-primary/10 to-brand-lime/30 px-6 py-14 text-center shadow-sm">
-            {/* Pin animasi — bounce + ping ring (sama seperti versi deploy) */}
-            <span className="relative">
-              <span className="animate-bounce grid size-16 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30">
-                <MapPin className="size-7" aria-hidden="true" />
-              </span>
-              <span
-                className="animate-ping absolute inset-0 rounded-full bg-primary/20"
-                aria-hidden="true"
-              />
-            </span>
-            <p className="mt-2 text-lg font-bold text-foreground sm:text-xl">
-              IzinPro — Jakarta Selatan
-            </p>
-            <p className="text-sm text-muted-foreground sm:text-base">
-              {CONTACT_INFO.addressShort}
-            </p>
+          <div className="relative min-h-96 overflow-hidden rounded-2xl border border-border/60 shadow-sm">
+            <iframe
+              title="Peta lokasi kantor IzinPro"
+              src={MAPS_EMBED_URL}
+              className="block h-96 w-full border-0"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              allowFullScreen
+            />
             <Button
               asChild
               variant="outline"
-              className="mt-2 rounded-full border-none bg-background font-semibold shadow-md hover:bg-background/90"
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border-none bg-background font-semibold shadow-md hover:bg-background/90"
             >
               <a
                 href={CONTACT_INFO.mapsUrl}

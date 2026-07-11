@@ -51,7 +51,8 @@ export default function KontakFormSection() {
   };
 
   return (
-    <section className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_360px] lg:px-8">
+    <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <div className="grid grid-cols-1 gap-8 rounded-3xl bg-muted/40 p-4 sm:p-6 lg:grid-cols-[1fr_400px] lg:p-8">
       {/* ─── Form ─── */}
       <Card className="gap-0 rounded-2xl border-border/60 py-0">
         <CardContent className="px-6 py-7 sm:px-8">
@@ -220,7 +221,7 @@ export default function KontakFormSection() {
                 <Send className="size-4" aria-hidden="true" />
               </Button>
 
-              <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Lock className="size-3.5" aria-hidden="true" />
                 Data Anda aman dan tidak akan dibagikan kepada pihak ketiga.
               </p>
@@ -229,49 +230,58 @@ export default function KontakFormSection() {
         </CardContent>
       </Card>
 
-      {/* ─── Sidebar informasi kontak ─── */}
-      <Card className="gap-0 self-start rounded-2xl border-border/60 py-0">
-        <CardContent className="px-6 py-7">
-          <h2 className="text-lg font-bold text-foreground">
-            Informasi Kontak
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Pilih cara terbaik untuk menghubungi kami.
-          </p>
-          <ul className="mt-5 divide-y divide-border/60">
-            {KONTAK_CHANNELS.map(({ icon: Icon, title, value, href }) => (
-              <li key={title}>
-                <a
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-start gap-3 py-4 transition-colors hover:text-primary"
+      {/* ─── Sidebar informasi kontak — tiap kanal kartu putih tersendiri ─── */}
+      <div className="lg:py-2">
+        <h2 className="text-lg font-bold text-foreground sm:text-xl">
+          Informasi Kontak
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Pilih cara terbaik untuk menghubungi kami.
+        </p>
+        <ul className="mt-5 space-y-4">
+          {KONTAK_CHANNELS.map(({ icon: Icon, title, value, note, href }) => (
+            <li key={title}>
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center gap-4 rounded-xl border border-border/60 bg-background px-5 py-4 shadow-sm transition-colors hover:border-primary/40"
+              >
+                <span
+                  className="shrink-0 text-primary"
+                  aria-hidden="true"
                 >
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-primary/30 text-primary">
-                    {Icon === "whatsapp" ? (
-                      <WhatsAppIcon className="size-4" />
-                    ) : (
-                      <Icon className="size-4" aria-hidden="true" />
-                    )}
+                  {Icon === "whatsapp" ? (
+                    <WhatsAppIcon className="size-7" />
+                  ) : (
+                    <Icon className="size-7" strokeWidth={1.7} />
+                  )}
+                </span>
+                <span className="flex-1">
+                  <span className="block text-sm font-bold text-foreground">
+                    {title}
                   </span>
-                  <span className="flex-1">
-                    <span className="block text-sm font-bold text-foreground group-hover:text-primary">
-                      {title}
-                    </span>
-                    <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+                  {value && (
+                    <span className="mt-0.5 block text-sm font-bold text-foreground">
                       {value}
                     </span>
-                  </span>
-                  <ChevronRight
-                    className="mt-2 size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
-                    aria-hidden="true"
-                  />
-                </a>
-              </li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
+                  )}
+                  {note && (
+                    <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+                      {note}
+                    </span>
+                  )}
+                </span>
+                <ChevronRight
+                  className="size-5 shrink-0 text-primary transition-transform group-hover:translate-x-0.5"
+                  aria-hidden="true"
+                />
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+      </div>
     </section>
   );
 }

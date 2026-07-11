@@ -6,8 +6,8 @@ import KontakInfoBar from "@/components/sections/KontakInfoBar";
 import KontakFormSection from "@/components/sections/KontakFormSection";
 
 /* ─── Lazy load sections below the fold ─── */
-const LocationSection = dynamic(
-  () => import("@/components/sections/LocationSection"),
+const KontakLocationSection = dynamic(
+  () => import("@/components/sections/KontakLocationSection"),
 );
 const KontakFaqSection = dynamic(
   () => import("@/components/sections/KontakFaqSection"),
@@ -46,8 +46,8 @@ export default function KontakPage() {
       {/* 3. Form + informasi kontak */}
       <KontakFormSection />
 
-      {/* 4. Lokasi kantor (reuse homepage) */}
-      <LocationSection />
+      {/* 4. Lokasi kantor — peta + kartu alamat */}
+      <KontakLocationSection />
 
       {/* 5. FAQ singkat + kartu bantuan */}
       <KontakFaqSection />

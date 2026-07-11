@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ChevronDown, Menu } from "lucide-react";
+import { ChevronDown, Menu, PackageSearch } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -21,8 +21,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
-import { NAV_LINKS, WHATSAPP_URL } from "@/lib/landing";
+import { NAV_LINKS } from "@/lib/landing";
 import { cn } from "@/lib/utils";
 
 /* ─── Navbar Utama ─── */
@@ -122,10 +121,10 @@ export default function Navbar() {
         {/* CTA desktop */}
         <div className="hidden lg:block">
           <Button asChild className="rounded-full font-semibold">
-            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
-              Konsultasikan Gratis
-              <WhatsAppIcon className="size-4" />
-            </a>
+            <Link href="/tracking">
+              Tracking Perizinan
+              <PackageSearch className="size-4" aria-hidden="true" />
+            </Link>
           </Button>
         </div>
 
@@ -214,14 +213,10 @@ export default function Navbar() {
               </ul>
               <Separator className="my-4" />
               <Button asChild className="w-full rounded-full font-semibold">
-                <a
-                  href={WHATSAPP_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Konsultasikan Gratis
-                  <WhatsAppIcon className="size-4" />
-                </a>
+                <Link href="/tracking">
+                  Tracking Perizinan
+                  <PackageSearch className="size-4" aria-hidden="true" />
+                </Link>
               </Button>
             </nav>
           </SheetContent>

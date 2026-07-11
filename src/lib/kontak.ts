@@ -39,11 +39,14 @@ export const KONTAK_INFO_CARDS: KontakInfoCard[] = [
   },
 ];
 
-/* ─── Baris info kontak di sidebar form ─── */
+/* ─── Kartu info kontak di sidebar form ─── */
 export interface KontakChannel {
   icon: LucideIcon | "whatsapp";
   title: string;
-  value: string;
+  /** Nilai utama dicetak tebal, mis. nomor WA / alamat email */
+  value?: string;
+  /** Keterangan kecil abu-abu di bawah nilai */
+  note?: string;
   href: string;
 }
 
@@ -51,25 +54,27 @@ export const KONTAK_CHANNELS: KontakChannel[] = [
   {
     icon: "whatsapp",
     title: "WhatsApp",
-    value: `${COMPANY_INFO.whatsappDisplay} — chat langsung dengan tim kami`,
+    value: COMPANY_INFO.whatsappDisplay,
+    note: "Chat langsung dengan tim kami",
     href: `https://wa.me/${COMPANY_INFO.whatsapp}`,
   },
   {
     icon: Mail,
     title: "Email",
-    value: `${COMPANY_INFO.email} — kirim pertanyaan melalui email`,
+    value: COMPANY_INFO.email,
+    note: "Kirim pertanyaan melalui email",
     href: `mailto:${COMPANY_INFO.email}`,
   },
   {
     icon: MapPin,
     title: "Alamat Kantor",
-    value: COMPANY_INFO.address,
+    note: COMPANY_INFO.address,
     href: COMPANY_INFO.mapsUrl,
   },
   {
     icon: Clock,
     title: "Jam Operasional",
-    value: COMPANY_INFO.hours,
+    note: COMPANY_INFO.hours,
     href: `https://wa.me/${COMPANY_INFO.whatsapp}`,
   },
 ];

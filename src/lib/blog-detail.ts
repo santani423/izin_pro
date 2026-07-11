@@ -3,6 +3,22 @@
  * artikel lain mendapat fallback generik dari BLOG_POSTS.
  */
 
+import {
+  Clock,
+  FileCheck,
+  FileText,
+  House,
+  IdCard,
+  ListChecks,
+  LogIn,
+  Mail,
+  Network,
+  Smartphone,
+  UserCog,
+  UserPlus,
+  type LucideIcon,
+} from "lucide-react";
+
 import { BLOG_POSTS } from "@/lib/constants";
 
 /* ─── Blok konten artikel ─── */
@@ -17,13 +33,13 @@ export type ArticleBlock =
       type: "cards";
       heading: string;
       lead?: string;
-      items: { title: string; description: string }[];
+      items: { title: string; description: string; icon?: LucideIcon }[];
     }
   | {
       type: "steps";
       heading: string;
       lead?: string;
-      steps: { title: string; description: string }[];
+      steps: { title: string; description: string; icon?: LucideIcon }[];
     }
   | {
       type: "info";
@@ -73,26 +89,32 @@ const ARTICLE_DETAILS: Record<string, ArticleDetail> = {
           {
             title: "KTP Penanggung Jawab",
             description: "KTP masih berlaku.",
+            icon: IdCard,
           },
           {
             title: "NPWP (Jika ada)",
             description: "Lampirkan NPWP perusahaan atau pribadi.",
+            icon: FileText,
           },
           {
             title: "Email Aktif",
             description: "Digunakan untuk verifikasi dan notifikasi.",
+            icon: Mail,
           },
           {
             title: "Nomor Handphone Aktif",
             description: "Untuk menerima kode OTP.",
+            icon: Smartphone,
           },
           {
             title: "Aktivitas Usaha",
             description: "Tentukan jenis dan bidang usaha Anda.",
+            icon: Network,
           },
           {
             title: "Alamat Usaha",
             description: "Alamat lengkap sesuai dokumen legal.",
+            icon: House,
           },
         ],
       },
@@ -104,30 +126,36 @@ const ARTICLE_DETAILS: Record<string, ArticleDetail> = {
           {
             title: "Buat Akun OSS",
             description: "Kunjungi oss.go.id dan daftar akun baru.",
+            icon: UserPlus,
           },
           {
             title: "Login ke OSS",
             description:
               "Login menggunakan email dan password yang telah didaftarkan.",
+            icon: LogIn,
           },
           {
             title: "Lengkapi Data",
             description:
               "Isi data pelaku usaha, data usaha, dan data penanggung jawab.",
+            icon: FileCheck,
           },
           {
             title: "Pilih KBLI",
             description: "Pilih kode KBLI sesuai dengan bidang usaha Anda.",
+            icon: ListChecks,
           },
           {
             title: "Perizinan Berusaha",
             description:
               "Pilih jenis perizinan yang dibutuhkan (NIB, Izin Usaha, atau Izin Komersial).",
+            icon: UserCog,
           },
           {
             title: "Cek & Terbitkan NIB",
             description:
               "Periksa data yang telah diisi. Jika sudah benar, NIB akan terbit secara otomatis.",
+            icon: Clock,
           },
         ],
       },

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   CheckCircle2,
+  ChevronRight,
   ClipboardCheck,
   FileText,
   ListOrdered,
@@ -60,14 +61,18 @@ function ArticleBlockView({
             </p>
           )}
           <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {block.items.map(({ title, description }) => (
+            {block.items.map(({ title, description, icon: Icon }) => (
               <Card
                 key={title}
                 className="h-full gap-0 rounded-xl border-border/60 py-0"
               >
                 <CardContent className="flex h-full flex-col items-center px-3 py-4 text-center">
                   <span className="flex size-9 items-center justify-center rounded-lg border border-primary/30 text-primary">
-                    <ClipboardCheck className="size-4" aria-hidden="true" />
+                    {Icon ? (
+                      <Icon className="size-4" aria-hidden="true" />
+                    ) : (
+                      <ClipboardCheck className="size-4" aria-hidden="true" />
+                    )}
                   </span>
                   <h3 className="mt-2 text-xs font-bold text-foreground sm:text-sm">
                     {title}
@@ -90,14 +95,28 @@ function ArticleBlockView({
             </p>
           )}
           <ol className="mt-5 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-6">
-            {block.steps.map(({ title, description }, stepIndex) => (
+            {block.steps.map(({ title, description, icon: Icon }, stepIndex) => (
               <li
                 key={title}
-                className="flex flex-col items-center text-center"
+                className="relative flex flex-col items-center text-center"
               >
+                {/* Panah putus-putus ke langkah berikutnya — hanya saat 6 kolom sejajar (lg) */}
+                {stepIndex < block.steps.length - 1 && (
+                  <div
+                    aria-hidden="true"
+                    className="absolute left-[calc(50%+1.875rem)] right-[calc(-50%+1.875rem)] top-[1.375rem] hidden -translate-y-1/2 items-center lg:flex"
+                  >
+                    <span className="flex-1 border-t-2 border-dashed border-primary/40" />
+                    <ChevronRight className="-ml-1.5 size-4 shrink-0 text-primary/60" />
+                  </div>
+                )}
                 <div className="relative">
                   <span className="grid size-11 place-items-center rounded-full border border-primary/30 bg-background text-primary shadow-sm">
-                    <FileText className="size-5" aria-hidden="true" />
+                    {Icon ? (
+                      <Icon className="size-5" aria-hidden="true" />
+                    ) : (
+                      <FileText className="size-5" aria-hidden="true" />
+                    )}
                   </span>
                   <span
                     className="absolute -left-1.5 -top-1 grid size-5 place-items-center rounded-full bg-primary text-[10px] font-bold text-white"
