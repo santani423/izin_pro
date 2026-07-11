@@ -1,6 +1,7 @@
 import { ChevronRight } from "lucide-react";
 
 import { Reveal } from "@/components/shared/Reveal";
+import { cn } from "@/lib/utils";
 import type { LayananDetail } from "@/lib/layanan-detail";
 
 /* ─── Alur proses layanan — 5 langkah bernomor ─── */
@@ -15,7 +16,12 @@ export default function LayananDetailProcessSection({
         {process.title}
       </h2>
 
-      <ol className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-5">
+      <ol
+        className={cn(
+          "mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2",
+          process.steps.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-5",
+        )}
+      >
         {process.steps.map(({ icon: Icon, title, description }, index) => (
           <Reveal key={title} delay={index * 0.08}>
             <li className="relative flex flex-col items-center text-center">

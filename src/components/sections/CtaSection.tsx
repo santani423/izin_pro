@@ -5,15 +5,17 @@ import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { WHATSAPP_URL } from "@/lib/landing";
 
 interface CtaSectionProps {
-  /** Judul & subjudul bisa dioverride per halaman (mis. detail layanan) */
+  /** Judul, subjudul & label tombol bisa dioverride per halaman */
   title?: string;
   subtitle?: string;
+  buttonLabel?: string;
 }
 
 /* ─── CTA Banner ─── */
 export default function CtaSection({
   title = "Siap Memulai Perizinan Bisnis Anda?",
   subtitle = "Konsultasikan kebutuhan perizinan Anda sekarang gratis bersama tim ahli kami.",
+  buttonLabel = "Konsultasikan Gratis Sekarang",
 }: CtaSectionProps) {
   return (
     <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
@@ -35,7 +37,7 @@ export default function CtaSection({
           className="w-full shrink-0 justify-center gap-1.5 rounded-lg bg-white px-2.5 text-xs font-semibold text-brand-green-dark hover:bg-white/90 sm:w-auto sm:gap-2 sm:px-5 sm:text-sm"
         >
           <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
-            Konsultasikan Gratis Sekarang
+            {buttonLabel}
             <WhatsAppIcon className="size-3.5 text-primary sm:size-4" />
           </a>
         </Button>
