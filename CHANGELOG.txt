@@ -5,6 +5,78 @@ CHANGELOG — IzinPro CMS Project
 Format: [YYYY-MM-DD] Versi — Deskripsi
 ====================================================
 
+[2026-07-12] v1.4.0 — Admin Panel Redesign (TailAdmin) + CRUD Frontend-Only
+----------------------------------------------------
+STATUS   : COMPLETED & DEPLOYED — live di https://izinpro-cms.vercel.app
+PROJECT  : izinpro-cms/
+SUMBER   : Referensi desain TailAdmin (nextjs-demo.tailadmin.com) dgn palet
+           hijau IzinPro; kartu metrik model Berry MUI (request klien)
+
+DASHBOARD /admin/dashboard (REDESIGN TOTAL GAYA TAILADMIN):
+  + 4 kartu metrik satu baris model Berry: bg hijau brand-700 + lingkaran
+    dekoratif, avatar ikon, angka besar + lingkaran panah tren, pill
+    persentase naik hijau / turun merah — MetricCard.tsx
+  + Bar chart Kunjungan Bulanan: SVG tanpa library, responsif penuh via
+    ResizeObserver (mengisi tinggi kartu), bar rounded-top, tooltip hover
+    — MonthlyVisitsChart.tsx
+  + Gauge setengah lingkaran Target Inquiry Bulanan + footer 3 kolom
+    Target/Tercapai/Hari Ini ber-background hijau brand — TargetGauge.tsx
+  + Area chart Statistik 2 seri (Page Views + Pengunjung Unik): tab
+    Bulanan/Mingguan/Harian, legend, crosshair + tooltip 2 nilai, navigasi
+    keyboard; warna seri lolos validasi buta warna (primary + chart-4)
+    — StatisticsChart.tsx
+  + Kartu Sumber Traffic (progress bar) + tabel Inquiry Terbaru gaya
+    TailAdmin (avatar inisial, pill status, tombol Filter & Lihat Semua)
+  ~ Skala data mock konsisten antar kartu (±12rb pengunjung/bulan)
+
+LAYOUT & CHROME ADMIN:
+  ~ AdminHeader kini reusable — dirender otomatis dari layout admin dgn peta
+    judul per route (PAGE_META); 11 halaman tak perlu panggil sendiri
+  ~ Hamburger ber-border di samping judul header (mobile: buka drawer,
+    desktop: collapse sidebar); tombol collapse lama di sidebar dihapus;
+    header dilonggarkan 72px → 80px
+  ~ AdminSidebar: logo gambar IzinPro asli (py-8, link ke beranda), item
+    aktif pill hijau muda ala TailAdmin, kartu footer "Lihat Website"
+  ~ FIX layout double-scroll: h-screen overflow-hidden → min-h-screen body
+    scroll (hilangkan ruang putih bawah & 2 scrollbar hijau tebal);
+    scrollbar sidebar pakai utility baru .scrollbar-slim (5px abu netral)
+  ~ FIX guard login: refresh di halaman admin tak lagi terlempar ke
+    /admin/login (useSyncExternalStore + baca sessionStorage langsung di
+    effect, bukan snapshot render yg masih null saat hydration)
+  + Token warna admin di globals.css: --color-admin-line #e4e7ec (border
+    kartu) & --color-admin-bg #f9fafb (bg container) — ubah 1 baris utk
+    ganti seluruh admin
+
+MENU BARU:
+  + /admin/inquiry — inbox pesan form kontak: search, filter status, dialog
+    detail pesan, ubah status Baru→Diproses→Selesai (klik pill / dari
+    dialog), hapus + konfirmasi; menu Inquiry masuk grup Utama di sidebar
+  + /admin/cta-banner — CTA "Siap Memulai Perizinan Bisnis Anda?" dinamis:
+    CTA default (judul, subjudul, label tombol, nomor WA) + live preview
+    banner; tabel varian per halaman (10 lokasi pemakaian CtaSection) —
+    tiap varian bisa beda kata-kata & NOMOR WA sendiri, toggle aktif,
+    hapus varian = kembali ke default
+
+CRUD FRONTEND-ONLY SEMUA MENU (kesepakatan: mockup state React — data
+reset saat refresh & belum mengubah halaman publik; penyimpanan nyata
+menyusul v2.2.0):
+  ~ Blog, Layanan, Tim, Testimoni, Promo, FAQ, Halaman: tambah/edit via
+    dialog form + hapus dgn konfirmasi + toast; slug/inisial otomatis,
+    rating bintang klik (testimoni), fitur per-baris (layanan)
+  ~ Halaman (/admin/pages): seed 8 halaman publik asli, edit judul hero/
+    subjudul/status, tombol mata buka halaman aslinya, halaman inti tak
+    bisa dihapus
+  ~ Media: upload mock, hapus satuan & massal + konfirmasi, search & salin
+    URL berfungsi; Pengaturan: simpan → toast
+  + Shared: ConfirmDeleteDialog.tsx + Toaster sonner di layout admin
+
+LAIN-LAIN:
+  ~ Dropdown "Layanan yang Dibutuhkan" di form kontak publik: select native
+    → komponen Select Base UI, gaya disamakan dgn dropdown Terbaru/Terlama
+    artikel (react-hook-form via Controller, placeholder, validasi tetap)
+
+====================================================
+
 [2026-07-11] v1.3.0 — Redesign Halaman Publik dari Prototype UI/UX
 ----------------------------------------------------
 STATUS   : COMPLETED & DEPLOYED — 9 dari 9 halaman + revisi review; live di
@@ -748,6 +820,8 @@ v1.2.0  → [SELESAI] Homepage redesign dari prototype klien + Deploy Vercel pro
 v1.3.0  → [SELESAI] Redesign 9 halaman publik dari prototype UI/UX klien
           + revisi review + deploy production (live di izinpro-cms.vercel.app;
           konten placeholder masih menunggu konfirmasi klien)
+v1.4.0  → [SELESAI] Admin panel redesign TailAdmin + CRUD frontend mockup
+          semua menu + menu baru Inquiry & CTA Banner dinamis + deploy
 v2.0.0  → Database schema + Prisma setup + MariaDB
 v2.1.0  → Authentication (Better Auth) + session management
 v2.2.0  → Admin panel fungsional — CRUD blog, layanan, media

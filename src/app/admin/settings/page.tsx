@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Save, Globe, Phone, Mail, MapPin, Clock, Share2 } from "lucide-react";
+import { Save, Globe, Phone, Share2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import AdminHeader from "@/components/admin/AdminHeader";
 import { COMPANY_INFO } from "@/lib/constants";
 
 /* ─── Halaman Pengaturan Admin ─── */
@@ -16,12 +16,12 @@ export default function AdminSettingsPage() {
 
   const handleSave = () => {
     setSaved(true);
+    toast.success("Pengaturan disimpan");
     setTimeout(() => setSaved(false), 2000);
   };
 
   return (
     <>
-      <AdminHeader title="Pengaturan" subtitle="Konfigurasi website dan informasi perusahaan" />
 
       <div className="p-6 lg:p-8 space-y-6">
         <Tabs defaultValue="umum">
@@ -34,7 +34,7 @@ export default function AdminSettingsPage() {
 
           {/* ─── Tab Umum ─── */}
           <TabsContent value="umum">
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-5 max-w-2xl">
+            <div className="bg-white rounded-2xl border border-admin-line p-6 space-y-5 max-w-2xl">
               <h3 className="font-bold text-gray-900 flex items-center gap-2">
                 <Globe size={16} className="text-primary" />
                 Informasi Website
@@ -68,7 +68,7 @@ export default function AdminSettingsPage() {
 
           {/* ─── Tab Kontak ─── */}
           <TabsContent value="kontak">
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-5 max-w-2xl">
+            <div className="bg-white rounded-2xl border border-admin-line p-6 space-y-5 max-w-2xl">
               <h3 className="font-bold text-gray-900 flex items-center gap-2">
                 <Phone size={16} className="text-primary" />
                 Informasi Kontak
@@ -105,7 +105,7 @@ export default function AdminSettingsPage() {
 
           {/* ─── Tab Sosmed ─── */}
           <TabsContent value="sosmed">
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-5 max-w-2xl">
+            <div className="bg-white rounded-2xl border border-admin-line p-6 space-y-5 max-w-2xl">
               <h3 className="font-bold text-gray-900 flex items-center gap-2">
                 <Share2 size={16} className="text-primary" />
                 Link Sosial Media
@@ -131,7 +131,7 @@ export default function AdminSettingsPage() {
 
           {/* ─── Tab SEO ─── */}
           <TabsContent value="seo">
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-5 max-w-2xl">
+            <div className="bg-white rounded-2xl border border-admin-line p-6 space-y-5 max-w-2xl">
               <h3 className="font-bold text-gray-900">SEO Global</h3>
               <div className="space-y-1.5">
                 <Label>Meta Title Default</Label>

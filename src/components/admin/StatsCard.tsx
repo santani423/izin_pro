@@ -1,19 +1,30 @@
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import {
+  TrendingUp, TrendingDown, Minus,
+  Eye, Users, FileText, MessageSquare, Clock,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DashboardStat } from "@/types";
 
-const ICONS: Record<string, React.ElementType> = {};
+/* Nama ikon (stat.icon) → komponen lucide; selain ini dirender sebagai emoji */
+const ICONS: Record<string, React.ElementType> = {
+  eye: Eye,
+  users: Users,
+  "file-text": FileText,
+  "message-square": MessageSquare,
+  clock: Clock,
+};
 
 /* ─── Kartu statistik dashboard ─── */
 export default function StatsCard({ stat }: { stat: DashboardStat }) {
+  const Icon = ICONS[stat.icon];
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-2xl border border-admin-line p-5 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-3">
         <div
           className="flex items-center justify-center w-10 h-10 rounded-xl text-lg"
           style={{ backgroundColor: stat.bgColor }}
         >
-          {stat.icon}
+          {Icon ? <Icon size={18} style={{ color: stat.color }} /> : stat.icon}
         </div>
         <span
           className={cn(

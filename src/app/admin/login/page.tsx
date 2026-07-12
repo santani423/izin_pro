@@ -47,7 +47,7 @@ export default function AdminLoginPage() {
 
       <div className="w-full max-w-md relative">
         {/* Card */}
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-2xl shadow-gray-200/60 p-8 sm:p-10">
+        <div className="bg-white rounded-3xl border border-admin-line shadow-2xl shadow-gray-200/60 p-8 sm:p-10">
 
           {/* Logo */}
           <div className="flex items-center gap-3 mb-8">

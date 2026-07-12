@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { Upload, Grid, List, Search, Trash2, Download, Copy } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import AdminHeader from "@/components/admin/AdminHeader";
+import ConfirmDeleteDialog from "@/components/admin/ConfirmDeleteDialog";
 
 /* ─── Data media mock ─── */
 const mediaItems = [
@@ -19,24 +20,70 @@ const mediaItems = [
   { id: "8", name: "document-icon.svg", type: "image/svg+xml", size: "4 KB", date: "21 Jun 2026", gradient: "from-[#b45309] to-[#fbbf24]" },
 ];
 
+const GRADIENTS = [
+  "from-[#1b3309] to-[#5ba12b]",
+  "from-[#1e3a5f] to-[#3b82f6]",
+  "from-[#4a1d96] to-[#8b5cf6]",
+  "from-[#7c2d12] to-[#ea580c]",
+];
+
 /* ─── Halaman Media Library Admin ─── */
 export default function AdminMediaPage() {
+  const [items, setItems] = useState(mediaItems);
   const [view, setView] = useState<"grid" | "list">("grid");
   const [selected, setSelected] = useState<string[]>([]);
+  const [search, setSearch] = useState("");
+  /* ID yang menunggu konfirmasi hapus (bulk atau satuan) */
+  const [pendingDelete, setPendingDelete] = useState<string[]>([]);
+
+  const filtered = items.filter((i) =>
+    i.name.toLowerCase().includes(search.toLowerCase()),
+  );
 
   const toggle = (id: string) =>
     setSelected((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
 
+  const upload = () => {
+    const n = items.length + 1;
+    setItems((prev) => [
+      {
+        id: String(Date.now()),
+        name: `upload-baru-${n}.jpg`,
+        type: "image/jpeg",
+        size: `${100 + n * 17} KB`,
+        date: new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }),
+        gradient: GRADIENTS[n % GRADIENTS.length],
+      },
+      ...prev,
+    ]);
+    toast.success("File berhasil diupload");
+  };
+
+  const confirmDelete = () => {
+    setItems((prev) => prev.filter((i) => !pendingDelete.includes(i.id)));
+    setSelected((prev) => prev.filter((id) => !pendingDelete.includes(id)));
+    toast.success(`${pendingDelete.length} file dihapus`);
+  };
+
+  const copyUrl = (name: string) => {
+    navigator.clipboard?.writeText(`/images/uploads/${name}`).catch(() => {});
+    toast.success("URL file disalin");
+  };
+
   return (
     <>
-      <AdminHeader title="Media Library" subtitle="Kelola semua gambar dan file" />
 
       <div className="p-6 lg:p-8 space-y-6">
         {/* ─── Toolbar ─── */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <Input placeholder="Cari file..." className="pl-9 rounded-xl" />
+            <Input
+              placeholder="Cari file..."
+              className="pl-9 rounded-xl"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
           <div className="flex gap-2">
             <div className="flex border border-gray-200 rounded-xl overflow-hidden">
@@ -54,12 +101,17 @@ export default function AdminMediaPage() {
               </button>
             </div>
             {selected.length > 0 && (
-              <Button variant="outline" size="sm" className="gap-1.5 rounded-xl text-red-500 border-red-200 hover:bg-red-50">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 rounded-xl text-red-500 border-red-200 hover:bg-red-50"
+                onClick={() => setPendingDelete(selected)}
+              >
                 <Trash2 size={14} />
                 Hapus ({selected.length})
               </Button>
             )}
-            <Button size="sm" className="gap-1.5 rounded-xl">
+            <Button size="sm" className="gap-1.5 rounded-xl" onClick={upload}>
               <Upload size={14} />
               Upload
             </Button>
@@ -76,11 +128,11 @@ export default function AdminMediaPage() {
         {/* ─── Grid/List Media ─── */}
         {view === "grid" ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
-            {mediaItems.map((item) => (
+            {filtered.map((item) => (
               <div
                 key={item.id}
                 onClick={() => toggle(item.id)}
-                className={`relative rounded-2xl overflow-hidden border-2 cursor-pointer transition-all group ${selected.includes(item.id) ? "border-primary shadow-md" : "border-gray-100 hover:border-primary/30"}`}
+                className={`relative rounded-2xl overflow-hidden border-2 cursor-pointer transition-all group ${selected.includes(item.id) ? "border-primary shadow-md" : "border-admin-line hover:border-primary/30"}`}
               >
                 <div className={`aspect-square bg-gradient-to-br ${item.gradient}`} />
                 {selected.includes(item.id) && (
@@ -96,10 +148,10 @@ export default function AdminMediaPage() {
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          <div className="bg-white rounded-2xl border border-admin-line overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/50">
+                <tr className="border-b border-admin-line bg-gray-50/50">
                   <th className="w-10 px-4 py-3" />
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Nama File</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase hidden md:table-cell">Tipe</th>
@@ -109,7 +161,7 @@ export default function AdminMediaPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {mediaItems.map((item) => (
+                {filtered.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-4 py-3">
                       <input
@@ -132,9 +184,27 @@ export default function AdminMediaPage() {
                     <td className="px-4 py-3 text-xs text-gray-500 hidden lg:table-cell">{item.date}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
-                        <button className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/5 transition-colors"><Copy size={13} /></button>
-                        <button className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/5 transition-colors"><Download size={13} /></button>
-                        <button className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={13} /></button>
+                        <button
+                          onClick={() => copyUrl(item.name)}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/5 transition-colors"
+                          aria-label="Salin URL"
+                        >
+                          <Copy size={13} />
+                        </button>
+                        <button
+                          onClick={() => toast.success(`Mengunduh ${item.name}`)}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/5 transition-colors"
+                          aria-label="Unduh"
+                        >
+                          <Download size={13} />
+                        </button>
+                        <button
+                          onClick={() => setPendingDelete([item.id])}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                          aria-label="Hapus file"
+                        >
+                          <Trash2 size={13} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -143,6 +213,18 @@ export default function AdminMediaPage() {
             </table>
           </div>
         )}
+
+        {/* ─── Konfirmasi hapus ─── */}
+        <ConfirmDeleteDialog
+          open={pendingDelete.length > 0}
+          onOpenChange={(o) => !o && setPendingDelete([])}
+          itemLabel={
+            pendingDelete.length === 1
+              ? `File "${items.find((i) => i.id === pendingDelete[0])?.name ?? ""}"`
+              : `${pendingDelete.length} file terpilih`
+          }
+          onConfirm={confirmDelete}
+        />
       </div>
     </>
   );

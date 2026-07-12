@@ -1,17 +1,45 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import AdminSidebar from "@/components/admin/AdminSidebar";
+import AdminHeader from "@/components/admin/AdminHeader";
+import { Toaster } from "@/components/ui/sonner";
 import { AdminSidebarProvider, useAdminSidebar } from "@/contexts/AdminSidebarContext";
 
 const AUTH_PAGES = ["/admin/login", "/admin/register"];
 
+/* Judul & subjudul header per menu — dipakai otomatis oleh layout */
+const PAGE_META: Record<string, { title: string; subtitle?: string }> = {
+  "/admin/dashboard": { title: "Dashboard", subtitle: "Selamat datang kembali, Super Admin!" },
+  "/admin/analitik": { title: "Analitik", subtitle: "Data kunjungan dan performa website" },
+  "/admin/pages": { title: "Halaman", subtitle: "Kelola semua halaman statis website" },
+  "/admin/blog": { title: "Blog & Artikel", subtitle: "Kelola semua artikel dan konten blog" },
+  "/admin/media": { title: "Media Library", subtitle: "Kelola semua gambar dan file" },
+  "/admin/layanan": { title: "Layanan", subtitle: "Kelola layanan yang ditampilkan di website" },
+  "/admin/tim": { title: "Tim", subtitle: "Kelola profil anggota tim IzinPro" },
+  "/admin/testimoni": { title: "Testimoni", subtitle: "Kelola testimoni klien yang ditampilkan di website" },
+  "/admin/promo": { title: "Promo & Banner", subtitle: "Kelola penawaran dan banner promosi" },
+  "/admin/faq": { title: "FAQ", subtitle: "Kelola pertanyaan yang sering diajukan" },
+  "/admin/cta-banner": { title: "CTA Banner", subtitle: "Kelola ajakan konsultasi di berbagai halaman website" },
+  "/admin/inquiry": { title: "Inquiry", subtitle: "Kelola pesan yang masuk dari form kontak" },
+  "/admin/settings": { title: "Pengaturan", subtitle: "Konfigurasi website dan informasi perusahaan" },
+};
+
+/* Rute turunan (mis. /admin/blog/baru) mewarisi meta induknya */
+function pageMeta(pathname: string) {
+  if (PAGE_META[pathname]) return PAGE_META[pathname];
+  const parent = Object.keys(PAGE_META).find((p) => pathname.startsWith(p + "/"));
+  return parent ? PAGE_META[parent] : { title: "Admin" };
+}
+
 /* ─── Inner layout (needs sidebar context) ─── */
 function AdminPanelLayout({ children }: { children: React.ReactNode }) {
   const { open, close } = useAdminSidebar();
+  const pathname = usePathname();
+  const meta = pageMeta(pathname);
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex min-h-screen bg-admin-bg">
       {/* Mobile overlay */}
       {open && (
         <div
@@ -20,41 +48,43 @@ function AdminPanelLayout({ children }: { children: React.ReactNode }) {
         />
       )}
       <AdminSidebar />
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+      <div className="flex-1 flex flex-col min-w-0">
+        <AdminHeader title={meta.title} subtitle={meta.subtitle} />
         {children}
       </div>
+      <Toaster position="top-right" richColors />
     </div>
   );
 }
+
+/* Baca status login dari sessionStorage — null saat SSR */
+const subscribeAuth = () => () => {};
+const getAuth = () => sessionStorage.getItem("admin-auth");
+const getServerAuth = () => null;
 
 /* ─── Root admin layout with auth guard ─── */
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [checked, setChecked] = useState(false);
+  const auth = useSyncExternalStore(subscribeAuth, getAuth, getServerAuth);
 
   const isAuthPage = AUTH_PAGES.includes(pathname);
 
   useEffect(() => {
-    if (isAuthPage) {
-      setChecked(true);
-      return;
-    }
-    const auth = sessionStorage.getItem("admin-auth");
-    if (!auth) {
+    /* Baca sessionStorage langsung — snapshot render bisa masih null
+       sesaat setelah hydration, jangan dipakai untuk redirect */
+    if (!isAuthPage && !sessionStorage.getItem("admin-auth")) {
       router.replace("/admin/login");
-    } else {
-      setChecked(true);
     }
   }, [isAuthPage, pathname, router]);
 
   /* Auth pages: render clean (no sidebar) */
   if (isAuthPage) return <>{children}</>;
 
-  /* Waiting for auth check */
-  if (!checked) {
+  /* Belum login / menunggu redirect */
+  if (!auth) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50">
+      <div className="flex h-screen items-center justify-center bg-admin-bg">
         <div className="w-8 h-8 rounded-full border-[3px] border-primary/20 border-t-primary animate-spin" />
       </div>
     );

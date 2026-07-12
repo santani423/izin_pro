@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, FileText, Newspaper, Image, Users, Settings,
+  LayoutDashboard, FileText, Newspaper, Image as ImageIcon, Users, Settings,
   Star, Megaphone, Package, HelpCircle, BarChart3, ChevronRight, X,
-  PanelLeftClose, PanelLeftOpen,
+  Inbox, Headset,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { COMPANY_INFO } from "@/lib/constants";
@@ -17,6 +18,7 @@ const navGroups = [
     items: [
       { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
       { label: "Analitik", href: "/admin/analitik", icon: BarChart3 },
+      { label: "Inquiry", href: "/admin/inquiry", icon: Inbox },
     ],
   },
   {
@@ -24,7 +26,7 @@ const navGroups = [
     items: [
       { label: "Halaman", href: "/admin/pages", icon: FileText },
       { label: "Blog & Artikel", href: "/admin/blog", icon: Newspaper },
-      { label: "Media Library", href: "/admin/media", icon: Image },
+      { label: "Media Library", href: "/admin/media", icon: ImageIcon },
     ],
   },
   {
@@ -34,6 +36,7 @@ const navGroups = [
       { label: "Tim", href: "/admin/tim", icon: Users },
       { label: "Testimoni", href: "/admin/testimoni", icon: Star },
       { label: "Promo / Banner", href: "/admin/promo", icon: Megaphone },
+      { label: "CTA Banner", href: "/admin/cta-banner", icon: Headset },
       { label: "FAQ", href: "/admin/faq", icon: HelpCircle },
     ],
   },
@@ -48,14 +51,14 @@ const navGroups = [
 /* ─── Sidebar Admin Panel ─── */
 export default function AdminSidebar() {
   const pathname = usePathname();
-  const { open, close, collapsed, toggleCollapse } = useAdminSidebar();
+  const { open, close, collapsed } = useAdminSidebar();
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
   return (
     <aside
       className={cn(
-        "flex flex-col flex-shrink-0 border-r border-gray-100 bg-white h-screen overflow-y-auto overflow-x-hidden",
+        "flex flex-col flex-shrink-0 border-r border-admin-line bg-white h-screen overflow-y-auto overflow-x-hidden scrollbar-slim",
         "lg:sticky lg:top-0 lg:translate-x-0 transition-all duration-300 ease-in-out",
         "fixed top-0 left-0 z-50",
         /* Desktop width: collapsed = w-16, expanded = w-64 */
@@ -64,71 +67,38 @@ export default function AdminSidebar() {
         open ? "w-64 translate-x-0 shadow-2xl" : "w-64 -translate-x-full lg:translate-x-0",
       )}
     >
-      {/* Header — collapsed (desktop only): hanya tombol expand di tengah */}
+      {/* Logo — collapsed (desktop only): logo mark di tengah */}
       {collapsed && (
-        <div className="hidden lg:flex items-center justify-center h-[72px] border-b border-gray-100">
-          <button
-            onClick={toggleCollapse}
-            className="flex items-center justify-center w-10 h-10 rounded-xl text-gray-400 hover:bg-primary/10 hover:text-primary transition-colors"
-            aria-label="Buka sidebar"
-          >
-            <PanelLeftOpen size={18} />
-          </button>
-        </div>
-      )}
-
-      {/* Header — expanded */}
-      {!collapsed && (
-        <div className="flex items-center gap-2.5 px-5 h-[72px] border-b border-gray-100">
-          <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary text-white shadow-sm flex-shrink-0">
+        <div className="hidden lg:flex justify-center py-8">
+          <Link href="/" title={COMPANY_INFO.name} className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary text-white shadow-sm">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
               <path d="M15 4.5L7 13.5L3 9" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          </span>
-          <div className="flex-1 min-w-0">
-            <div className="font-bold text-gray-900 text-sm truncate">{COMPANY_INFO.name}</div>
-            <div className="text-xs text-gray-400">Admin Panel</div>
-          </div>
-          {/* Collapse button — desktop */}
-          <button
-            onClick={toggleCollapse}
-            className="hidden lg:flex items-center justify-center w-9 h-9 rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors flex-shrink-0"
-            aria-label="Tutup sidebar"
-          >
-            <PanelLeftClose size={16} />
-          </button>
-          {/* Close button — mobile */}
-          <button
-            onClick={close}
-            className="lg:hidden flex items-center justify-center w-9 h-9 rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors flex-shrink-0"
-            aria-label="Tutup menu"
-          >
-            <X size={16} />
-          </button>
+          </Link>
         </div>
       )}
 
-      {/* Header mobile — collapsed state tetap tampil logo */}
-      {collapsed && (
-        <div className="flex lg:hidden items-center gap-2.5 px-5 h-[72px] border-b border-gray-100">
-          <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary text-white shadow-sm flex-shrink-0">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path d="M15 4.5L7 13.5L3 9" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </span>
-          <div className="flex-1 min-w-0">
-            <div className="font-bold text-gray-900 text-sm truncate">{COMPANY_INFO.name}</div>
-            <div className="text-xs text-gray-400">Admin Panel</div>
-          </div>
-          <button
-            onClick={close}
-            className="flex items-center justify-center w-9 h-9 rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors flex-shrink-0"
-            aria-label="Tutup menu"
-          >
-            <X size={16} />
-          </button>
-        </div>
-      )}
+      {/* Logo — expanded (dan drawer mobile) */}
+      <div className={cn("items-center justify-between py-8 px-5", collapsed ? "flex lg:hidden" : "flex")}>
+        <Link href="/" onClick={close} className="flex justify-start">
+          <Image
+            src="/images/izinpro-logo.png"
+            alt={COMPANY_INFO.name}
+            width={150}
+            height={40}
+            priority
+            className="h-8 w-auto"
+          />
+        </Link>
+        {/* Close button — mobile */}
+        <button
+          onClick={close}
+          className="lg:hidden flex items-center justify-center w-9 h-9 rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors flex-shrink-0"
+          aria-label="Tutup menu"
+        >
+          <X size={16} />
+        </button>
+      </div>
 
       {/* Navigasi */}
       <nav className="flex-1 p-2 space-y-4">
@@ -148,15 +118,14 @@ export default function AdminSidebar() {
                     title={collapsed ? label : undefined}
                     className={cn(
                       "flex items-center rounded-xl text-sm font-medium transition-all",
-                      collapsed ? "justify-center w-10 h-10 mx-auto" : "gap-2.5 px-3 py-2",
+                      collapsed ? "justify-center w-10 h-10 mx-auto" : "gap-3 px-3 py-2.5",
                       isActive(href)
-                        ? "bg-primary text-white shadow-sm shadow-primary/20"
+                        ? "bg-primary/10 text-primary"
                         : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
                     )}
                   >
-                    <Icon size={16} className="flex-shrink-0" />
+                    <Icon size={17} className="flex-shrink-0" />
                     {!collapsed && <span className="flex-1">{label}</span>}
-                    {!collapsed && isActive(href) && <ChevronRight size={13} />}
                   </Link>
                 </li>
               ))}
@@ -165,27 +134,35 @@ export default function AdminSidebar() {
         ))}
       </nav>
 
-      {/* Footer */}
-      <div className="p-2 border-t border-gray-100">
-        <Link
-          href="/"
-          target="_blank"
-          onClick={close}
-          title={collapsed ? "Lihat Website" : undefined}
-          className={cn(
-            "flex items-center rounded-xl text-sm text-gray-500 hover:text-primary hover:bg-gray-50 transition-colors",
-            collapsed ? "justify-center w-10 h-10 mx-auto" : "gap-2 px-3 py-2",
-          )}
-        >
-          {collapsed ? (
+      {/* Footer — kartu info gaya TailAdmin saat expanded */}
+      <div className={cn("border-t border-admin-line", collapsed ? "p-2" : "p-4")}>
+        {collapsed ? (
+          <Link
+            href="/"
+            target="_blank"
+            onClick={close}
+            title="Lihat Website"
+            className="flex items-center justify-center w-10 h-10 mx-auto rounded-xl text-gray-500 hover:text-primary hover:bg-gray-50 transition-colors"
+          >
             <ChevronRight size={15} />
-          ) : (
-            <>
-              <span>Lihat Website</span>
-              <ChevronRight size={13} className="ml-auto" />
-            </>
-          )}
-        </Link>
+          </Link>
+        ) : (
+          <div className="rounded-2xl bg-gray-50 p-4 text-center">
+            <div className="text-sm font-bold text-gray-900">IzinPro CMS</div>
+            <p className="mt-1 text-xs text-gray-400 leading-relaxed">
+              Kelola konten & pantau performa website dari satu tempat.
+            </p>
+            <Link
+              href="/"
+              target="_blank"
+              onClick={close}
+              className="mt-3 flex items-center justify-center gap-1 w-full rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white hover:bg-primary/90 transition-colors"
+            >
+              Lihat Website
+              <ChevronRight size={12} />
+            </Link>
+          </div>
+        )}
       </div>
     </aside>
   );

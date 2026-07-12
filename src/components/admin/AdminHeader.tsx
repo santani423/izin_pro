@@ -13,7 +13,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
 import { useAdminSidebar } from "@/contexts/AdminSidebarContext";
 
 interface AdminHeaderProps {
@@ -21,10 +20,10 @@ interface AdminHeaderProps {
   subtitle?: string;
 }
 
-/* ─── Header Admin Panel ─── */
+/* ─── Header Admin Panel — dirender otomatis dari layout admin ─── */
 export default function AdminHeader({ title, subtitle }: AdminHeaderProps) {
   const [notifOpen, setNotifOpen] = useState(false);
-  const { toggle } = useAdminSidebar();
+  const { toggle, toggleCollapse } = useAdminSidebar();
   const router = useRouter();
 
   const notifications = [
@@ -41,19 +40,28 @@ export default function AdminHeader({ title, subtitle }: AdminHeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between h-[72px] px-4 sm:px-6 lg:px-8 bg-white/95 backdrop-blur-sm border-b border-gray-100">
+    <header className="sticky top-0 z-30 flex items-center justify-between h-20 px-4 sm:px-6 lg:px-8 bg-white/95 backdrop-blur-sm border-b border-admin-line">
 
-      {/* Kiri: hamburger (mobile) + judul */}
-      <div className="flex items-center gap-3 min-w-0">
+      {/* Kiri: hamburger (collapse sidebar) + judul */}
+      <div className="flex items-center gap-3.5 min-w-0">
+        {/* Mobile: buka/tutup drawer sidebar */}
         <button
           onClick={toggle}
-          className="lg:hidden flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors flex-shrink-0"
+          className="lg:hidden flex items-center justify-center w-11 h-11 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors flex-shrink-0"
           aria-label="Buka menu"
         >
-          <Menu size={20} />
+          <Menu size={18} />
+        </button>
+        {/* Desktop: collapse/expand sidebar */}
+        <button
+          onClick={toggleCollapse}
+          className="hidden lg:flex items-center justify-center w-11 h-11 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors flex-shrink-0"
+          aria-label="Ciutkan sidebar"
+        >
+          <Menu size={18} />
         </button>
         <div className="min-w-0">
-          <h1 className="text-base font-bold text-gray-900 leading-none truncate">{title}</h1>
+          <h1 className="text-base font-bold text-gray-900 truncate">{title}</h1>
           {subtitle && <p className="text-xs text-gray-400 mt-1 truncate">{subtitle}</p>}
         </div>
       </div>
@@ -62,29 +70,28 @@ export default function AdminHeader({ title, subtitle }: AdminHeaderProps) {
       <div className="flex items-center gap-2 sm:gap-3">
 
         {/* Search */}
-        <button className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-400 hover:border-primary/30 hover:text-primary transition-colors min-w-[160px]">
-          <Search size={14} />
-          <span>Cari...</span>
-          <span className="ml-auto text-xs bg-gray-100 px-1.5 py-0.5 rounded">⌘K</span>
+        <button className="hidden sm:flex items-center gap-2.5 px-4 py-2.5 rounded-full border border-gray-200 bg-gray-50/60 text-sm text-gray-400 hover:border-primary/30 hover:text-primary transition-colors min-w-[220px]">
+          <Search size={15} />
+          <span>Cari atau ketik perintah...</span>
+          <span className="ml-auto text-xs border border-gray-200 bg-white px-1.5 py-0.5 rounded-md">⌘K</span>
         </button>
 
         {/* Notifikasi */}
         <div className="relative">
           <button
             onClick={() => setNotifOpen(!notifOpen)}
-            className="relative flex items-center justify-center w-10 h-10 rounded-xl border border-gray-200 text-gray-500 hover:border-primary/30 hover:text-primary transition-colors"
+            className="relative flex items-center justify-center w-11 h-11 rounded-full border border-gray-200 text-gray-500 hover:border-primary/30 hover:text-primary transition-colors"
+            aria-label="Notifikasi"
           >
             <Bell size={18} />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center">
-                {unreadCount}
-              </span>
+              <span className="absolute top-0.5 right-1 w-2.5 h-2.5 rounded-full bg-orange-400 ring-2 ring-white" />
             )}
           </button>
 
           {notifOpen && (
-            <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+            <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-xl border border-admin-line overflow-hidden z-50">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-admin-line">
                 <span className="font-semibold text-sm">Notifikasi</span>
                 <button onClick={() => setNotifOpen(false)}>
                   <X size={14} className="text-gray-400" />
@@ -107,7 +114,7 @@ export default function AdminHeader({ title, subtitle }: AdminHeaderProps) {
 
         {/* Profil user */}
         <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-2 pl-1 pr-2 sm:pr-3 py-1.5 rounded-xl hover:bg-gray-50 transition-colors outline-none">
+          <DropdownMenuTrigger className="flex items-center gap-2 pl-1 pr-2 sm:pr-3 py-1.5 rounded-full hover:bg-gray-50 transition-colors outline-none">
             <Avatar className="w-9 h-9">
               <AvatarFallback className="bg-primary text-white text-xs font-bold">
                 SA

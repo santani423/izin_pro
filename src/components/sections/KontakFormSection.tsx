@@ -1,13 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { CheckCircle2, ChevronRight, Lock, Send } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { cn } from "@/lib/utils";
 import { SERVICES } from "@/lib/constants";
@@ -27,6 +34,12 @@ const kontakSchema = z.object({
 
 type KontakFormValues = z.infer<typeof kontakSchema>;
 
+/* Pilihan layanan untuk dropdown — label dipetakan dari value */
+const LAYANAN_ITEMS = Object.fromEntries([
+  ...SERVICES.map((service) => [service.title, service.title]),
+  ["Lainnya", "Lainnya"],
+]);
+
 const inputClass =
   "h-10 w-full rounded-lg border border-border/60 bg-background px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20";
 
@@ -35,6 +48,7 @@ export default function KontakFormSection() {
   const [submitted, setSubmitted] = useState(false);
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
@@ -162,22 +176,36 @@ export default function KontakFormSection() {
                     Layanan yang Dibutuhkan{" "}
                     <span className="text-destructive">*</span>
                   </label>
-                  <select
-                    id="layanan"
-                    className={cn(inputClass, "mt-1.5")}
-                    aria-invalid={!!errors.layanan}
-                    {...register("layanan")}
-                  >
-                    <option value="" disabled>
-                      Pilih layanan
-                    </option>
-                    {SERVICES.map((service) => (
-                      <option key={service.slug} value={service.title}>
-                        {service.title}
-                      </option>
-                    ))}
-                    <option value="Lainnya">Lainnya</option>
-                  </select>
+                  <Controller
+                    name="layanan"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        items={LAYANAN_ITEMS}
+                        value={field.value || null}
+                        onValueChange={(value) => field.onChange(value ?? "")}
+                      >
+                        <SelectTrigger
+                          id="layanan"
+                          aria-invalid={!!errors.layanan}
+                          className="mt-1.5 h-10 w-full rounded-lg border-border/60 bg-background pl-3 font-medium hover:border-primary/40 focus-visible:border-primary focus-visible:ring-primary/20"
+                        >
+                          <SelectValue placeholder="Pilih layanan" />
+                        </SelectTrigger>
+                        <SelectContent
+                          alignItemWithTrigger={false}
+                          align="start"
+                        >
+                          {SERVICES.map((service) => (
+                            <SelectItem key={service.slug} value={service.title}>
+                              {service.title}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="Lainnya">Lainnya</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                   {errors.layanan && (
                     <p className="mt-1 text-xs text-destructive">
                       {errors.layanan.message}

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { TrendingUp, TrendingDown, Eye, Users, Clock, MousePointerClick } from "lucide-react";
-import AdminHeader from "@/components/admin/AdminHeader";
 import { Progress } from "@/components/ui/progress";
 
 /* ─── Data mock analitik ─── */
@@ -49,7 +48,6 @@ export default function AdminAnalitikPage() {
 
   return (
     <>
-      <AdminHeader title="Analitik" subtitle="Data kunjungan dan performa website" />
 
       <div className="p-6 lg:p-8 space-y-6">
 
@@ -73,7 +71,7 @@ export default function AdminAnalitikPage() {
           {stats.map((s) => {
             const Icon = s.icon;
             return (
-              <div key={s.label} className="bg-white rounded-2xl border border-gray-100 p-5">
+              <div key={s.label} className="bg-white rounded-2xl border border-admin-line p-5">
                 <div className="flex items-start justify-between mb-4">
                   <div className="p-2 rounded-xl" style={{ backgroundColor: s.bg }}>
                     <Icon size={18} style={{ color: s.color }} />
@@ -97,7 +95,7 @@ export default function AdminAnalitikPage() {
         <div className="grid lg:grid-cols-3 gap-6">
 
           {/* ─── Grafik Tren Kunjungan ─── */}
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-5">
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-admin-line p-5">
             <h2 className="font-bold text-sm text-gray-900 mb-5">Tren Page Views — 7 Hari Terakhir</h2>
             <div className="flex items-end gap-3 h-40">
               {trendData.map((d) => (
@@ -119,7 +117,7 @@ export default function AdminAnalitikPage() {
           </div>
 
           {/* ─── Sumber Traffic ─── */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+          <div className="bg-white rounded-2xl border border-admin-line p-5">
             <h2 className="font-bold text-sm text-gray-900 mb-5">Sumber Traffic</h2>
             <div className="space-y-3.5">
               {trafficSources.map((s) => (
@@ -136,13 +134,13 @@ export default function AdminAnalitikPage() {
         </div>
 
         {/* ─── Halaman Terpopuler ─── */}
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-admin-line overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-50">
             <h2 className="font-bold text-sm text-gray-900">Halaman Terpopuler</h2>
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50/50">
+              <tr className="border-b border-admin-line bg-gray-50/50">
                 <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Halaman</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase hidden md:table-cell">Views</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase w-1/3">Traffic</th>

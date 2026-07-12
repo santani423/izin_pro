@@ -8,6 +8,10 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  /* Admin panel: border kartu & background container */
+  --color-admin-line: #e4e7ec;
+  --color-admin-bg: #f9fafb;
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
@@ -289,4 +293,30 @@
   html {
     scrollbar-color: var(--primary) var(--muted);
   }
+}
+
+/* ─── Scrollbar tipis netral — untuk container scroll di admin panel ─── */
+.scrollbar-slim {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.scrollbar-slim::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.scrollbar-slim::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-slim::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border: none;
+  border-radius: 999px;
+}
+
+.scrollbar-slim::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+  border: none;
 }
