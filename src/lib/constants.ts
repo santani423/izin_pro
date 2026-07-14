@@ -50,7 +50,7 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   { label: "Tentang Kami", href: "/tentang-kami" },
-  { label: "Blog", href: "/blog" },
+  { label: "Panduan & Artikel", href: "/blog" },
   { label: "Kontak", href: "/kontak" },
 ];
 
@@ -541,6 +541,28 @@ export const BLOG_POSTS: BlogPost[] = [
     views: "921",
     gradient: "from-[#064e3b] to-[#10b981]",
   },
+  {
+    id: "7",
+    slug: "panduan-lengkap-mengurus-nib-melalui-oss",
+    title: "Panduan Lengkap Mengurus NIB Melalui OSS",
+    excerpt:
+      "Dapatkan NIB (Nomor Induk Berusaha) dengan mudah, cepat, dan legal melalui sistem OSS. Ikuti panduan lengkap berikut agar proses pengajuan NIB Anda lancar tanpa kendala.",
+    category: "Panduan Lengkap",
+    date: "24 Mei 2024",
+    views: "1.048",
+    gradient: "from-[#1b3309] to-[#5ba12b]",
+  },
+  {
+    id: "8",
+    slug: "legalitas-lengkap-bisnis-makin-terpercaya",
+    title: "Legalitas Lengkap, Bisnis Makin Terpercaya",
+    excerpt:
+      "Miliki semua legalitas usaha yang dibutuhkan untuk menjalankan bisnis secara aman, profesional, dan dipercaya oleh klien maupun mitra.",
+    category: "Panduan Lengkap",
+    date: "10 Mei 2024",
+    views: "864",
+    gradient: "from-[#14532d] to-[#22c55e]",
+  },
 ];
 
 /* ─── Statistik ─── */
@@ -712,7 +734,7 @@ export const FOOTER_LINKS = {
   ],
   informasi: [
     { label: "Tentang Kami", href: "/tentang-kami" },
-    { label: "Blog & Artikel", href: "/blog" },
+    { label: "Panduan & Artikel", href: "/blog" },
     { label: "Syarat & Ketentuan", href: "/syarat-ketentuan" },
     { label: "Kebijakan Privasi", href: "/kebijakan-privasi" },
     { label: "Hubungi Kami", href: "/kontak" },

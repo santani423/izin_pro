@@ -126,12 +126,12 @@ export default function DashboardPage() {
             </div>
 
             <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[560px] text-sm">
                 <thead>
                   <tr className="border-y border-admin-line">
                     <th className="text-left py-3 pr-4 text-xs font-medium text-gray-400">Nama</th>
                     <th className="text-left py-3 pr-4 text-xs font-medium text-gray-400">Layanan</th>
-                    <th className="text-left py-3 pr-4 text-xs font-medium text-gray-400 hidden sm:table-cell">Waktu</th>
+                    <th className="text-left py-3 pr-4 text-xs font-medium text-gray-400">Waktu</th>
                     <th className="text-left py-3 text-xs font-medium text-gray-400">Status</th>
                   </tr>
                 </thead>
@@ -147,7 +147,7 @@ export default function DashboardPage() {
                         </div>
                       </td>
                       <td className="py-3.5 pr-4 text-gray-500 whitespace-nowrap">{item.subject}</td>
-                      <td className="py-3.5 pr-4 text-gray-400 whitespace-nowrap hidden sm:table-cell">{item.time}</td>
+                      <td className="py-3.5 pr-4 text-gray-400 whitespace-nowrap">{item.time}</td>
                       <td className="py-3.5">
                         <span className={`text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap ${statusColor[item.status]}`}>
                           {item.status}

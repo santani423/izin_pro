@@ -37,7 +37,7 @@ export const NAV_LINKS: NavLink[] = [
     ],
   },
   { label: "Tentang Kami", href: "/tentang-kami" },
-  { label: "Artikel", href: "/blog" },
+  { label: "Panduan & Artikel", href: "/blog" },
   { label: "Testimoni", href: "/testimoni" },
   { label: "Promo", href: "/promo" },
   { label: "Kontak", href: "/kontak" },
@@ -411,7 +411,7 @@ export const FOOTER_COLUMNS: FooterColumn[] = [
     title: "Informasi",
     links: [
       { label: "Tentang Kami", href: "/tentang-kami" },
-      { label: "Artikel", href: "/blog" },
+      { label: "Panduan & Artikel", href: "/blog" },
       { label: "Testimoni", href: "/testimoni" },
       { label: "Promo", href: "/promo" },
       { label: "Tracking Perizinan", href: "/tracking" },

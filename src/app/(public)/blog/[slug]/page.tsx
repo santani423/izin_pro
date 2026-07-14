@@ -8,6 +8,11 @@ import BlogDetailBodySection from "@/components/sections/BlogDetailBodySection";
 import { BLOG_POSTS } from "@/lib/constants";
 import { getArticleDetail } from "@/lib/blog-detail";
 import { getReadTime } from "@/lib/blog";
+import { PANDUAN_NIB_SLUG } from "@/lib/panduan-nib";
+import { PANDUAN_LEGALITAS_SLUG } from "@/lib/panduan-legalitas";
+
+/* Slug dengan route statis sendiri — dikeluarkan dari route dinamis */
+const STATIC_ARTICLE_SLUGS = [PANDUAN_NIB_SLUG, PANDUAN_LEGALITAS_SLUG];
 
 /* ─── Lazy load section below the fold ─── */
 const CtaSection = dynamic(() => import("@/components/sections/CtaSection"));
@@ -17,7 +22,9 @@ interface Props {
 }
 
 export async function generateStaticParams() {
-  return BLOG_POSTS.map((p) => ({ slug: p.slug }));
+  return BLOG_POSTS.filter((p) => !STATIC_ARTICLE_SLUGS.includes(p.slug)).map(
+    (p) => ({ slug: p.slug }),
+  );
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -56,6 +63,7 @@ export default async function BlogDetailPage({ params }: Props) {
         title={post.title}
         description={post.excerpt}
         imageLabel={`Ilustrasi artikel ${post.title}`}
+        mobileImageFirst
       >
         {/* Chip highlight */}
         <ul className="mt-5 flex flex-wrap gap-2">

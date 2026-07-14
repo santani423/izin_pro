@@ -5,6 +5,100 @@ CHANGELOG — IzinPro CMS Project
 Format: [YYYY-MM-DD] Versi — Deskripsi
 ====================================================
 
+[2026-07-15] v1.5.1 — Responsive Artikel Generik + Fix Tabel Inquiry Dashboard
+----------------------------------------------------
+STATUS   : COMPLETED & DEPLOYED — live di https://izinpro-cms.vercel.app
+PROJECT  : izinpro-cms/
+SUMBER   : Feedback user langsung (chat), bukan dari file design klien
+
+PageHero (src/components/shared/PageHero.tsx):
+  + Prop baru mobileImageFirst (default false — halaman lain yg pakai
+    PageHero: promo, tentang-kami, testimoni, tracking, kontak, blog
+    listing, TIDAK berubah). Saat aktif: breadcrumb jadi full-width di
+    atas grid, foto (placeholder gradient) ikut tampil di mobile (semula
+    hidden lg:block), urutan mobile jadi breadcrumb → foto → kicker →
+    judul → deskripsi — menyamakan pola /blog/[slug] dgn halaman statis
+    /blog/panduan-lengkap-mengurus-nib-melalui-oss
+
+blog/[slug]/page.tsx:
+  ~ Aktifkan mobileImageFirst di PageHero supaya 6 artikel generik (yg
+    belum punya desain khusus) ikut pola responsive di atas
+
+admin/dashboard/page.tsx — kartu "Inquiry Terbaru":
+  ! Bug: table w-full di dalam overflow-x-auto malah dipepetkan (squish)
+    di mobile, bukan discroll, krn tabel tak pernah melebihi lebar
+    wrapper; kolom "Waktu" disembunyikan (hidden sm:table-cell)
+  ~ Fix: tabel dikasih min-w-[560px] shg wrapper overflow-x-auto benar2
+    aktif scroll horizontal di layar sempit; kolom "Waktu" ditampilkan
+    kembali di semua ukuran layar
+
+====================================================
+
+[2026-07-14] v1.5.0 — 2 Halaman Panduan Baru + Menu "Panduan & Artikel"
+----------------------------------------------------
+STATUS   : COMPLETED & DEPLOYED — live di https://izinpro-cms.vercel.app
+PROJECT  : izinpro-cms/
+SUMBER   : Gambar design UI/UX + aset foto dari klien (Files Archive/aset/
+           04-1. PANDUAL MENGURUS NIB & 04-2. ARTIKEL LEGALITAS), di-convert
+           via Claude Code dgn format prompt standar v1.3.0
+
+HALAMAN BARU (route statis di bawah /blog/, desain khusus per halaman —
+artikel lain tetap pakai template detail lama):
+  + /blog/panduan-lengkap-mengurus-nib-melalui-oss — "Panduan Lengkap
+    Mengurus NIB Melalui OSS": hero (breadcrumb, kicker, chips benefit,
+    meta penulis + foto laptop OSS), Ringkasan Artikel + chip anchor,
+    5 bagian (Apa itu NIB + foto kartu, 6 kartu syarat, timeline 6 langkah,
+    kartu Biaya GRATIS & Waktu 1-3 Hari + ilustrasi dompet/jam, 6 FAQ),
+    sidebar sticky (Daftar Isi, kartu bantuan, Artikel Terkait = 4 artikel
+    existing dgn thumbnail foto), CTA banner
+    — src/lib/panduan-nib.ts + PanduanNibHeroSection/PanduanNibBodySection
+  + /blog/legalitas-lengkap-bisnis-makin-terpercaya — "Legalitas Lengkap,
+    Bisnis Makin Terpercaya" (gaya landing page): hero + CTA WhatsApp +
+    foto meeting (kartu stat 5.000+/99% sudah di dlm foto), kartu "Mengapa
+    Legalitas Penting" (ikon timbangan + 4 bullet), 8 kartu layanan +
+    tombol ke /layanan, timeline 6 proses, 5 kartu keunggulan, 6 FAQ,
+    sidebar (Daftar Isi, kartu bantuan, kartu Checklist Legalitas gratis)
+    — src/lib/panduan-legalitas.ts + PanduanLegalitas*Section
+  ~ Kedua slug masuk BLOG_POSTS (muncul di listing /blog; tanggal 24 & 10
+    Mei 2024 agar urutan terbaru→terlama tetap valid) dan difilter dari
+    generateStaticParams route dinamis (STATIC_ARTICLE_SLUGS di
+    blog/[slug]/page.tsx) — route statis menang atas [slug]
+  ! Tombol "Unduh Sekarang" checklist legalitas masih placeholder
+    (menunggu file PDF dari klien — ada TODO di PanduanLegalitasBodySection)
+
+MENU & LABEL:
+  ~ Label nav "Artikel" → "Panduan & Artikel" (landing.ts: navbar + footer;
+    NAV navbar asli ada di landing.ts, BUKAN constants.ts) + label serupa
+    di constants.ts ikut disamakan; route tetap /blog
+
+ASET (public/images/, di-resize & compress via System.Drawing PowerShell,
+total ~15 MB sumber → ~1,3 MB):
+  + panduan-nib-hero.jpg, panduan-nib-kartu.png, panduan-nib-dompet.png,
+    panduan-nib-jam.png, panduan-nib-penulis.jpg, artikel-nib-vs-siup.jpg,
+    artikel-izin-umkm.jpg, artikel-akun-oss.jpg, artikel-importir-pemula.jpg
+  + panduan-legalitas-hero.jpg, panduan-legalitas-checklist.jpg
+
+REVISI RESPONSIVE (feedback user, 2026-07-14):
+  ~ Kartu bantuan sidebar: foto konsultan sempat dibuat responsive 2 kolom,
+    akhirnya DIHAPUS (kartu = teks + tombol saja; aset konsultan tak dipakai)
+  ~ Foto hero kedua halaman kini tampil juga di mobile/tab — urutan:
+    breadcrumb → foto → judul (breadcrumb jadi grid item lg:col-span-2,
+    blok teks order-last lg:order-none)
+  ~ Daftar Isi dirender 2x (DaftarIsiCard): mobile/tab lg:hidden di bawah
+    Ringkasan Artikel (NIB) / kartu Mengapa Penting (Legalitas); desktop
+    hidden lg:block tetap di sidebar
+  ~ Tombol shadcn punya whitespace-nowrap — hati-hati di kolom sempit
+
+CATATAN TEKNIS:
+  ~ Ikon lucide dicek dulu ke lucide-react.d.ts sebelum dipakai:
+    FilePlus2 tidak ada → FilePlus; Handshake/Headset/Scale tersedia
+  ~ Verifikasi cukup via npm run dev + fetch localhost (build production
+    sekali saja sebelum commit); cek elemen HTML mulai dari <body> karena
+    nama gambar juga muncul di <link rel=preload> dalam <head>
+  ~ Build production bersih: 55 halaman statis, 1 h1 per halaman baru
+
+====================================================
+
 [2026-07-12] v1.4.0 — Admin Panel Redesign (TailAdmin) + CRUD Frontend-Only
 ----------------------------------------------------
 STATUS   : COMPLETED & DEPLOYED — live di https://izinpro-cms.vercel.app
