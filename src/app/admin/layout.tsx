@@ -39,7 +39,7 @@ function AdminPanelLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const meta = pageMeta(pathname);
   return (
-    <div className="flex min-h-screen bg-admin-bg">
+    <div className="fixed inset-0 flex overflow-hidden bg-admin-bg">
       {/* Mobile overlay */}
       {open && (
         <div
@@ -50,7 +50,10 @@ function AdminPanelLayout({ children }: { children: React.ReactNode }) {
       <AdminSidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <AdminHeader title={meta.title} subtitle={meta.subtitle} />
-        {children}
+        {/* Hanya area ini yang scroll — header & sidebar tetap fixed, jadi lebar header tidak pernah terpotong scrollbar */}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          {children}
+        </div>
       </div>
       <Toaster position="top-right" richColors />
     </div>

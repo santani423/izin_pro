@@ -28,7 +28,7 @@ export default function MetricCard({
 }: MetricCardProps) {
   const Trend = TREND_ICON[changeType];
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-brand-700 p-5 sm:p-6 text-white">
+    <div className="relative overflow-hidden rounded-2xl bg-brand-700 p-4 sm:p-6 text-white">
       {/* Lingkaran dekoratif pojok kanan atas */}
       <div className="absolute -top-20 -right-24 w-44 h-44 rounded-full bg-brand-800" aria-hidden="true" />
       <div className="absolute -top-2 -right-32 w-44 h-44 rounded-full bg-brand-800/50" aria-hidden="true" />
@@ -41,7 +41,7 @@ export default function MetricCard({
 
         {/* Nilai besar + lingkaran tren */}
         <div className="mt-5 flex items-center gap-2.5">
-          <div className="text-2xl sm:text-[28px] font-bold leading-none">{value}</div>
+          <div className="text-xl sm:text-2xl lg:text-[28px] font-bold leading-none">{value}</div>
           <span
             className={`flex items-center justify-center w-7 h-7 rounded-full ${TREND_COLOR[changeType]}`}
             title={`${change} dibanding periode lalu`}

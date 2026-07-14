@@ -5,6 +5,36 @@ CHANGELOG — IzinPro CMS Project
 Format: [YYYY-MM-DD] Versi — Deskripsi
 ====================================================
 
+[2026-07-15] v1.5.2 — Fix Header Admin Tidak Full Width + Double Scrollbar
+----------------------------------------------------
+STATUS   : COMPLETED & DEPLOYED — live di https://izinpro-cms.vercel.app
+PROJECT  : izinpro-cms/
+SUMBER   : Bug report user langsung (chat)
+
+admin/layout.tsx:
+  ! Bug: header admin (search, notif, profil) berhenti beberapa px
+    sebelum pojok kanan khusus di halaman yang kontennya lebih tinggi
+    dari layar (Dashboard, Analitik) — tidak terjadi di halaman pendek
+    (Inquiry, Blog, dll). Penyebab: seluruh dokumen (body) yang scroll,
+    jadi saat scrollbar vertikal 10px muncul, ia memakan lebar kolom
+    header, sedangkan halaman pendek tanpa scrollbar tetap penuh.
+  ~ Fix percobaan 1 (h-screen overflow-hidden + area konten dibungkus
+    div scroll sendiri) sempat memunculkan bug baru: 2 scrollbar
+    (dokumen ikut scroll krn CSS quirk overflow-x-hidden di body yang
+    otomatis membuat overflow-y ter-computed jadi auto) + area scroll
+    kosong berlebih di ujung
+  ~ Fix final: shell admin panel dibuat position:fixed (inset-0) supaya
+    keluar total dari alur dokumen — hanya 1 area scroll (konten di
+    bawah header), header & sidebar selalu fixed penuh terhadap layar
+    di semua halaman
+
+admin/dashboard/page.tsx, MetricCard.tsx, globals.css:
+  ~ Rapikan responsive kartu metrik & grid dashboard di mobile (stack
+    1 kolom di layar sempit, padding & ukuran angka kartu menyesuaikan)
+  ~ Warna background admin-bg disesuaikan (#eff2f7)
+
+====================================================
+
 [2026-07-15] v1.5.1 — Responsive Artikel Generik + Fix Tabel Inquiry Dashboard
 ----------------------------------------------------
 STATUS   : COMPLETED & DEPLOYED — live di https://izinpro-cms.vercel.app

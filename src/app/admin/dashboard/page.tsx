@@ -40,7 +40,7 @@ export default function DashboardPage() {
       <div className="p-4 sm:p-6 space-y-5">
 
         {/* ─── Baris 1: 4 kartu metrik satu baris ─── */}
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5 xl:grid-cols-4">
           <MetricCard
             label="Pengunjung Bulan Ini"
             value="12.483"
@@ -72,7 +72,7 @@ export default function DashboardPage() {
         </div>
 
         {/* ─── Baris 2: bar chart | gauge target ─── */}
-        <div className="grid gap-5 lg:grid-cols-12">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
           <div className="lg:col-span-7">
             <MonthlyVisitsChart />
           </div>
@@ -85,7 +85,7 @@ export default function DashboardPage() {
         <StatisticsChart />
 
         {/* ─── Baris 3: sumber traffic | inquiry terbaru ─── */}
-        <div className="grid gap-5 lg:grid-cols-12">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
 
           <div className="lg:col-span-5 bg-white rounded-2xl border border-admin-line p-5 sm:p-6">
             <h2 className="font-bold text-base text-gray-900">Sumber Traffic</h2>
