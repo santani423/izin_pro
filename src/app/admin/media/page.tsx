@@ -119,7 +119,7 @@ export default function AdminMediaPage() {
         </div>
 
         {/* ─── Area upload drag & drop ─── */}
-        <div className="border-2 border-dashed border-gray-200 rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:border-primary/40 hover:bg-primary/2 transition-colors cursor-pointer">
+        <div className="border-2 border-dashed border-gray-300 rounded-2xl bg-white p-8 flex flex-col items-center justify-center text-center hover:border-primary/40 hover:bg-primary/5 transition-colors cursor-pointer">
           <Upload size={28} className="text-gray-300 mb-3" />
           <p className="text-sm font-medium text-gray-500">Drag & drop file di sini</p>
           <p className="text-xs text-gray-400 mt-1">atau klik untuk pilih file (JPG, PNG, SVG, WebP maks. 5MB)</p>

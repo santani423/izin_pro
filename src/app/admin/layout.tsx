@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
@@ -38,8 +38,23 @@ function AdminPanelLayout({ children }: { children: React.ReactNode }) {
   const { open, close } = useAdminSidebar();
   const pathname = usePathname();
   const meta = pageMeta(pathname);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  /* Next.js fokus elemen baru tiap ganti route buat aksesibilitas —
+     itu memicu browser "scroll into view" ke SEMUA ancestor yg punya
+     overflow, termasuk shell terluar ini (overflow-hidden tapi tetap
+     bisa ke-scroll via focus meski gak ada scrollbar-nya sendiri),
+     bukan cuma div konten. Makanya dua-duanya harus direset.
+     useLayoutEffect supaya reset kejadian SEBELUM browser sempat
+     paint frame dgn scrollTop lama */
+  useLayoutEffect(() => {
+    rootRef.current?.scrollTo(0, 0);
+    scrollRef.current?.scrollTo(0, 0);
+  }, [pathname]);
+
   return (
-    <div className="fixed inset-0 flex overflow-hidden bg-admin-bg">
+    <div ref={rootRef} className="fixed inset-0 flex overflow-hidden bg-admin-bg [overflow-anchor:none]">
       {/* Mobile overlay */}
       {open && (
         <div
@@ -51,7 +66,7 @@ function AdminPanelLayout({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex flex-col min-w-0">
         <AdminHeader title={meta.title} subtitle={meta.subtitle} />
         {/* Hanya area ini yang scroll — header & sidebar tetap fixed, jadi lebar header tidak pernah terpotong scrollbar */}
-        <div className="flex-1 min-h-0 overflow-y-auto">
+        <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto [overflow-anchor:none]">
           {children}
         </div>
       </div>

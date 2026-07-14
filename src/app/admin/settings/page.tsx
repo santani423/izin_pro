@@ -25,7 +25,7 @@ export default function AdminSettingsPage() {
 
       <div className="p-6 lg:p-8 space-y-6">
         <Tabs defaultValue="umum">
-          <TabsList className="rounded-xl mb-6">
+          <TabsList className="rounded-xl mb-6 bg-gray-200">
             <TabsTrigger value="umum" className="rounded-lg">Umum</TabsTrigger>
             <TabsTrigger value="kontak" className="rounded-lg">Kontak</TabsTrigger>
             <TabsTrigger value="sosmed" className="rounded-lg">Sosial Media</TabsTrigger>

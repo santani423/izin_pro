@@ -1,17 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Mail, Phone } from "lucide-react";
+import { Plus, Pencil, Trash2, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import ConfirmDeleteDialog from "@/components/admin/ConfirmDeleteDialog";
 import { TEAM_MEMBERS } from "@/lib/constants";
 
@@ -22,6 +29,7 @@ const teamData = TEAM_MEMBERS.map((m, i) => ({
   department: ["Manajemen", "Legal", "Konsultasi", "Operasional", "Business Dev", "Customer Relations"][i] ?? "Lainnya",
   email: `${m.initials.toLowerCase()}@izinpro.co.id`,
   phone: `+62 812-000-000${i + 1}`,
+  location: ["Jakarta", "Bandung", "Surabaya", "Yogyakarta", "Semarang", "Medan"][i] ?? "Jakarta",
   active: true,
 }));
 
@@ -47,6 +55,7 @@ const emptyForm = (): MemberRow => ({
   department: "Lainnya",
   email: "",
   phone: "",
+  location: "",
   active: true,
 });
 
@@ -99,69 +108,80 @@ export default function AdminTimPage() {
           {members.map((member) => (
             <div
               key={member.id}
-              className={`bg-white rounded-2xl border border-admin-line p-5 transition-all ${
+              className={`relative bg-white rounded-2xl border border-admin-line p-5 transition-all ${
                 !member.active ? "opacity-50" : ""
               }`}
             >
-              {/* Avatar & nama */}
-              <div className="flex items-start gap-4 mb-4">
-                <div
-                  className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${member.gradient} flex items-center justify-center text-white font-bold text-lg flex-shrink-0`}
+              {/* Menu aksi */}
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  className="absolute top-4 right-4 p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors outline-none"
+                  aria-label="Menu anggota"
                 >
-                  {member.initials}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-gray-900 text-sm truncate">{member.name}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{member.role}</div>
-                  <Badge
-                    variant="secondary"
-                    className="mt-1.5 text-[10px] px-2 py-0.5 bg-gray-100 text-gray-600 font-medium"
-                  >
-                    {member.department}
-                  </Badge>
-                </div>
-              </div>
-
-              {/* Kontak */}
-              <div className="space-y-1.5 mb-4">
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <Mail size={12} className="text-gray-400 flex-shrink-0" />
-                  <span className="truncate">{member.email}</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <Phone size={12} className="text-gray-400 flex-shrink-0" />
-                  <span>{member.phone}</span>
-                </div>
-              </div>
-
-              {/* Aksi */}
-              <div className="flex items-center justify-between pt-3 border-t border-gray-50">
-                <button
-                  onClick={() => toggleActive(member.id)}
-                  className={`text-xs font-medium px-3 py-1 rounded-full transition-colors ${
-                    member.active
-                      ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                      : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                  }`}
-                >
-                  {member.active ? "Aktif" : "Nonaktif"}
-                </button>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setForm(member)}
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/5 transition-colors"
-                    aria-label="Edit anggota"
-                  >
-                    <Pencil size={13} />
-                  </button>
-                  <button
+                  <MoreHorizontal size={16} />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40 rounded-xl">
+                  <DropdownMenuItem className="text-sm cursor-pointer gap-2" onClick={() => setForm(member)}>
+                    <Pencil size={13} className="text-gray-400" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-sm text-red-500 cursor-pointer gap-2 focus:text-red-500 focus:bg-red-50"
                     onClick={() => setToDelete(member)}
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                    aria-label="Hapus anggota"
                   >
                     <Trash2 size={13} />
-                  </button>
+                    Hapus
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Avatar */}
+              <div
+                className={`w-16 h-16 rounded-full bg-gradient-to-br ${member.gradient} flex items-center justify-center text-white font-bold text-xl flex-shrink-0`}
+              >
+                {member.initials}
+              </div>
+
+              {/* Nama & jabatan */}
+              <div className="mt-4">
+                <div className="font-bold text-gray-900 text-lg truncate">{member.name}</div>
+                <div className="text-sm text-gray-500 mt-0.5">{member.role}</div>
+                <Badge
+                  variant="secondary"
+                  className="mt-2 text-[10px] px-2 py-0.5 bg-gray-100 text-gray-600 font-medium w-fit"
+                >
+                  {member.department}
+                </Badge>
+              </div>
+
+              {/* Email */}
+              <div className="mt-4 pt-4 border-t border-gray-50">
+                <div className="text-xs text-gray-400">Email</div>
+                <div className="text-sm font-semibold text-gray-900 truncate mt-0.5">{member.email}</div>
+              </div>
+
+              {/* Phone & Location */}
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <div>
+                  <div className="text-xs text-gray-400">Phone</div>
+                  <div className="text-sm font-semibold text-gray-900 mt-0.5">{member.phone}</div>
                 </div>
+                <div>
+                  <div className="text-xs text-gray-400">Location</div>
+                  <div className="text-sm font-semibold text-gray-900 mt-0.5">{member.location}</div>
+                </div>
+              </div>
+
+              {/* Status aktif */}
+              <div className="flex items-center gap-2 mt-4 pt-3 border-t border-admin-line">
+                <Switch
+                  checked={member.active}
+                  onCheckedChange={() => toggleActive(member.id)}
+                  className="data-[state=checked]:bg-primary"
+                />
+                <span className="text-xs font-medium text-gray-600">
+                  {member.active ? "Aktif" : "Nonaktif"}
+                </span>
               </div>
             </div>
           ))}
@@ -230,6 +250,16 @@ export default function AdminTimPage() {
                         onChange={(e) => setForm({ ...form, phone: e.target.value })}
                       />
                     </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="t-location" className="text-sm font-semibold text-gray-700">Lokasi</Label>
+                    <Input
+                      id="t-location"
+                      className="mt-1.5 rounded-lg"
+                      placeholder="mis. Jakarta"
+                      value={form.location}
+                      onChange={(e) => setForm({ ...form, location: e.target.value })}
+                    />
                   </div>
                 </div>
                 <div className="flex gap-2 pt-1">

@@ -79,12 +79,12 @@ export default function AdminInquiryPage() {
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <Input
             placeholder="Cari nama atau layanan..."
-            className="pl-9 rounded-xl"
+            className="pl-9 rounded-xl h-10"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-xl w-fit">
+        <div className="flex items-center gap-1 p-1 bg-gray-200 rounded-xl w-fit">
           {(["Semua", ...STATUS_ORDER] as const).map((s) => (
             <button
               key={s}

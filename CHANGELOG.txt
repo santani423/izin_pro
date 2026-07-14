@@ -5,6 +5,58 @@ CHANGELOG — IzinPro CMS Project
 Format: [YYYY-MM-DD] Versi — Deskripsi
 ====================================================
 
+[2026-07-15] v1.5.3 — Fix Scroll Reset Antar-Halaman + Kontras Warna Admin
+----------------------------------------------------
+STATUS   : COMPLETED & DEPLOYED — live di https://izinpro-cms.vercel.app
+PROJECT  : izinpro-cms/
+SUMBER   : Bug report user langsung (chat)
+
+admin/layout.tsx:
+  ! Bug: pindah menu (mis. Dashboard → Analitik, scroll ke bawah, balik
+    ke Dashboard) bikin bagian atas halaman ketutupan / gak bisa
+    discroll ke atas. Penyebab: Next.js App Router auto-focus elemen
+    baru tiap ganti route (aksesibilitas) memicu browser scroll-into-view
+    ke SEMUA ancestor yang overflow-nya bukan visible — termasuk shell
+    admin terluar (overflow-hidden) yang seharusnya gak pernah scroll,
+    bukan cuma div konten
+  ~ Fix: reset scrollTop kedua-duanya (shell terluar + div konten) via
+    useLayoutEffect tiap pathname berubah, plus [overflow-anchor:none]
+    supaya browser gak "melawan" reset ini
+
+Kontras warna (elemen nge-blend sama admin-bg #eff2f7):
+  ~ ui/input.tsx: bg-transparent → bg-background (semua field cari di
+    Media/Blog/Inquiry/Settings dll ikut kena karena base component)
+  ~ AdminHeader.tsx: hapus badge "⌘K" di tombol cari header (bukan
+    input beneran, badge shortcut-nya menyesatkan)
+  ~ analitik & inquiry: pill filter bg-gray-100 → bg-gray-200
+  ~ settings: TabsList bg-muted → bg-gray-200
+  ~ media: dropzone drag & drop border-gray-200 → border-gray-300 +
+    bg-white (sebelumnya nyaris invisible di atas admin-bg)
+
+admin/analitik/page.tsx:
+  ! Bug: bar chart "Tren Page Views — 7 Hari Terakhir" render kosong
+    total (cuma angka & label hari). Penyebab: height:% pada bar CSS
+    gak bisa dihitung krn parent flex pakai items-end (bukan stretch),
+    jadi containing block gak definite height
+  ~ Fix: bungkus tiap bar dgn div ber-tinggi definitif (h-28) supaya
+    height:% resolve dengan benar
+
+admin/inquiry/page.tsx:
+  ! Bug: ikon search gak center vertikal — input h-8 tapi wrapper-nya
+    ke-stretch 40px krn sejajar pill filter status yang lebih tinggi
+  ~ Fix: samakan tinggi input jadi h-10, match dgn pill filter
+
+admin/tim/page.tsx:
+  ~ Redesign kartu anggota tim ikut struktur referensi desain user:
+    avatar bulat lebih besar, nama+jabatan lebih menonjol, baris Email,
+    baris Phone+Location berdampingan, menu aksi jadi dropdown "•••"
+    (Edit/Hapus), status Aktif/Nonaktif pakai Switch (konsisten dgn
+    pola di halaman Testimoni & Promo) menggantikan badge teks
+  + Field baru "location" per anggota tim (ditambahkan di form
+    tambah/edit juga)
+
+====================================================
+
 [2026-07-15] v1.5.2 — Fix Header Admin Tidak Full Width + Double Scrollbar
 ----------------------------------------------------
 STATUS   : COMPLETED & DEPLOYED — live di https://izinpro-cms.vercel.app

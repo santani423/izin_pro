@@ -52,7 +52,7 @@ export default function AdminAnalitikPage() {
       <div className="p-6 lg:p-8 space-y-6">
 
         {/* ─── Filter Rentang Waktu ─── */}
-        <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-xl w-fit">
+        <div className="flex items-center gap-1 p-1 bg-gray-200 rounded-xl w-fit">
           {(["7", "30", "90"] as const).map((r) => (
             <button
               key={r}
@@ -101,14 +101,17 @@ export default function AdminAnalitikPage() {
               {trendData.map((d) => (
                 <div key={d.day} className="flex-1 flex flex-col items-center gap-1.5">
                   <span className="text-[10px] font-semibold text-gray-500">{d.views.toLocaleString("id-ID")}</span>
-                  <div
-                    className="w-full rounded-t-lg bg-primary/20 hover:bg-primary/40 transition-colors cursor-default relative group"
-                    style={{ height: `${(d.views / maxViews) * 100}%` }}
-                  >
+                  {/* Wrapper butuh tinggi definitif (h-28) supaya height:% pada bar di bawah bisa dihitung browser — tanpa ini bar collapse ke 0 krn parent flex (items-end) gak stretch */}
+                  <div className="w-full h-28 flex items-end">
                     <div
-                      className="absolute bottom-0 left-0 right-0 rounded-t-lg bg-primary transition-all"
-                      style={{ height: "60%" }}
-                    />
+                      className="w-full rounded-t-lg bg-primary/20 hover:bg-primary/40 transition-colors cursor-default relative group"
+                      style={{ height: `${(d.views / maxViews) * 100}%` }}
+                    >
+                      <div
+                        className="absolute bottom-0 left-0 right-0 rounded-t-lg bg-primary transition-all"
+                        style={{ height: "60%" }}
+                      />
+                    </div>
                   </div>
                   <span className="text-xs text-gray-400">{d.day}</span>
                 </div>

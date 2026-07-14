@@ -73,7 +73,6 @@ export default function AdminHeader({ title, subtitle }: AdminHeaderProps) {
         <button className="hidden sm:flex items-center gap-2.5 px-4 py-2.5 rounded-full border border-gray-200 bg-gray-50/60 text-sm text-gray-400 hover:border-primary/30 hover:text-primary transition-colors min-w-[220px]">
           <Search size={15} />
           <span>Cari atau ketik perintah...</span>
-          <span className="ml-auto text-xs border border-gray-200 bg-white px-1.5 py-0.5 rounded-md">⌘K</span>
         </button>
 
         {/* Notifikasi */}
