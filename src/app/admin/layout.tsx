@@ -7,12 +7,13 @@ import AdminHeader from "@/components/admin/AdminHeader";
 import { Toaster } from "@/components/ui/sonner";
 import { AdminSidebarProvider, useAdminSidebar } from "@/contexts/AdminSidebarContext";
 
-const AUTH_PAGES = ["/admin/login", "/admin/register"];
+const AUTH_PAGES = ["/admin/login"];
 
 /* Judul & subjudul header per menu — dipakai otomatis oleh layout */
 const PAGE_META: Record<string, { title: string; subtitle?: string }> = {
   "/admin/dashboard": { title: "Dashboard", subtitle: "Selamat datang kembali, Super Admin!" },
   "/admin/analitik": { title: "Analitik", subtitle: "Data kunjungan dan performa website" },
+  "/admin/users": { title: "Pengguna", subtitle: "Kelola akun admin dan hak akses (role)" },
   "/admin/pages": { title: "Halaman", subtitle: "Kelola semua halaman statis website" },
   "/admin/blog": { title: "Blog & Artikel", subtitle: "Kelola semua artikel dan konten blog" },
   "/admin/media": { title: "Media Library", subtitle: "Kelola semua gambar dan file" },

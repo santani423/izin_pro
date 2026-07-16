@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, FileText, Newspaper, Image as ImageIcon, Users, Settings,
   Star, Megaphone, Package, HelpCircle, BarChart3, ChevronRight, X,
-  Inbox, Headset,
+  Inbox, Headset, UserCog,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { COMPANY_INFO } from "@/lib/constants";
@@ -43,6 +43,7 @@ const navGroups = [
   {
     label: "Sistem",
     items: [
+      { label: "Pengguna", href: "/admin/users", icon: UserCog },
       { label: "Pengaturan", href: "/admin/settings", icon: Settings },
     ],
   },

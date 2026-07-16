@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Eye, EyeOff, Lock, Mail, ArrowRight } from "lucide-react";
 
 /* ─── Demo credentials ─── */
@@ -148,13 +147,6 @@ export default function AdminLoginPage() {
               )}
             </button>
           </form>
-
-          <p className="text-center text-sm text-gray-500 mt-6">
-            Belum punya akun?{" "}
-            <Link href="/admin/register" className="font-semibold text-primary hover:underline">
-              Daftar sekarang
-            </Link>
-          </p>
 
           {/* Demo hint */}
           <div className="mt-6 p-3.5 rounded-2xl bg-primary/5 border border-primary/10">

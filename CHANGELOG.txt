@@ -5,6 +5,60 @@ CHANGELOG — IzinPro CMS Project
 Format: [YYYY-MM-DD] Versi — Deskripsi
 ====================================================
 
+[2026-07-17] v1.5.4 — Menu Pengguna & Role (CRUD Frontend-Only) + Hapus Self-Registration
+----------------------------------------------------
+STATUS   : DONE (frontend-only, belum tersambung backend)
+PROJECT  : izinpro-cms/
+SUMBER   : Diskusi user, persiapan sebelum develop backend (Prisma/MariaDB v2.0.0)
+
+admin/register:
+  - Hapus halaman /admin/register + link "Daftar sekarang" di halaman
+    login + entry-nya di AUTH_PAGES (admin/layout.tsx). Alasan: model
+    akses baru "invite-only" — user admin dibuat manual oleh Super
+    Admin/Admin lewat menu Pengguna baru, bukan self-registration publik
+
+admin/users/ (BARU):
+  + Menu "Pengguna" di sidebar grup Sistem (icon UserCog) + entry
+    PAGE_META baru (admin/layout.tsx, AdminSidebar.tsx)
+  + Halaman /admin/users: tabel pengguna (avatar inisial, nama, email,
+    no. HP, role badge, status Aktif/Nonaktif via Switch, tanggal
+    dibuat) dengan search + filter pill per role
+  + Dialog Tambah/Edit: nama, email, no. HP, role (Select), password
+    sementara (cuma muncul saat tambah baru, bukan reset password saat
+    edit), toggle status aktif
+  + 4 role: Super Admin, Admin, Editor, Author — menggantikan "Viewer"
+    dari draft awal (Author = gaya WordPress, cuma bisa tulis & publish
+    artikel miliknya sendiri, gak bisa edit punya orang lain)
+
+Bug fix (ditemukan user langsung setelah dites):
+  ! Toggle switch Aktif/Nonaktif bikin kolom tabel lain ikut geser —
+    penyebab: teks "Aktif" vs "Nonaktif" beda lebar, kolom masih
+    table-auto jadi lebar kolom dihitung ulang tiap toggle
+  ~ Fix: kasih lebar tetap (w-14) ke span label status
+  ! (regresi sempat terjadi) sempat coba table-fixed + lebar kolom
+    hardcoded buat "benerin" hal di atas, tapi ini malah bikin tabel
+    gak responsive lagi di mobile (kolom gak menyusut proporsional)
+  ~ Revert ke table-auto — cukup andalkan lebar tetap di span status,
+    table-fixed gak diperlukan sama sekali
+  ~ Kolom "No. HP" awalnya hidden di mobile (hidden md:table-cell) demi
+    kompak, tapi user minta tetap tampil di semua ukuran layar → hidden
+    dihapus, andalkan overflow-x-auto kalau perlu scroll horizontal
+
+CATATAN LANJUTAN:
+  - Masih React state mock (frontend-only) sama seperti menu admin lain
+    — data reset saat refresh, belum tersambung DB
+  - Sudah mulai diskusi desain skema Prisma penuh (User+Role, Blog,
+    Service+Category+Package, Testimonial, Faq, Promo, Cta, Inquiry,
+    Media, Settings, Menu, AuditLog, PageView/DailyStat) berdasarkan
+    inventarisasi field dari semua modul mock yang ada — BELUM final,
+    masih ada beberapa keputusan desain menggantung (JSON vs tabel
+    relasional untuk rich content Service/Blog, scope soft-delete,
+    konsolidasi data Tim & Testimoni yang sekarang tersebar tidak
+    konsisten di banyak file). Lanjut sesi berikutnya sebelum
+    schema.prisma ditulis.
+
+====================================================
+
 [2026-07-15] v1.5.3 — Fix Scroll Reset Antar-Halaman + Kontras Warna Admin
 ----------------------------------------------------
 STATUS   : COMPLETED & DEPLOYED — live di https://izinpro-cms.vercel.app
