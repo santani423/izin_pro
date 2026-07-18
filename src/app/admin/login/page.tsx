@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Lock, Mail, ArrowRight } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
 
-/* ─── Demo credentials ─── */
-const DEMO_EMAIL = "admin@izinpro.co.id";
-const DEMO_PASSWORD = "admin123";
+/* ─── Akun Super Admin hasil `npx prisma db seed` (dev lokal) ─── */
+const SEEDED_EMAIL = "admin@izinpro.co.id";
+const SEEDED_PASSWORD = "admin123";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -16,23 +17,21 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    setTimeout(() => {
-      if (email === DEMO_EMAIL && password === DEMO_PASSWORD) {
-        sessionStorage.setItem(
-          "admin-auth",
-          JSON.stringify({ name: "Super Admin", email }),
-        );
-        router.replace("/admin/dashboard");
-      } else {
-        setError("Email atau password salah. Coba periksa kembali.");
-        setLoading(false);
-      }
-    }, 700);
+    const { error: signInError } = await authClient.signIn.email({ email, password });
+
+    if (signInError) {
+      setError(signInError.message ?? "Email atau password salah. Coba periksa kembali.");
+      setLoading(false);
+      return;
+    }
+
+    router.replace("/admin/dashboard");
+    router.refresh();
   };
 
   return (
@@ -148,11 +147,11 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
-          {/* Demo hint */}
+          {/* Hint akun seed (dev lokal) */}
           <div className="mt-6 p-3.5 rounded-2xl bg-primary/5 border border-primary/10">
-            <p className="text-xs text-gray-600 text-center font-medium mb-1">Akun Demo</p>
+            <p className="text-xs text-gray-600 text-center font-medium mb-1">Akun Super Admin (seed)</p>
             <p className="text-xs text-gray-500 text-center">
-              {DEMO_EMAIL} &nbsp;/&nbsp; {DEMO_PASSWORD}
+              {SEEDED_EMAIL} &nbsp;/&nbsp; {SEEDED_PASSWORD}
             </p>
           </div>
         </div>

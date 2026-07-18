@@ -5,6 +5,99 @@ CHANGELOG — IzinPro CMS Project
 Format: [YYYY-MM-DD] Versi — Deskripsi
 ====================================================
 
+[2026-07-18] v2.0.0 — Backend Prisma/MariaDB + Better Auth (Login & Pengguna Tersambung)
+----------------------------------------------------
+STATUS   : DONE — backend infra jalan di dev lokal (XAMPP MariaDB), belum deploy
+PROJECT  : izinpro-cms/
+SUMBER   : Lanjutan diskusi desain skema Prisma (v1.5.4) — inventarisasi field
+           per modul mock, konfirmasi keputusan desain, lalu instalasi &
+           penyambungan backend beneran
+
+SKEMA DATABASE (prisma/schema.prisma, BARU):
+  + 8 domain, ~27 tabel: Auth&User (Better Auth + role/phone/isActive),
+    Konten (Category/BlogPost/Tag/PostTag/Page), Media&Tim, Bisnis Inti
+    (ServiceCategory/Service/ServicePackage/Testimonial/Partner/Faq/
+    PromoBanner/PromoPackage/Cta), Inquiry, Menu&Settings, AuditLog,
+    PageView/DailyStat
+  Keputusan desain (dikonfirmasi user):
+    ~ Rich content (Service/BlogPost) → kolom Json? fleksibel, bukan tabel
+      relasional terpisah — hindari over-desain sblm UI-nya ada
+    ~ Soft delete (deletedAt) cuma di tabel konten utama (Service, BlogPost,
+      Testimonial, TeamMember, Page, PromoBanner) — bukan tabel lookup
+    ~ TeamMember & Testimonial: 1 tabel gabungan per entity, source of
+      truth dipilih saat migrasi data mock nanti (bukan digabung semua versi)
+  Field diselaraskan ke mock admin (bukan cuma rencana awal) satu-per-satu:
+    ~ Settings: persis 4 tab (Umum/Kontak/Sosmed/SEO), tanpa ogImageId
+    ~ Page: buang metaTitle/metaDescription (gak ada di form admin/pages)
+    ~ BlogPost.views: Int (bukan String "1.2K" spt mock) — biar bisa
+      di-increment & di-sort, sama pola dgn Media.sizeBytes
+    ~ Faq.scope/serviceId & Inquiry.assignedToId: gak ada di mock skrg,
+      tapi dipertahankan (forward-looking, dikonfirmasi user)
+    ~ Menu/MenuItem: nol mock sama sekali (fitur Fase 1 blm dibangun),
+      dipertahankan apa adanya sesuai rencana awal
+
+INSTALASI BACKEND:
+  + Prisma 6.19.3 + @prisma/client (BUKAN v7 — Node lokal v20.9.0 gak
+    compatible dgn requirement Node Prisma 7 ^20.19)
+  + better-auth 1.6.23 + Prisma adapter (provider mysql)
+  + Database dev lokal: MariaDB 10.4.32 via XAMPP (root no-password,
+    db "izinpro") — 27 tabel ter-migrate (prisma/migrations/20260718080947_init)
+  + .env / .env.example: DATABASE_URL, BETTER_AUTH_SECRET, BETTER_AUTH_URL
+  + src/lib/db.ts        — Prisma client singleton
+  + src/lib/auth.ts      — konfigurasi Better Auth: additionalFields
+    (phone/role/isActive di User), minPasswordLength:6 (samain sama form
+    admin/users), hook before sign-in/email nolak login kalau isActive=false
+  + src/lib/auth-client.ts — signIn/signOut/useSession utk client component
+  + src/app/api/auth/[...all]/route.ts — route handler Better Auth
+  + prisma/seed.ts + `npx prisma db seed` — seed 1 akun Super Admin
+    (admin@izinpro.co.id / admin123)
+
+SAMBUNG KE MOCK (bukan mock lagi, beneran ke DB):
+  admin/login/page.tsx:
+    ~ Fake setTimeout+DEMO_EMAIL → authClient.signIn.email() beneran,
+      sessionStorage dihapus total
+  src/proxy.ts (BARU, gantikan middleware.ts — Next.js 16 deprecate
+    "middleware" convention, ganti nama file+export function jadi "proxy"):
+    + Proteksi /admin/* di edge via getSessionCookie (cek cepat tanpa hit
+      DB), redirect ke /admin/login kalau belum ada sesi — gantikan guard
+      client-side sessionStorage lama yg gak aman (cuma jalan stlh hydration)
+  admin/layout.tsx:
+    ~ Guard useSyncExternalStore+sessionStorage dihapus total, proteksi
+      sepenuhnya diserahkan ke proxy.ts (kalau layout ini kerender berarti
+      request-nya udah lolos)
+  AdminHeader.tsx:
+    ~ Nama/email profil & tombol Keluar pakai useSession()/signOut() asli
+      (sebelumnya hardcode "Super Admin" / sessionStorage.removeItem)
+  admin/users/ (REFACTOR ke Server Component + Server Actions):
+    + page.tsx jadi Server Component: cek role (cuma SUPER_ADMIN/ADMIN
+      boleh akses, selain itu redirect ke dashboard) + fetch data asli
+      dari Prisma
+    + UsersManager.tsx (BARU, client) — UI CRUD sama persis spt mock,
+      tapi data & aksi asli lewat Server Actions
+    + src/lib/actions/users.ts (BARU) — createUserAction (signUpEmail +
+      update phone/role/isActive), updateUserAction, toggleUserActiveAction,
+      deleteUserAction; semua di-guard requireAdmin(), gak bisa hapus/
+      nonaktifin akun sendiri
+
+VERIFIKASI:
+  ~ tsc --noEmit bersih
+  ~ Playwright (browser beneran, headless): unauthenticated /admin/dashboard
+    → redirect ke login ✓; salah password → error message ✓; login benar →
+    dashboard + nama asli di header ✓; /admin/users tampil data Prisma ✓;
+    tambah pengguna → tersimpan & muncul di tabel ✓; toggle Aktif/Nonaktif
+    → tersimpan ✓
+  ~ curl: isActive=false → login ditolak 403 dgn pesan yg sesuai ✓
+
+CATATAN LANJUTAN:
+  - Modul lain (Blog, Layanan, Tim, Testimoni, Promo, FAQ, Halaman, Media,
+    Settings, Inquiry) MASIH mock React state — belum disambung Prisma
+  - Migrasi data mock ke DB (constants.ts, landing.ts, tentang.ts, dll.)
+    belum dilakukan — termasuk keputusan source-of-truth Tim & Testimoni
+  - Belum dicoba deploy ke Rumahweb (MariaDB shared hosting) — baru jalan
+    di dev lokal XAMPP
+
+====================================================
+
 [2026-07-17] v1.5.4 — Menu Pengguna & Role (CRUD Frontend-Only) + Hapus Self-Registration
 ----------------------------------------------------
 STATUS   : DONE (frontend-only, belum tersambung backend)

@@ -16,6 +16,16 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Database & Auth (dev lokal)
+
+Backend pakai Prisma + MariaDB + Better Auth (lihat `CHANGELOG.txt` v2.0.0 utk detail).
+
+1. Jalankan MariaDB lokal (mis. via XAMPP Control Panel → Start MySQL), lalu buat database `izinpro`.
+2. Copy `.env.example` → `.env`, isi `DATABASE_URL` & `BETTER_AUTH_SECRET`.
+3. `npx prisma migrate dev` — bikin/sinkronkan seluruh tabel dari `prisma/schema.prisma`.
+4. `npx prisma db seed` — bikin akun Super Admin pertama (`admin@izinpro.co.id` / `admin123`).
+5. `npm run dev` → login di `/admin/login`.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

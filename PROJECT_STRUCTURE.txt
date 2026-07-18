@@ -1,6 +1,6 @@
 ====================================================
 DOKUMENTASI STRUKTUR PROJECT — IzinPro CMS
-Versi  : 1.2.0
+Versi  : 1.2.0 (lihat catatan v2.0.0 di bawah utk update backend terbaru)
 Tanggal: 2026-07-08
 Target : Developer yang akan melanjutkan development
 ====================================================
@@ -11,6 +11,18 @@ Project ini adalah frontend website company profile + admin CMS
 untuk IzinPro, dibangun dengan Next.js 16.x + TypeScript + Tailwind CSS v4.
 Fase ini adalah frontend statis dengan mock data, siap diintegrasikan
 dengan backend (Prisma + MariaDB + Better Auth) di fase berikutnya.
+
+CATATAN UPDATE v2.0.0 (2026-07-18) — BACKEND SUDAH MULAI TERSAMBUNG:
+  Detail lengkap ada di CHANGELOG.txt entry [2026-07-18] v2.0.0. Ringkas:
+  + prisma/schema.prisma — skema penuh 8 domain (~27 tabel)
+  + Prisma 6.19.3 + better-auth 1.6.23, DB dev lokal: MariaDB via XAMPP
+  + src/lib/db.ts, src/lib/auth.ts, src/lib/auth-client.ts,
+    src/lib/actions/ (Server Actions), src/app/api/auth/[...all]/
+  + src/proxy.ts (BARU — nama file convention Next.js 16 pengganti
+    middleware.ts) — proteksi route /admin/*
+  + admin/login & admin/users SUDAH tersambung Prisma/Better Auth beneran
+  + Modul admin lain (Blog, Layanan, Tim, Testimoni, Promo, FAQ, Halaman,
+    Media, Settings, Inquiry) MASIH mock React state, belum disambung
 
 Homepage (v1.2.0) sudah di-redesign total berdasarkan prototype UI/UX
 dari klien dan sudah di-deploy ke Vercel production:

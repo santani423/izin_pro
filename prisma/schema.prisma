@@ -1,0 +1,532 @@
+// Draft v2.0.0 — hasil diskusi desain skema (lihat diskusi_cms_corporate.txt +
+// CHANGELOG.txt v1.5.4). BELUM final: menunggu review & penyesuaian user.
+// Keputusan yang sudah dikonfirmasi:
+//   1. Rich content (Service.detailContent, BlogPost.detailContent) -> Json?, bukan tabel relasional
+//   2. Soft delete (deletedAt) hanya di tabel konten utama, bukan tabel lookup
+//   3. TeamMember & Testimonial masing-masing 1 tabel gabungan (source of truth
+//      dipilih saat migrasi data mock, bukan digabung dari semua versi yang ada)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql" // MariaDB (Rumahweb), compatible dgn protocol mysql
+  url      = env("DATABASE_URL")
+}
+
+// ====================================================
+// Domain 1 — Auth & User (Better Auth)
+// ====================================================
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  EDITOR
+  AUTHOR
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  phone         String?
+  role          Role      @default(EDITOR)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions        Session[]
+  accounts        Account[]
+  blogPosts       BlogPost[]      @relation("BlogPostAuthor")
+  uploadedMedia   Media[]         @relation("MediaUploader")
+  assignedInquiry Inquiry[]       @relation("InquiryAssignee")
+  auditLogs       AuditLog[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verifications")
+}
+
+// ====================================================
+// Domain 2 — Konten
+// ====================================================
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  posts     BlogPost[]
+
+  @@map("categories")
+}
+
+model BlogPost {
+  id              String        @id @default(cuid())
+  slug            String        @unique
+  title           String
+  excerpt         String
+  content         String        @db.Text
+  detailContent   Json?
+  categoryId      String
+  category        Category      @relation(fields: [categoryId], references: [id])
+  authorId        String
+  author          User          @relation("BlogPostAuthor", fields: [authorId], references: [id])
+  featuredMediaId String?
+  featuredMedia   Media?        @relation("BlogPostFeaturedMedia", fields: [featuredMediaId], references: [id])
+  views           Int           @default(0) // mock nyimpen string ringkas ("1.2K") sbg tampilan, DB simpan angka mentah spy bisa di-increment & sort (pola sama dgn Media.sizeBytes)
+  status          ContentStatus @default(DRAFT)
+  publishedAt     DateTime?
+  metaTitle       String?
+  metaDescription String?
+  deletedAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  tags            PostTag[]
+
+  @@map("blog_posts")
+}
+
+model Tag {
+  id   String    @id @default(cuid())
+  name String
+  slug String    @unique
+  posts PostTag[]
+
+  @@map("tags")
+}
+
+model PostTag {
+  postId String
+  post   BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tagId  String
+  tag    Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@map("post_tags")
+}
+
+model Page {
+  id           String        @id @default(cuid())
+  slug         String        @unique
+  title        String
+  heroTitle    String
+  heroSubtitle String
+  status       ContentStatus @default(DRAFT)
+  isCore       Boolean       @default(false) // halaman inti (Beranda, Layanan, dll) tidak bisa dihapus, sesuai tombol Hapus yg disembunyikan di admin/pages
+  deletedAt    DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@map("pages")
+}
+
+// ====================================================
+// Domain 3 — Media & Tim
+// ====================================================
+
+model Media {
+  id             String   @id @default(cuid())
+  fileName       String
+  url            String // ukuran large/original
+  thumbnailUrl   String? // 150px, auto-generate via Sharp.js
+  mediumUrl      String? // 600px, auto-generate via Sharp.js
+  mimeType       String
+  sizeBytes      Int
+  width          Int?
+  height         Int?
+  uploadedById   String?
+  uploadedBy     User?    @relation("MediaUploader", fields: [uploadedById], references: [id])
+  createdAt      DateTime @default(now())
+
+  blogPostsFeatured BlogPost[]     @relation("BlogPostFeaturedMedia")
+  teamMembers       TeamMember[]   @relation("TeamMemberPhoto")
+  services          Service[]      @relation("ServiceFeaturedMedia")
+  testimonials      Testimonial[]  @relation("TestimonialPhoto")
+  partners          Partner[]      @relation("PartnerLogo")
+
+  @@map("media")
+}
+
+model TeamMember {
+  id            String    @id @default(cuid())
+  name          String
+  role          String
+  department    String?
+  email         String?
+  phone         String?
+  location      String?
+  photoMediaId  String?
+  photoMedia    Media?    @relation("TeamMemberPhoto", fields: [photoMediaId], references: [id])
+  isActive      Boolean   @default(true)
+  sortOrder     Int       @default(0)
+  deletedAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("team_members")
+}
+
+// ====================================================
+// Domain 4 — Bisnis Inti
+// ====================================================
+
+enum FaqScope {
+  GLOBAL
+  KONTAK
+  SERVICE
+}
+
+enum CtaLocation {
+  BERANDA
+  LAYANAN
+  DETAIL_LAYANAN
+  BLOG
+  DETAIL_BLOG
+  PROMO
+  TENTANG_KAMI
+  TESTIMONI
+  KONTAK
+  TRACKING
+}
+
+model ServiceCategory {
+  id        String    @id @default(cuid())
+  slug      String    @unique
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  services     Service[]
+  testimonials Testimonial[]
+
+  @@map("service_categories")
+}
+
+model Service {
+  id              String          @id @default(cuid())
+  slug            String          @unique
+  title           String
+  description     String          @db.Text
+  icon            String?
+  color           String?
+  bgColor         String?
+  categoryId      String
+  category        ServiceCategory @relation(fields: [categoryId], references: [id])
+  featuredMediaId String?
+  featuredMedia   Media?          @relation("ServiceFeaturedMedia", fields: [featuredMediaId], references: [id])
+  features        Json
+  detailContent   Json? // highlights, stats, proses, benefits, jenis izin, dll
+  isActive        Boolean         @default(true)
+  sortOrder       Int             @default(0)
+  deletedAt       DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  packages      ServicePackage[]
+  faqs          Faq[]
+  promoPackages PromoPackage[]
+  inquiries     Inquiry[]
+
+  @@map("services")
+}
+
+model ServicePackage {
+  id            String   @id @default(cuid())
+  serviceId     String
+  service       Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  name          String
+  price         Decimal  @db.Decimal(12, 2)
+  originalPrice Decimal? @db.Decimal(12, 2)
+  features      Json
+  isPopular     Boolean  @default(false)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("service_packages")
+}
+
+model Testimonial {
+  id           String           @id @default(cuid())
+  name         String
+  role         String?
+  company      String?
+  content      String           @db.Text
+  rating       Int
+  categoryId   String?
+  category     ServiceCategory? @relation(fields: [categoryId], references: [id])
+  photoMediaId String?
+  photoMedia   Media?           @relation("TestimonialPhoto", fields: [photoMediaId], references: [id])
+  isVideo      Boolean          @default(false)
+  videoUrl     String?
+  duration     String?
+  isActive     Boolean          @default(true)
+  sortOrder    Int              @default(0)
+  deletedAt    DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@map("testimonials")
+}
+
+model Partner {
+  id           String   @id @default(cuid())
+  name         String
+  logoMediaId  String
+  logoMedia    Media    @relation("PartnerLogo", fields: [logoMediaId], references: [id])
+  isActive     Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("partners")
+}
+
+model Faq {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String   @db.Text
+  serviceId String?
+  service   Service? @relation(fields: [serviceId], references: [id])
+  scope     FaqScope @default(GLOBAL)
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("faqs")
+}
+
+model PromoBanner {
+  id          String    @id @default(cuid())
+  tag         String?
+  title       String
+  subtitle    String?
+  description String?   @db.Text
+  ctaLabel    String?
+  ctaHref     String?
+  startDate   DateTime?
+  endDate     DateTime?
+  isActive    Boolean   @default(true)
+  clicks      Int       @default(0)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("promo_banners")
+}
+
+model PromoPackage {
+  id            String   @id @default(cuid())
+  badge         String?
+  title         String
+  price         Decimal  @db.Decimal(12, 2)
+  originalPrice Decimal? @db.Decimal(12, 2)
+  features      Json
+  serviceId     String?
+  service       Service? @relation(fields: [serviceId], references: [id])
+  isDark        Boolean  @default(false)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("promo_packages")
+}
+
+model Cta {
+  id         String       @id @default(cuid())
+  location   CtaLocation? @unique // null = CTA default, dipakai halaman tanpa varian sendiri
+  title      String
+  subtitle   String?
+  buttonLabel String
+  whatsapp   String? // null -> fallback ke Settings.whatsapp
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@map("ctas")
+}
+
+// ====================================================
+// Domain 5 — Interaksi Pengunjung
+// ====================================================
+
+enum InquiryStatus {
+  BARU
+  DIPROSES
+  SELESAI
+}
+
+model Inquiry {
+  id           String        @id @default(cuid())
+  name         String
+  email        String
+  whatsapp     String
+  serviceId    String? // null = kasus "Lainnya"
+  service      Service?      @relation(fields: [serviceId], references: [id])
+  message      String        @db.Text
+  status       InquiryStatus @default(BARU)
+  assignedToId String?
+  assignedTo   User?         @relation("InquiryAssignee", fields: [assignedToId], references: [id])
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@map("inquiries")
+}
+
+// ====================================================
+// Domain 6 — Navigasi & Konfigurasi
+// ====================================================
+
+model Menu {
+  id        String     @id @default(cuid())
+  key       String     @unique // "header" | "footer"
+  name      String
+  items     MenuItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("menus")
+}
+
+model MenuItem {
+  id        String     @id @default(cuid())
+  menuId    String
+  menu      Menu       @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    MenuItem?  @relation("MenuItemChildren", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children  MenuItem[] @relation("MenuItemChildren")
+  label     String
+  href      String
+  sortOrder Int        @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("menu_items")
+}
+
+// Singleton (1 row, id selalu "1") — persis 4 tab /admin/settings (Umum, Kontak, Sosmed, SEO)
+model Settings {
+  id String @id @default("1")
+
+  // Tab Umum
+  companyName    String
+  tagline        String
+  description    String @db.Text
+  operatingHours String
+
+  // Tab Kontak
+  whatsapp String // format internasional tanpa "+", mis. "6282280007821"
+  email    String
+  address  String @db.Text
+  mapsUrl  String
+
+  // Tab Sosial Media (kosong = ikon disembunyikan di footer/navbar)
+  socialLinkedin  String?
+  socialFacebook  String?
+  socialInstagram String?
+  socialX         String?
+  socialYoutube   String?
+
+  // Tab SEO (default global — dioverride per Page/BlogPost via metaTitle/metaDescription sendiri)
+  seoTitle       String
+  seoDescription String @db.Text
+  seoKeywords    String
+
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
+// ====================================================
+// Domain 7 & 8 — Sistem & Analytics
+// ====================================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String
+  entityType String
+  entityId   String
+  changes    Json?
+  createdAt  DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+model PageView {
+  id        String   @id @default(cuid())
+  path      String
+  sessionId String
+  referrer  String?
+  isBot     Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([path])
+  @@index([createdAt])
+  @@map("page_views")
+}
+
+model DailyStat {
+  id              String   @id @default(cuid())
+  date            DateTime @unique
+  totalViews      Int      @default(0)
+  uniqueVisitors  Int      @default(0)
+  bounceRate      Float?
+  avgDuration     Float?
+  createdAt       DateTime @default(now())
+
+  @@map("daily_stats")
+}

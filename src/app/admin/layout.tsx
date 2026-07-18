@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useLayoutEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import { Toaster } from "@/components/ui/sonner";
@@ -76,38 +76,17 @@ function AdminPanelLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
-/* Baca status login dari sessionStorage — null saat SSR */
-const subscribeAuth = () => () => {};
-const getAuth = () => sessionStorage.getItem("admin-auth");
-const getServerAuth = () => null;
-
-/* ─── Root admin layout with auth guard ─── */
+/* ─── Root admin layout ───
+ * Proteksi akses beneran ada di middleware.ts (cek session cookie di edge,
+ * redirect ke /admin/login sebelum halaman ini dirender sama sekali) —
+ * jadi di sini gak perlu guard/spinner lagi, kalau kode ini jalan berarti
+ * request-nya sudah lolos middleware. */
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const auth = useSyncExternalStore(subscribeAuth, getAuth, getServerAuth);
-
   const isAuthPage = AUTH_PAGES.includes(pathname);
-
-  useEffect(() => {
-    /* Baca sessionStorage langsung — snapshot render bisa masih null
-       sesaat setelah hydration, jangan dipakai untuk redirect */
-    if (!isAuthPage && !sessionStorage.getItem("admin-auth")) {
-      router.replace("/admin/login");
-    }
-  }, [isAuthPage, pathname, router]);
 
   /* Auth pages: render clean (no sidebar) */
   if (isAuthPage) return <>{children}</>;
-
-  /* Belum login / menunggu redirect */
-  if (!auth) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-admin-bg">
-        <div className="w-8 h-8 rounded-full border-[3px] border-primary/20 border-t-primary animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <AdminSidebarProvider>

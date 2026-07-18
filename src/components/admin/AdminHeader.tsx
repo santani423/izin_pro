@@ -14,6 +14,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAdminSidebar } from "@/contexts/AdminSidebarContext";
+import { authClient, useSession } from "@/lib/auth-client";
+
+const initialsOf = (name: string) =>
+  name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "?";
 
 interface AdminHeaderProps {
   title: string;
@@ -25,6 +29,9 @@ export default function AdminHeader({ title, subtitle }: AdminHeaderProps) {
   const [notifOpen, setNotifOpen] = useState(false);
   const { toggle, toggleCollapse } = useAdminSidebar();
   const router = useRouter();
+  const { data: session } = useSession();
+  const displayName = session?.user?.name ?? "...";
+  const displayEmail = session?.user?.email ?? "";
 
   const notifications = [
     { id: 1, text: "Inquiry baru dari Budi Santoso", time: "5 menit lalu", unread: true },
@@ -34,9 +41,10 @@ export default function AdminHeader({ title, subtitle }: AdminHeaderProps) {
 
   const unreadCount = notifications.filter((n) => n.unread).length;
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("admin-auth");
+  const handleLogout = async () => {
+    await authClient.signOut();
     router.replace("/admin/login");
+    router.refresh();
   };
 
   return (
@@ -116,12 +124,12 @@ export default function AdminHeader({ title, subtitle }: AdminHeaderProps) {
           <DropdownMenuTrigger className="flex items-center gap-2 pl-1 pr-2 sm:pr-3 py-1.5 rounded-full hover:bg-gray-50 transition-colors outline-none">
             <Avatar className="w-9 h-9">
               <AvatarFallback className="bg-primary text-white text-xs font-bold">
-                SA
+                {initialsOf(displayName)}
               </AvatarFallback>
             </Avatar>
             <div className="hidden sm:block text-left">
-              <div className="text-xs font-semibold text-gray-800 leading-none">Super Admin</div>
-              <div className="text-[10px] text-gray-400 mt-0.5">admin@izinpro.co.id</div>
+              <div className="text-xs font-semibold text-gray-800 leading-none">{displayName}</div>
+              <div className="text-[10px] text-gray-400 mt-0.5">{displayEmail}</div>
             </div>
             <ChevronDown size={13} className="text-gray-400" />
           </DropdownMenuTrigger>
