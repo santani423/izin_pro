@@ -35,15 +35,58 @@ model User {
   phone         String?
   role          Role      @default(EDITOR)
   isActive      Boolean   @default(true)
+  deletedAt     DateTime? // soft delete — akun gak dihapus permanen, cuma disembunyikan
+  createdById   String?
+  createdBy     User?     @relation("UserCreatedBy", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  updatedById   String?
+  updatedBy     User?     @relation("UserUpdatedBy", fields: [updatedById], references: [id], onDelete: NoAction, onUpdate: NoAction)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  createdUsers    User[]          @relation("UserCreatedBy")
+  updatedUsers    User[]          @relation("UserUpdatedBy")
   sessions        Session[]
   accounts        Account[]
   blogPosts       BlogPost[]      @relation("BlogPostAuthor")
   uploadedMedia   Media[]         @relation("MediaUploader")
   assignedInquiry Inquiry[]       @relation("InquiryAssignee")
   auditLogs       AuditLog[]
+
+  // Jejak "dibuat oleh" / "diubah oleh" — satu pasang relasi per tabel konten
+  // (nama relasi eksplisit krn 2 relasi berbeda ke User yg sama per tabel)
+  createdCategories        Category[]        @relation("CategoryCreatedBy")
+  updatedCategories        Category[]        @relation("CategoryUpdatedBy")
+  updatedBlogPosts         BlogPost[]         @relation("BlogPostUpdatedBy")
+  createdPages             Page[]             @relation("PageCreatedBy")
+  updatedPages             Page[]             @relation("PageUpdatedBy")
+  createdTeamMembers       TeamMember[]       @relation("TeamMemberCreatedBy")
+  updatedTeamMembers       TeamMember[]       @relation("TeamMemberUpdatedBy")
+  createdServiceCategories ServiceCategory[]  @relation("ServiceCategoryCreatedBy")
+  updatedServiceCategories ServiceCategory[]  @relation("ServiceCategoryUpdatedBy")
+  createdServices          Service[]          @relation("ServiceCreatedBy")
+  updatedServices          Service[]          @relation("ServiceUpdatedBy")
+  createdServicePackages   ServicePackage[]   @relation("ServicePackageCreatedBy")
+  updatedServicePackages   ServicePackage[]   @relation("ServicePackageUpdatedBy")
+  createdTestimonials      Testimonial[]      @relation("TestimonialCreatedBy")
+  updatedTestimonials      Testimonial[]      @relation("TestimonialUpdatedBy")
+  createdPartners          Partner[]          @relation("PartnerCreatedBy")
+  updatedPartners          Partner[]          @relation("PartnerUpdatedBy")
+  createdFaqs              Faq[]              @relation("FaqCreatedBy")
+  updatedFaqs              Faq[]              @relation("FaqUpdatedBy")
+  createdPromoBanners      PromoBanner[]      @relation("PromoBannerCreatedBy")
+  updatedPromoBanners      PromoBanner[]      @relation("PromoBannerUpdatedBy")
+  createdPromoPackages     PromoPackage[]     @relation("PromoPackageCreatedBy")
+  updatedPromoPackages     PromoPackage[]     @relation("PromoPackageUpdatedBy")
+  createdCtas              Cta[]              @relation("CtaCreatedBy")
+  updatedCtas              Cta[]              @relation("CtaUpdatedBy")
+  updatedInquiries         Inquiry[]          @relation("InquiryUpdatedBy")
+  createdOrders            Order[]            @relation("OrderCreatedBy")
+  updatedOrders            Order[]            @relation("OrderUpdatedBy")
+  createdMenus             Menu[]             @relation("MenuCreatedBy")
+  updatedMenus             Menu[]             @relation("MenuUpdatedBy")
+  createdMenuItems         MenuItem[]         @relation("MenuItemCreatedBy")
+  updatedMenuItems         MenuItem[]         @relation("MenuItemUpdatedBy")
+  updatedSettings          Settings[]         @relation("SettingsUpdatedBy")
 
   @@map("users")
 }
@@ -102,12 +145,16 @@ enum ContentStatus {
 }
 
 model Category {
-  id        String     @id @default(cuid())
-  name      String
-  slug      String     @unique
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  posts     BlogPost[]
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  createdById String?
+  createdBy   User?      @relation("CategoryCreatedBy", fields: [createdById], references: [id])
+  updatedById String?
+  updatedBy   User?      @relation("CategoryUpdatedBy", fields: [updatedById], references: [id])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  posts       BlogPost[]
 
   @@map("categories")
 }
@@ -131,6 +178,9 @@ model BlogPost {
   metaTitle       String?
   metaDescription String?
   deletedAt       DateTime?
+  // authorId di atas sudah berfungsi sbg "dibuat oleh" — cuma perlu updatedBy
+  updatedById     String?
+  updatedBy       User?         @relation("BlogPostUpdatedBy", fields: [updatedById], references: [id])
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   tags            PostTag[]
@@ -166,6 +216,10 @@ model Page {
   status       ContentStatus @default(DRAFT)
   isCore       Boolean       @default(false) // halaman inti (Beranda, Layanan, dll) tidak bisa dihapus, sesuai tombol Hapus yg disembunyikan di admin/pages
   deletedAt    DateTime?
+  createdById  String?
+  createdBy    User?         @relation("PageCreatedBy", fields: [createdById], references: [id])
+  updatedById  String?
+  updatedBy    User?         @relation("PageUpdatedBy", fields: [updatedById], references: [id])
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
@@ -212,6 +266,10 @@ model TeamMember {
   isActive      Boolean   @default(true)
   sortOrder     Int       @default(0)
   deletedAt     DateTime?
+  createdById   String?
+  createdBy     User?     @relation("TeamMemberCreatedBy", fields: [createdById], references: [id])
+  updatedById   String?
+  updatedBy     User?     @relation("TeamMemberUpdatedBy", fields: [updatedById], references: [id])
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -242,11 +300,15 @@ enum CtaLocation {
 }
 
 model ServiceCategory {
-  id        String    @id @default(cuid())
-  slug      String    @unique
-  name      String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  createdById String?
+  createdBy   User?     @relation("ServiceCategoryCreatedBy", fields: [createdById], references: [id])
+  updatedById String?
+  updatedBy   User?     @relation("ServiceCategoryUpdatedBy", fields: [updatedById], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   services     Service[]
   testimonials Testimonial[]
@@ -271,6 +333,10 @@ model Service {
   isActive        Boolean         @default(true)
   sortOrder       Int             @default(0)
   deletedAt       DateTime?
+  createdById     String?
+  createdBy       User?           @relation("ServiceCreatedBy", fields: [createdById], references: [id])
+  updatedById     String?
+  updatedBy       User?           @relation("ServiceUpdatedBy", fields: [updatedById], references: [id])
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
@@ -278,6 +344,7 @@ model Service {
   faqs          Faq[]
   promoPackages PromoPackage[]
   inquiries     Inquiry[]
+  orders        Order[]
 
   @@map("services")
 }
@@ -292,6 +359,10 @@ model ServicePackage {
   features      Json
   isPopular     Boolean  @default(false)
   sortOrder     Int      @default(0)
+  createdById   String?
+  createdBy     User?    @relation("ServicePackageCreatedBy", fields: [createdById], references: [id])
+  updatedById   String?
+  updatedBy     User?    @relation("ServicePackageUpdatedBy", fields: [updatedById], references: [id])
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -315,6 +386,10 @@ model Testimonial {
   isActive     Boolean          @default(true)
   sortOrder    Int              @default(0)
   deletedAt    DateTime?
+  createdById  String?
+  createdBy    User?            @relation("TestimonialCreatedBy", fields: [createdById], references: [id])
+  updatedById  String?
+  updatedBy    User?            @relation("TestimonialUpdatedBy", fields: [updatedById], references: [id])
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
 
@@ -327,7 +402,12 @@ model Partner {
   logoMediaId  String
   logoMedia    Media    @relation("PartnerLogo", fields: [logoMediaId], references: [id])
   isActive     Boolean  @default(true)
+  deletedAt    DateTime? // soft delete
   sortOrder    Int      @default(0)
+  createdById  String?
+  createdBy    User?    @relation("PartnerCreatedBy", fields: [createdById], references: [id])
+  updatedById  String?
+  updatedBy    User?    @relation("PartnerUpdatedBy", fields: [updatedById], references: [id])
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -335,16 +415,20 @@ model Partner {
 }
 
 model Faq {
-  id        String   @id @default(cuid())
-  question  String
-  answer    String   @db.Text
-  serviceId String?
-  service   Service? @relation(fields: [serviceId], references: [id])
-  scope     FaqScope @default(GLOBAL)
-  isActive  Boolean  @default(true)
-  sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  question    String
+  answer      String   @db.Text
+  serviceId   String?
+  service     Service? @relation(fields: [serviceId], references: [id])
+  scope       FaqScope @default(GLOBAL)
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdById String?
+  createdBy   User?    @relation("FaqCreatedBy", fields: [createdById], references: [id])
+  updatedById String?
+  updatedBy   User?    @relation("FaqUpdatedBy", fields: [updatedById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("faqs")
 }
@@ -362,6 +446,10 @@ model PromoBanner {
   isActive    Boolean   @default(true)
   clicks      Int       @default(0)
   deletedAt   DateTime?
+  createdById String?
+  createdBy   User?     @relation("PromoBannerCreatedBy", fields: [createdById], references: [id])
+  updatedById String?
+  updatedBy   User?     @relation("PromoBannerUpdatedBy", fields: [updatedById], references: [id])
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -379,6 +467,10 @@ model PromoPackage {
   service       Service? @relation(fields: [serviceId], references: [id])
   isDark        Boolean  @default(false)
   sortOrder     Int      @default(0)
+  createdById   String?
+  createdBy     User?    @relation("PromoPackageCreatedBy", fields: [createdById], references: [id])
+  updatedById   String?
+  updatedBy     User?    @relation("PromoPackageUpdatedBy", fields: [updatedById], references: [id])
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -386,14 +478,18 @@ model PromoPackage {
 }
 
 model Cta {
-  id         String       @id @default(cuid())
-  location   CtaLocation? @unique // null = CTA default, dipakai halaman tanpa varian sendiri
-  title      String
-  subtitle   String?
+  id          String       @id @default(cuid())
+  location    CtaLocation? @unique // null = CTA default, dipakai halaman tanpa varian sendiri
+  title       String
+  subtitle    String?
   buttonLabel String
-  whatsapp   String? // null -> fallback ke Settings.whatsapp
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
+  whatsapp    String? // null -> fallback ke Settings.whatsapp
+  createdById String?
+  createdBy   User?        @relation("CtaCreatedBy", fields: [createdById], references: [id])
+  updatedById String?
+  updatedBy   User?        @relation("CtaUpdatedBy", fields: [updatedById], references: [id])
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   @@map("ctas")
 }
@@ -419,6 +515,10 @@ model Inquiry {
   status       InquiryStatus @default(BARU)
   assignedToId String?
   assignedTo   User?         @relation("InquiryAssignee", fields: [assignedToId], references: [id])
+  // Dibuat oleh pengunjung publik via form kontak, bukan admin -> gak ada createdBy.
+  // updatedBy nyatet admin yg terakhir ubah status/detail inquiry ini.
+  updatedById  String?
+  updatedBy    User?         @relation("InquiryUpdatedBy", fields: [updatedById], references: [id])
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
@@ -426,32 +526,65 @@ model Inquiry {
 }
 
 // ====================================================
+// Domain 5b — Tracking Perizinan (/tracking)
+// ====================================================
+
+model Order {
+  id              String    @id @default(cuid())
+  orderNo         String    @unique
+  serviceId       String?
+  service         Service?  @relation(fields: [serviceId], references: [id])
+  currentStep     Int       @default(1) // 1-5, selaras TRACKING_STEPS statis di frontend (sama utk semua order)
+  submittedAt     DateTime
+  estimatedDoneAt DateTime?
+  stepDates       Json // array 5 tanggal nullable, index sejajar TRACKING_STEPS
+  createdById     String?
+  createdBy       User?     @relation("OrderCreatedBy", fields: [createdById], references: [id])
+  updatedById     String?
+  updatedBy       User?     @relation("OrderUpdatedBy", fields: [updatedById], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("orders")
+}
+
+// ====================================================
 // Domain 6 — Navigasi & Konfigurasi
 // ====================================================
 
 model Menu {
-  id        String     @id @default(cuid())
-  key       String     @unique // "header" | "footer"
-  name      String
-  items     MenuItem[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id          String     @id @default(cuid())
+  key         String     @unique // "header" | "footer"
+  name        String
+  deletedAt   DateTime? // soft delete
+  items       MenuItem[]
+  createdById String?
+  createdBy   User?      @relation("MenuCreatedBy", fields: [createdById], references: [id])
+  updatedById String?
+  updatedBy   User?      @relation("MenuUpdatedBy", fields: [updatedById], references: [id])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   @@map("menus")
 }
 
 model MenuItem {
-  id        String     @id @default(cuid())
-  menuId    String
-  menu      Menu       @relation(fields: [menuId], references: [id], onDelete: Cascade)
-  parentId  String?
-  parent    MenuItem?  @relation("MenuItemChildren", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  children  MenuItem[] @relation("MenuItemChildren")
-  label     String
-  href      String
-  sortOrder Int        @default(0)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id          String     @id @default(cuid())
+  menuId      String
+  menu        Menu       @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  parentId    String?
+  parent      MenuItem?  @relation("MenuItemChildren", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children    MenuItem[] @relation("MenuItemChildren")
+  label       String
+  href        String
+  sortOrder   Int        @default(0)
+  deletedAt   DateTime? // soft delete
+  createdById String?
+  createdBy   User?      @relation("MenuItemCreatedBy", fields: [createdById], references: [id])
+  updatedById String?
+  updatedBy   User?      @relation("MenuItemUpdatedBy", fields: [updatedById], references: [id])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   @@map("menu_items")
 }
@@ -484,7 +617,10 @@ model Settings {
   seoDescription String @db.Text
   seoKeywords    String
 
-  updatedAt DateTime @updatedAt
+  // Singleton, gak pernah "dibuat" lewat admin (selalu ada dari seed) -> gak ada createdBy
+  updatedById String?
+  updatedBy   User?    @relation("SettingsUpdatedBy", fields: [updatedById], references: [id])
+  updatedAt   DateTime @updatedAt
 
   @@map("settings")
 }

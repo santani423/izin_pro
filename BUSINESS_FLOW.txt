@@ -93,11 +93,13 @@ TAHAP 6 — RETENTION (Pertahankan Klien)
 ALUR KONTEN ADMIN — PENGELOLA WEBSITE
 ====================================================
 
-SIAPA YANG PAKAI ADMIN PANEL:
-  - Super Admin  → akses penuh semua fitur
-  - Admin        → kelola konten, lihat inquiry
-  - Editor       → hanya kelola blog & media
-  - Viewer       → hanya baca dashboard (read-only)
+SIAPA YANG PAKAI ADMIN PANEL (4 role final — lihat CHANGELOG.txt v1.5.4 & v2.2.x):
+  - Super Admin  → akses penuh semua menu, termasuk Pengaturan & Pengguna
+  - Admin        → akses semua menu, tapi Pengaturan cuma bisa dilihat (view-only)
+  - Editor       → akses semua menu KECUALI Pengaturan & Pengguna
+  - Author       → gaya WordPress — cuma bisa tulis & publish artikel miliknya
+                   sendiri (Blog/Media), gak bisa edit punya penulis lain & gak
+                   bisa akses menu lain (Layanan, Tim, Testimoni, dst)
 
 ALUR PENGELOLAAN KONTEN BLOG:
 

@@ -2,9 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Search, Pencil, Trash2, MoreHorizontal, Eye, EyeOff } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, MoreHorizontal, Eye, EyeOff, Lock } from "lucide-react";
 import { toast } from "sonner";
 import type { Role, User } from "@prisma/client";
+import { canManageUser } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -86,13 +87,20 @@ const emptyForm = (): FormState => ({
   password: "",
 });
 
+type UserWithAudit = User & {
+  createdBy: { name: string } | null;
+  updatedBy: { name: string } | null;
+};
+
 /* ─── Halaman Manajemen Pengguna & Role Admin (tersambung Prisma/Better Auth) ─── */
 export default function UsersManager({
   initialUsers,
   currentUserId,
+  currentUserRole,
 }: {
-  initialUsers: User[];
+  initialUsers: UserWithAudit[];
   currentUserId: string;
+  currentUserRole: Role;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -101,6 +109,11 @@ export default function UsersManager({
   const [form, setForm] = useState<FormState | null>(null);
   const [toDelete, setToDelete] = useState<User | null>(null);
   const [showPass, setShowPass] = useState(false);
+
+  /* Cuma Super Admin yg boleh kelola akun Super Admin lain (termasuk edit
+   * role jadi Super Admin) — samain dgn guard di src/lib/actions/users.ts */
+  const canManage = (u: User) => canManageUser(currentUserRole, u.role);
+  const selectableRoles = currentUserRole === "SUPER_ADMIN" ? ROLES : ROLES.filter((r) => r !== "SUPER_ADMIN");
 
   const filtered = initialUsers.filter((u) => {
     const q = search.toLowerCase();
@@ -262,12 +275,20 @@ export default function UsersManager({
                     </Badge>
                   </td>
                   <td className="px-5 py-3.5 text-center text-gray-500 whitespace-nowrap">{u.phone ?? "-"}</td>
-                  <td className="px-5 py-3.5 text-gray-500 hidden lg:table-cell whitespace-nowrap">{formatDate(u.createdAt)}</td>
+                  <td className="px-5 py-3.5 text-gray-500 hidden lg:table-cell whitespace-nowrap">
+                    <div>{formatDate(u.createdAt)}</div>
+                    <div className="text-[11px] text-gray-400">
+                      oleh {u.createdBy?.name ?? "—"}
+                      {u.updatedBy && u.updatedBy.name !== u.createdBy?.name && (
+                        <> · diubah {u.updatedBy.name}</>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-2">
                       <Switch
                         checked={u.isActive}
-                        disabled={isPending || u.id === currentUserId}
+                        disabled={isPending || u.id === currentUserId || !canManage(u)}
                         onCheckedChange={() => toggleActive(u)}
                         className="data-[state=checked]:bg-primary"
                       />
@@ -276,29 +297,38 @@ export default function UsersManager({
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-end">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors outline-none"
-                          aria-label="Menu pengguna"
-                        >
-                          <MoreHorizontal size={16} />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-40 rounded-xl">
-                          <DropdownMenuItem className="text-sm cursor-pointer gap-2" onClick={() => openEdit(u)}>
-                            <Pencil size={13} className="text-gray-400" />
-                            Edit
-                          </DropdownMenuItem>
-                          {u.id !== currentUserId && (
-                            <DropdownMenuItem
-                              className="text-sm text-red-500 cursor-pointer gap-2 focus:text-red-500 focus:bg-red-50"
-                              onClick={() => setToDelete(u)}
-                            >
-                              <Trash2 size={13} />
-                              Hapus
+                      {canManage(u) ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors outline-none"
+                            aria-label="Menu pengguna"
+                          >
+                            <MoreHorizontal size={16} />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-40 rounded-xl">
+                            <DropdownMenuItem className="text-sm cursor-pointer gap-2" onClick={() => openEdit(u)}>
+                              <Pencil size={13} className="text-gray-400" />
+                              Edit
                             </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                            {u.id !== currentUserId && (
+                              <DropdownMenuItem
+                                className="text-sm text-red-500 cursor-pointer gap-2 focus:text-red-500 focus:bg-red-50"
+                                onClick={() => setToDelete(u)}
+                              >
+                                <Trash2 size={13} />
+                                Hapus
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : (
+                        <span
+                          className="p-1.5 text-gray-300"
+                          title="Cuma Super Admin yang bisa mengelola akun ini"
+                        >
+                          <Lock size={14} />
+                        </span>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -374,7 +404,7 @@ export default function UsersManager({
                 <div>
                   <Label className="text-sm font-semibold text-gray-700">Role</Label>
                   <Select
-                    items={Object.fromEntries(ROLES.map((r) => [r, ROLE_LABEL[r]]))}
+                    items={Object.fromEntries(selectableRoles.map((r) => [r, ROLE_LABEL[r]]))}
                     value={form.role}
                     onValueChange={(v) => v && setForm({ ...form, role: v as Role })}
                   >
@@ -382,7 +412,7 @@ export default function UsersManager({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent alignItemWithTrigger={false} align="start">
-                      {ROLES.map((r) => (
+                      {selectableRoles.map((r) => (
                         <SelectItem key={r} value={r}>{ROLE_LABEL[r]}</SelectItem>
                       ))}
                     </SelectContent>

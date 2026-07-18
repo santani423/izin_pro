@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { canManageUser } from "@/lib/permissions";
 import type { Role } from "@prisma/client";
 
 export type ActionResult = { ok: true } | { ok: false; message: string };
@@ -31,13 +32,19 @@ export async function createUserAction(data: {
   password: string;
 }): Promise<ActionResult> {
   try {
-    await requireAdmin();
+    const session = await requireAdmin();
     const result = await auth.api.signUpEmail({
       body: { email: data.email, password: data.password, name: data.name },
     });
     await prisma.user.update({
       where: { id: result.user.id },
-      data: { phone: data.phone || null, role: data.role, isActive: data.isActive },
+      data: {
+        phone: data.phone || null,
+        role: data.role,
+        isActive: data.isActive,
+        createdById: session.user.id,
+        updatedById: session.user.id,
+      },
     });
     revalidatePath("/admin/users");
     return { ok: true };
@@ -51,7 +58,15 @@ export async function updateUserAction(
   data: { name: string; email: string; phone: string; role: Role; isActive: boolean },
 ): Promise<ActionResult> {
   try {
-    await requireAdmin();
+    const session = await requireAdmin();
+    const target = await prisma.user.findUnique({ where: { id } });
+    if (!target) return { ok: false, message: "Pengguna tidak ditemukan." };
+    if (!canManageUser(session.user.role as Role, target.role)) {
+      return { ok: false, message: "Anda tidak punya izin mengubah akun Super Admin." };
+    }
+    if (data.role === "SUPER_ADMIN" && session.user.role !== "SUPER_ADMIN") {
+      return { ok: false, message: "Cuma Super Admin yang bisa menjadikan pengguna lain Super Admin." };
+    }
     await prisma.user.update({
       where: { id },
       data: {
@@ -60,6 +75,7 @@ export async function updateUserAction(
         phone: data.phone || null,
         role: data.role,
         isActive: data.isActive,
+        updatedById: session.user.id,
       },
     });
     revalidatePath("/admin/users");
@@ -75,7 +91,12 @@ export async function toggleUserActiveAction(id: string, isActive: boolean): Pro
     if (session.user.id === id) {
       return { ok: false, message: "Tidak bisa menonaktifkan akun sendiri." };
     }
-    await prisma.user.update({ where: { id }, data: { isActive } });
+    const target = await prisma.user.findUnique({ where: { id } });
+    if (!target) return { ok: false, message: "Pengguna tidak ditemukan." };
+    if (!canManageUser(session.user.role as Role, target.role)) {
+      return { ok: false, message: "Anda tidak punya izin mengubah status akun Super Admin." };
+    }
+    await prisma.user.update({ where: { id }, data: { isActive, updatedById: session.user.id } });
     revalidatePath("/admin/users");
     return { ok: true };
   } catch (e) {
@@ -83,13 +104,24 @@ export async function toggleUserActiveAction(id: string, isActive: boolean): Pro
   }
 }
 
+/** Soft delete — akun ditandai deletedAt & dinonaktifkan (isActive: false,
+ * ikut nolak login lewat pengecekan yg sama di auth.ts), bukan dihapus
+ * permanen dari DB. */
 export async function deleteUserAction(id: string): Promise<ActionResult> {
   try {
     const session = await requireAdmin();
     if (session.user.id === id) {
       return { ok: false, message: "Tidak bisa menghapus akun sendiri." };
     }
-    await prisma.user.delete({ where: { id } });
+    const target = await prisma.user.findUnique({ where: { id } });
+    if (!target) return { ok: false, message: "Pengguna tidak ditemukan." };
+    if (!canManageUser(session.user.role as Role, target.role)) {
+      return { ok: false, message: "Anda tidak punya izin menghapus akun Super Admin." };
+    }
+    await prisma.user.update({
+      where: { id },
+      data: { deletedAt: new Date(), isActive: false, updatedById: session.user.id },
+    });
     revalidatePath("/admin/users");
     return { ok: true };
   } catch (e) {

@@ -6,11 +6,14 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, FileText, Newspaper, Image as ImageIcon, Users, Settings,
   Star, Megaphone, Package, HelpCircle, BarChart3, ChevronRight, X,
-  Inbox, Headset, UserCog,
+  Inbox, Headset, UserCog, Building2, Menu as MenuIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { COMPANY_INFO } from "@/lib/constants";
 import { useAdminSidebar } from "@/contexts/AdminSidebarContext";
+import { useSession } from "@/lib/auth-client";
+import { canAccessAdminRoute } from "@/lib/permissions";
+import type { Role } from "@prisma/client";
 
 const navGroups = [
   {
@@ -25,6 +28,7 @@ const navGroups = [
     label: "Konten",
     items: [
       { label: "Halaman", href: "/admin/pages", icon: FileText },
+      { label: "Menu", href: "/admin/menu", icon: MenuIcon },
       { label: "Blog & Artikel", href: "/admin/blog", icon: Newspaper },
       { label: "Media Library", href: "/admin/media", icon: ImageIcon },
     ],
@@ -36,6 +40,7 @@ const navGroups = [
       { label: "Tim", href: "/admin/tim", icon: Users },
       { label: "Testimoni", href: "/admin/testimoni", icon: Star },
       { label: "Promo / Banner", href: "/admin/promo", icon: Megaphone },
+      { label: "Klien", href: "/admin/klien", icon: Building2 },
       { label: "CTA Banner", href: "/admin/cta-banner", icon: Headset },
       { label: "FAQ", href: "/admin/faq", icon: HelpCircle },
     ],
@@ -53,8 +58,22 @@ const navGroups = [
 export default function AdminSidebar() {
   const pathname = usePathname();
   const { open, close, collapsed } = useAdminSidebar();
+  const { data: session } = useSession();
+  // useSession() client-side gak nge-infer custom additionalFields (role) di
+  // tipenya walau datanya beneran ada di response — cast manual di sini.
+  const role = (session?.user as { role?: Role } | undefined)?.role;
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
+
+  /* Sembunyikan menu yg gak boleh diakses role ini — belum tau role (session
+   * lom kebaca) -> tampilin semua dulu spy gak "flash" kosong, page.tsx tetap
+   * jadi penjaga terakhir kalau nekat buka URL langsung. */
+  const visibleGroups = navGroups
+    .map((group) => ({
+      ...group,
+      items: role ? group.items.filter((item) => canAccessAdminRoute(role, item.href)) : group.items,
+    }))
+    .filter((group) => group.items.length > 0);
 
   return (
     <aside
@@ -103,7 +122,7 @@ export default function AdminSidebar() {
 
       {/* Navigasi */}
       <nav className="flex-1 p-2 space-y-4">
-        {navGroups.map((group) => (
+        {visibleGroups.map((group) => (
           <div key={group.label}>
             {!collapsed && (
               <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 mb-1.5">

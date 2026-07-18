@@ -4,8 +4,9 @@ import type { SVGProps } from "react";
 import { Mail, MapPin, Phone } from "lucide-react";
 
 import { Separator } from "@/components/ui/separator";
-import { CONTACT_INFO, FOOTER_COLUMNS } from "@/lib/landing";
+import { CONTACT_INFO } from "@/lib/landing";
 import { COMPANY_INFO } from "@/lib/constants";
+import { prisma } from "@/lib/db";
 
 /* ─── Ikon sosial media (lucide-react tidak menyediakan brand icon) ─── */
 function BrandIcon({ d, ...props }: SVGProps<SVGSVGElement> & { d: string }) {
@@ -44,8 +45,22 @@ const SOCIALS = [
   },
 ];
 
-/* ─── Footer ─── */
-export default function Footer() {
+/* ─── Footer ───
+ * Server Component: fetch Menu "footer" langsung dari Prisma (gak butuh
+ * "use client" krn gak ada state/interaktivitas di sini). */
+export default async function Footer() {
+  const footerMenu = await prisma.menu.findUnique({
+    where: { key: "footer", deletedAt: null },
+    include: {
+      items: {
+        where: { parentId: null, deletedAt: null },
+        include: { children: { where: { deletedAt: null }, orderBy: { sortOrder: "asc" } } },
+        orderBy: { sortOrder: "asc" },
+      },
+    },
+  });
+  const columns = footerMenu?.items ?? [];
+
   return (
     <footer className="bg-footer text-footer-foreground">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -80,12 +95,12 @@ export default function Footer() {
           </div>
 
           {/* Kolom link */}
-          {FOOTER_COLUMNS.map((column) => (
-            <nav key={column.title} aria-label={column.title}>
-              <h3 className="text-sm font-bold text-white">{column.title}</h3>
+          {columns.map((column) => (
+            <nav key={column.id} aria-label={column.label}>
+              <h3 className="text-sm font-bold text-white">{column.label}</h3>
               <ul className="mt-4 space-y-2.5">
-                {column.links.map((link) => (
-                  <li key={link.label}>
+                {column.children.map((link) => (
+                  <li key={link.id}>
                     <Link
                       href={link.href}
                       className="text-sm transition-colors hover:text-primary"

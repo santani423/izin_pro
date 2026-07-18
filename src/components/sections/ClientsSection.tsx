@@ -1,11 +1,21 @@
 import Image from "next/image";
 
-import { LANDING_CLIENTS } from "@/lib/landing";
+import { prisma } from "@/lib/db";
 
 /* ─── Klien Kami — marquee logo auto-slide, jeda saat di-hover ───
  * Daftar logo digandakan 2x agar loop translateX(-50%) tersambung mulus.
+ * Server Component: baca Partner (isActive: true) langsung dari Prisma,
+ * jadi toggle Aktif/Nonaktif di admin/klien langsung berefek di sini.
  */
-export default function ClientsSection() {
+export default async function ClientsSection() {
+  const partners = await prisma.partner.findMany({
+    where: { isActive: true, deletedAt: null },
+    include: { logoMedia: true },
+    orderBy: { sortOrder: "asc" },
+  });
+
+  if (partners.length === 0) return null;
+
   return (
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
@@ -19,17 +29,17 @@ export default function ClientsSection() {
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-background to-transparent" />
 
         <ul className="animate-marquee flex w-max items-center gap-4">
-          {[...LANDING_CLIENTS, ...LANDING_CLIENTS].map((client, index) => (
+          {[...partners, ...partners].map((partner, index) => (
             <li
-              key={`${client.id}-${index}`}
+              key={`${partner.id}-${index}`}
               className="shrink-0"
-              aria-hidden={index >= LANDING_CLIENTS.length}
+              aria-hidden={index >= partners.length}
             >
               <div className="grid h-20 w-40 place-items-center rounded-xl border border-border/60 bg-white px-6 shadow-sm">
                 <div className="relative h-10 w-full">
                   <Image
-                    src={client.logo}
-                    alt={client.name}
+                    src={partner.logoMedia.url}
+                    alt={partner.name}
                     fill
                     sizes="160px"
                     className="object-contain"

@@ -16,32 +16,6 @@ import {
 } from "lucide-react";
 import { COMPANY_INFO } from "@/lib/constants";
 
-/* ─── Navigasi ─── */
-export interface NavLink {
-  label: string;
-  href: string;
-  children?: { label: string; href: string }[];
-}
-
-export const NAV_LINKS: NavLink[] = [
-  { label: "Beranda", href: "/" },
-  {
-    label: "Layanan",
-    href: "/layanan",
-    children: [
-      { label: "Pendirian PT", href: "/layanan/pendirian-pt" },
-      { label: "NIB (Nomor Induk Berusaha)", href: "/layanan/nib" },
-      { label: "Izin Usaha", href: "/layanan/izin-usaha" },
-      { label: "Izin Komersial & Operasional", href: "/layanan/izin-komersial" },
-      { label: "Perizinan Lainnya", href: "/layanan/perizinan-lainnya" },
-    ],
-  },
-  { label: "Tentang Kami", href: "/tentang-kami" },
-  { label: "Panduan & Artikel", href: "/blog" },
-  { label: "Testimoni", href: "/testimoni" },
-  { label: "Promo", href: "/promo" },
-  { label: "Kontak", href: "/kontak" },
-];
 
 /* ─── Hero ─── */
 export interface HeroHighlight {
@@ -369,62 +343,6 @@ export const LANDING_VIDEO_TESTIMONIALS: LandingVideoTestimonial[] = [
     role: "Owner, CV Sejahtera Abadi",
     duration: "1:27",
     gradient: "from-red-500 to-red-950",
-  },
-];
-
-/* ─── Klien ─── */
-export interface LandingClient {
-  id: string;
-  name: string;
-  logo: string;
-}
-
-export const LANDING_CLIENTS: LandingClient[] = [
-  { id: "cl-1", name: "bank bjb", logo: "/images/clients/bank-bjb.webp" },
-  { id: "cl-2", name: "Alfamart", logo: "/images/clients/alfamart.png" },
-  { id: "cl-3", name: "Telkom Indonesia", logo: "/images/clients/telkom.png" },
-  { id: "cl-4", name: "Trive Invest", logo: "/images/clients/trive-invest.jpg" },
-  { id: "cl-5", name: "JNE Express", logo: "/images/clients/jne.png" },
-  { id: "cl-6", name: "Sinarmas", logo: "/images/clients/sinarmas.jpg" },
-  { id: "cl-7", name: "WIKA", logo: "/images/clients/wika.webp" },
-  { id: "cl-8", name: "Maybank", logo: "/images/clients/maybank.png" },
-];
-
-/* ─── Footer ─── */
-export interface FooterColumn {
-  title: string;
-  links: { label: string; href: string }[];
-}
-
-export const FOOTER_COLUMNS: FooterColumn[] = [
-  {
-    title: "Layanan Kami",
-    links: [
-      { label: "Pendirian PT", href: "/layanan/pendirian-pt" },
-      { label: "NIB & Berusaha", href: "/layanan/nib" },
-      { label: "Izin Usaha", href: "/layanan/izin-usaha" },
-      { label: "Izin Komersial & Operasional", href: "/layanan/izin-komersial" },
-      { label: "Perizinan Lainnya", href: "/layanan/perizinan-lainnya" },
-    ],
-  },
-  {
-    title: "Informasi",
-    links: [
-      { label: "Tentang Kami", href: "/tentang-kami" },
-      { label: "Panduan & Artikel", href: "/blog" },
-      { label: "Testimoni", href: "/testimoni" },
-      { label: "Promo", href: "/promo" },
-      { label: "Tracking Perizinan", href: "/tracking" },
-    ],
-  },
-  {
-    title: "Bantuan",
-    links: [
-      { label: "FAQ", href: "/faq" },
-      { label: "Syarat & Ketentuan", href: "/syarat-ketentuan" },
-      { label: "Kebijakan Privasi", href: "/kebijakan-privasi" },
-      { label: "Hubungi Kami", href: "/kontak" },
-    ],
   },
 ];
 

@@ -21,11 +21,23 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { NAV_LINKS } from "@/lib/landing";
 import { cn } from "@/lib/utils";
 
-/* ─── Navbar Utama ─── */
-export default function Navbar() {
+interface NavChild {
+  id: string;
+  label: string;
+  href: string;
+}
+
+interface NavItem extends NavChild {
+  children: NavChild[];
+}
+
+/* ─── Navbar Utama ───
+ * items datang dari Menu "header" (Prisma), di-fetch di PublicLayout
+ * (Server Component) lalu diteruskan ke sini krn Navbar butuh "use client"
+ * utk interaktivitas (dropdown, sheet mobile, highlight halaman aktif). */
+export default function Navbar({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileDropdown, setMobileDropdown] = useState<string | null>(null);
@@ -59,9 +71,9 @@ export default function Navbar() {
         {/* Menu desktop */}
         <nav aria-label="Navigasi utama" className="hidden lg:block">
           <ul className="flex items-center gap-1">
-            {NAV_LINKS.map((link) =>
-              link.children ? (
-                <li key={link.label}>
+            {items.map((link) =>
+              link.children.length > 0 ? (
+                <li key={link.id}>
                   <DropdownMenu>
                     <DropdownMenuTrigger
                       className={cn(
@@ -85,7 +97,7 @@ export default function Navbar() {
                     >
                       {link.children.map((child) => (
                         <DropdownMenuItem
-                          key={child.label}
+                          key={child.id}
                           render={<Link href={child.href} />}
                           className="gap-3 rounded-lg px-3 py-2.5 text-sm text-foreground/80"
                         >
@@ -100,7 +112,7 @@ export default function Navbar() {
                   </DropdownMenu>
                 </li>
               ) : (
-                <li key={link.label}>
+                <li key={link.id}>
                   <Link
                     href={link.href}
                     className={cn(
@@ -148,21 +160,21 @@ export default function Navbar() {
             </SheetHeader>
             <nav aria-label="Navigasi mobile" className="px-4">
               <ul className="flex flex-col gap-1.5">
-                {NAV_LINKS.map((link) =>
-                  link.children ? (
+                {items.map((link) =>
+                  link.children.length > 0 ? (
                     /* Item dengan sub-menu — dropdown buka/tutup */
-                    <li key={link.label}>
+                    <li key={link.id}>
                       <button
                         type="button"
-                        aria-expanded={mobileDropdown === link.label}
+                        aria-expanded={mobileDropdown === link.id}
                         onClick={() =>
                           setMobileDropdown(
-                            mobileDropdown === link.label ? null : link.label,
+                            mobileDropdown === link.id ? null : link.id,
                           )
                         }
                         className={cn(
                           "flex w-full items-center justify-between rounded-lg px-4 py-3 text-sm font-medium transition-colors",
-                          mobileDropdown === link.label
+                          mobileDropdown === link.id
                             ? "bg-primary/5 text-primary"
                             : "text-foreground/90 hover:bg-accent hover:text-primary",
                         )}
@@ -171,15 +183,15 @@ export default function Navbar() {
                         <ChevronDown
                           className={cn(
                             "size-4 transition-transform",
-                            mobileDropdown === link.label && "rotate-180",
+                            mobileDropdown === link.id && "rotate-180",
                           )}
                           aria-hidden="true"
                         />
                       </button>
-                      {mobileDropdown === link.label && (
+                      {mobileDropdown === link.id && (
                         <ul className="ml-4 mt-1 border-l border-border pl-4">
                           {link.children.map((child) => (
-                            <li key={child.label}>
+                            <li key={child.id}>
                               <Link
                                 href={child.href}
                                 onClick={() => setMobileOpen(false)}
@@ -194,7 +206,7 @@ export default function Navbar() {
                     </li>
                   ) : (
                     /* Item link biasa — pill outline saat halaman aktif */
-                    <li key={link.label}>
+                    <li key={link.id}>
                       <Link
                         href={link.href}
                         onClick={() => setMobileOpen(false)}

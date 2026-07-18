@@ -2,6 +2,8 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { canAccessAdminRoute } from "@/lib/permissions";
+import type { Role } from "@prisma/client";
 import UsersManager from "./UsersManager";
 
 /* ─── Halaman Manajemen Pengguna & Role Admin ───
@@ -9,12 +11,26 @@ import UsersManager from "./UsersManager";
  * pengguna asli dari Prisma, lalu serahkan interaksi ke UsersManager (client). */
 export default async function AdminUsersPage() {
   const session = await auth.api.getSession({ headers: await headers() });
+  const role = session?.user.role as Role | undefined;
 
-  if (!session || (session.user.role !== "SUPER_ADMIN" && session.user.role !== "ADMIN")) {
+  if (!session || !role || !canAccessAdminRoute(role, "/admin/users")) {
     redirect("/admin/dashboard");
   }
 
-  const users = await prisma.user.findMany({ orderBy: { createdAt: "desc" } });
+  const users = await prisma.user.findMany({
+    where: { deletedAt: null },
+    orderBy: { createdAt: "desc" },
+    include: {
+      createdBy: { select: { name: true } },
+      updatedBy: { select: { name: true } },
+    },
+  });
 
-  return <UsersManager initialUsers={users} currentUserId={session.user.id} />;
+  return (
+    <UsersManager
+      initialUsers={users}
+      currentUserId={session.user.id}
+      currentUserRole={role}
+    />
+  );
 }

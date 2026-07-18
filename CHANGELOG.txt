@@ -5,6 +5,309 @@ CHANGELOG — IzinPro CMS Project
 Format: [YYYY-MM-DD] Versi — Deskripsi
 ====================================================
 
+[2026-07-19] v2.2.5 — Sidebar Sesuai Role + Proteksi Hierarki Antar-User
+----------------------------------------------------
+STATUS   : DONE
+PROJECT  : izinpro-cms/
+SUMBER   : Diskusi user — 2 hal: (1) ADMIN gak boleh modifikasi data akun
+           SUPER_ADMIN, (2) menu sidebar yang gak bisa diakses suatu role
+           harusnya gak usah ditampilkan sama sekali (bukan cuma redirect
+           kalau nekat buka URL-nya)
+
+DITAMBAHKAN:
+  + src/lib/permissions.ts (BARU) — satu sumber kebenaran utk matrix akses
+    role x route (canAccessAdminRoute) + hierarki antar-user
+    (canManageUser: cuma SUPER_ADMIN yg boleh kelola akun SUPER_ADMIN lain)
+  + AdminSidebar.tsx pakai useSession() (client) + permissions.ts,
+    sembunyikan grup/menu yg role login gak boleh akses — SUPER_ADMIN/ADMIN
+    lihat 16 menu, EDITOR 14 (tanpa Pengguna & Pengaturan), AUTHOR cuma 3
+    (Dashboard, Blog & Artikel, Media Library)
+  + src/lib/actions/users.ts: updateUserAction/toggleUserActiveAction/
+    deleteUserAction nolak kalau target SUPER_ADMIN & pelaku bukan
+    SUPER_ADMIN; updateUserAction juga nolak promosi role jadi SUPER_ADMIN
+    kalau pelakunya bukan SUPER_ADMIN (cegah privilege escalation)
+  + UsersManager.tsx: baris Super Admin nampilin ikon gembok (bukan menu
+    aksi) kalau yg login bukan Super Admin; opsi role "Super Admin" di
+    dropdown Tambah/Edit disembunyikan utk non-Super-Admin
+  ~ Migrasi 13 page.tsx admin (semua yg tadinya inline session.user.role
+    check) ke canAccessAdminRoute() terpusat — gak ada lagi logic akses yg
+    tercecer & berpotensi beda-beda antar halaman
+
+VERIFIKASI:
+  ~ tsc --noEmit bersih
+  ~ Playwright pakai 4 akun asli (Super Admin/Admin/Editor/Author): sidebar
+    tiap role nunjukin menu yg sesuai; ADMIN gak bisa edit/nonaktifkan/
+    hapus Super Admin (server tolak + UI nampilin gembok)
+  ! 2 bug ketemu di script tes sendiri (bukan kode aplikasi) — selector
+    Playwright hasText:"Super Admin" ambigu krn substring itu juga muncul
+    di audit trail "oleh Super Admin" pada baris lain; diperbaiki di script
+
+====================================================
+
+[2026-07-19] v2.2.4 — Hak Akses Per Role Ditegakkan di Semua Menu Admin
+----------------------------------------------------
+STATUS   : DONE
+PROJECT  : izinpro-cms/
+SUMBER   : Diskusi user — 4 role (Super Admin/Admin/Editor/Author) sudah
+           didesain sejak v1.5.4 (ROLE_DESC di UsersManager.tsx) tapi baru
+           ditegakkan di 4 menu (Users/Layanan/Klien/Menu). Sesi ini
+           menegakkan aturan yg sama ke semua menu admin lainnya.
+
+DITAMBAHKAN:
+  + 8 halaman (Analitik, Inquiry, Halaman, Promo, Testimoni, FAQ, CTA
+    Banner, Tim) di-split jadi Server Component wrapper (cek role, redirect
+    AUTHOR ke dashboard) + file *PageClient.tsx (isi asli dipindah tanpa
+    diubah — masih mock, belum tersambung Prisma)
+  + admin/settings: EDITOR & AUTHOR diblokir total (redirect); ADMIN boleh
+    akses tapi view-only (banner peringatan, semua Input/Textarea disabled,
+    tombol Simpan disembunyikan di 4 tab); SUPER_ADMIN akses penuh
+  ~ admin/blog & admin/media SENGAJA gak diubah — AUTHOR emang harus bisa
+    akses keduanya (nulis artikel + upload gambar sendiri). Filter "cuma
+    bisa edit artikel miliknya sendiri" nunggu Blog tersambung Prisma
+    (butuh authorId asli buat validasi kepemilikan)
+  ~ admin/dashboard sengaja gak dibatasi — halaman utama semua role stlh
+    login
+
+DOKUMENTASI:
+  ~ BUSINESS_FLOW.txt: perbaiki referensi basi "Viewer" (draft lama) jadi
+    4 role final sesuai ROLE_DESC yg beneran dipakai di kode
+
+VERIFIKASI:
+  ~ tsc --noEmit bersih
+  ~ Playwright pakai akun AUTHOR & ADMIN sungguhan (dibuat lewat admin/users,
+    dihapus lagi setelah tes): AUTHOR ke-redirect dari /admin/tim &
+    /admin/settings tapi tetap bisa /admin/blog ✓; ADMIN bisa buka
+    /admin/settings tapi view-only (nol tombol Simpan, input disabled) ✓,
+    tetap bisa /admin/tim normal ✓
+  ! Sempat ketemu bug di script tes (bukan kode aplikasi): pilih role
+    "Admin" via dropdown ke-select "Super Admin" krn "Admin" substring dari
+    "Super Admin" — sempat kebuat 1 akun Super Admin gak sengaja, langsung
+    dihapus begitu ketauan
+
+====================================================
+
+[2026-07-19] v2.2.3 — Soft Delete Konsisten (deletedAt) + Jejak Dibuat/Diubah Oleh
+----------------------------------------------------
+STATUS   : DONE
+PROJECT  : izinpro-cms/
+SUMBER   : Diskusi user — mau ada createdBy/updatedBy di semua tabel yg
+           punya createdAt+updatedAt, dan soft delete konsisten di semua
+           tabel yg masih hapus permanen
+
+DITAMBAHKAN (createdBy/updatedBy):
+  + createdById+updatedById (FK User) ke 15 tabel konten: Category, Page,
+    TeamMember, ServiceCategory, Service, ServicePackage, Testimonial,
+    Partner, Faq, PromoBanner, PromoPackage, Cta, Order, Menu, MenuItem
+  + updatedById SAJA ke BlogPost (authorId udah jadi createdBy), Inquiry
+    (dibuat pengunjung publik, bukan admin), Settings (singleton), User
+    (self-relation — siapa admin yg buat/ubah akun user lain)
+  + Backfill data lama ke Super Admin; seed.ts diupdate isi field ini juga
+    biar seed ulang dari nol tetap benar
+  + Server Actions (users/services/partners/menu) isi createdById/
+    updatedById pakai session user yg login
+  + UI "Dibuat oleh / Diubah oleh" tampil di Layanan, Klien, Menu, Pengguna
+
+DITAMBAHKAN (soft delete):
+  + deletedAt DateTime? ke Partner, Menu, MenuItem, User — samain konvensi
+    dgn 6 tabel yg udah duluan pakai deletedAt (Service, BlogPost, Page,
+    TeamMember, Testimonial, PromoBanner). Sempat coba isDeleted (boolean)
+    dulu tapi direvisi ke deletedAt biar satu konvensi di seluruh schema
+  ~ deletePartnerAction/deleteMenuItemAction/deleteUserAction jadi soft
+    delete (update deletedAt, bukan hapus row). User soft delete juga set
+    isActive:false biar login ketolak (pakai pengecekan yg udah ada)
+  ~ Media logo Partner TIDAK ikut dihapus saat Partner di-soft-delete
+    (row-nya harus tetap utuh selama Partner masih ada, walau "terhapus")
+  ~ Semua query baca (admin/klien, admin/menu, admin/users, ClientsSection,
+    PublicLayout, Footer) difilter deletedAt: null
+
+VERIFIKASI:
+  ~ tsc --noEmit bersih
+  ~ Playwright: hapus Partner/MenuItem/User → hilang dari admin & publik,
+    tapi row tetap ada di DB dgn deletedAt terisi timestamp (dicek
+    langsung); User terhapus gak bisa login lagi
+
+====================================================
+
+[2026-07-19] v2.2.2 — Menu Navigasi Tersambung Prisma (Admin + Publik)
+----------------------------------------------------
+STATUS   : DONE
+PROJECT  : izinpro-cms/
+SUMBER   : Lanjutan v2.2.1 — user minta halaman admin buat kelola Menu
+           (belum ada sama sekali sebelumnya), lalu minta Navbar/Footer
+           publik ikut disambungkan juga
+
+DITAMBAHKAN:
+  + src/lib/actions/menu.ts (BARU) — create/update/delete/move (naik-turun)
+    MenuItem. Delete hapus submenu dulu (parentId onDelete: NoAction di
+    schema, jadi harus dibersihkan manual)
+  + admin/menu/page.tsx + MenuManager.tsx (BARU) — tab Header/Footer,
+    expand submenu, tombol naik/turun/edit/hapus/tambah submenu
+  + src/app/(public)/layout.tsx jadi Server Component: fetch Menu "header"
+    dari Prisma, teruskan ke Navbar (tetap "use client" krn butuh
+    interaktivitas dropdown/mobile sheet) via props
+  + Footer.tsx jadi Server Component: fetch Menu "footer" sendiri langsung
+  ~ NAV_LINKS & FOOTER_COLUMNS dihapus dari landing.ts (udah gak dipakai),
+    datanya dipindah jadi konstanta lokal di seed.ts
+  ~ revalidatePath("/", "layout") (bukan cuma "/") biar perubahan menu
+    ke-refresh di SEMUA halaman publik, bukan cuma homepage
+
+VERIFIKASI:
+  ~ tsc --noEmit bersih
+  ~ Playwright: tab Header/Footer tampil sesuai DB; edit label "Kontak" di
+    admin → langsung berubah di homepage DAN /tentang-kami (halaman lain,
+    layout sama) — konfirmasi revalidate "layout" jalan bukan cuma 1 rute
+
+====================================================
+
+[2026-07-19] v2.2.1 — Menu Klien/Partner Tersambung Prisma (Baru)
+----------------------------------------------------
+STATUS   : DONE
+PROJECT  : izinpro-cms/
+SUMBER   : User sadar gak ada menu admin buat kelola logo klien (Partner
+           model udah ke-seed di v2.0.1 tapi emang belum ada UI-nya sejak
+           awal, ditandain di riset migrasi data)
+
+DITAMBAHKAN:
+  + src/lib/actions/partners.ts (BARU) — create/update/toggle-aktif/hapus,
+    upload logo ke public/uploads/partners/ (simpan apa adanya, belum ada
+    resize/WebP — itu bagian Media Library v2.3.0), validasi format &
+    ukuran maks 2MB
+  + admin/klien/page.tsx + KlienManager.tsx (BARU, gak ada mock referensi
+    sama sekali) — grid kartu logo klien, upload, toggle aktif, edit, hapus
+  + Entry sidebar "Klien" (grup Company Profile) + PAGE_META
+  + next.config.ts: naikkan batas body Server Action ke 4MB (default 1MB
+    kekecilan buat upload gambar)
+  + ClientsSection.tsx (homepage) jadi Server Component, baca Partner dari
+    Prisma langsung (bukan LANDING_CLIENTS statis lagi) — toggle admin
+    langsung berefek ke tampilan publik
+
+VERIFIKASI:
+  ~ tsc --noEmit bersih
+  ~ Playwright: 8 klien tampil dari DB, upload klien baru, toggle nonaktif
+    → hilang dari homepage, hapus → file & Media row ikut bersih
+
+====================================================
+
+[2026-07-18] v2.2.0 — Admin Layanan Tersambung Prisma (Sebagian)
+----------------------------------------------------
+STATUS   : DONE (sebagian) — modul Layanan selesai; Blog, Tim, Testimoni,
+           Promo, FAQ, Halaman, Media, Settings, Inquiry masih mock,
+           menyusul di entri berikutnya (v2.2.1 dst.)
+PROJECT  : izinpro-cms/
+SUMBER   : Lanjutan v2.0.1 (data sudah di-seed) — sambungkan modul admin
+           satu-per-satu ke Prisma mengikuti pola referensi modul
+           Pengguna (v2.0.0): Server Component + Server Actions.
+
+DITAMBAHKAN:
+  + src/lib/actions/services.ts (BARU) — createServiceAction,
+    updateServiceAction, toggleServiceActiveAction, deleteServiceAction
+    (soft delete via deletedAt, sesuai keputusan desain schema utk Service).
+    Semua di-guard requireContentEditor() — SUPER_ADMIN/ADMIN/EDITOR boleh,
+    AUTHOR gak boleh kelola Layanan
+  + admin/layanan/page.tsx jadi Server Component: cek role + fetch Service
+    (deletedAt: null, include category, orderBy sortOrder) & ServiceCategory
+    asli dari Prisma
+  + admin/layanan/LayananManager.tsx (BARU, client) — UI sama persis spt
+    mock lama, tapi data & aksi asli lewat Server Actions
+
+PENYESUAIAN (dipicu kebutuhan schema, bukan pilihan desain baru):
+  ~ Dialog tambah/edit dapat field baru "Kategori" (dropdown ServiceCategory)
+    — Service.categoryId wajib di schema, mock lama gak punya field ini
+  ~ Tombol Hapus jadi soft delete (set deletedAt), bukan hapus permanen
+  ~ Peta ikon (ICONS) dilengkapi dari 5 jadi 18 — mock lama diam-diam
+    fallback ke ikon generik FileText utk 13 dari 18 layanan
+
+VERIFIKASI:
+  ~ tsc --noEmit bersih
+  ~ Playwright (browser beneran, headless): login -> /admin/layanan tampil
+    18 layanan asli dari DB dgn ikon & kategori benar ✓; toggle status
+    aktif/nonaktif persisten setelah reload ✓; dialog edit ada field
+    Kategori ✓; tambah layanan baru tersimpan ke DB ✓; nol error console ✓
+  ~ Data uji coba (smoke test) dibersihkan setelah verifikasi
+
+====================================================
+
+[2026-07-18] v2.0.1 — Migrasi Data Mock ke Database (Seed Lengkap)
+----------------------------------------------------
+STATUS   : DONE — seed jalan di dev lokal (XAMPP MariaDB), belum deploy
+PROJECT  : izinpro-cms/
+SUMBER   : Lanjutan v2.0.0 — modul Login & Pengguna sudah tersambung Prisma,
+           modul lain (Blog, Layanan, Tim, Testimoni, Promo, FAQ, Halaman,
+           Media, Settings, Inquiry) masih mock React state. Sesi ini
+           memigrasikan seluruh data mock yang tersebar di src/lib/*.ts &
+           beberapa halaman admin (inline SEED) ke database beneran.
+
+SKEMA (prisma/schema.prisma):
+  + Model baru Order (tracking perizinan /tracking) — orderNo unik,
+    serviceId? (FK Service), currentStep, submittedAt, estimatedDoneAt,
+    stepDates (Json array 5 tanggal nullable). TRACKING_STEPS (5 tahap)
+    tetap statis di frontend krn sama utk semua order & belum ada admin
+    CRUD-nya. Migration: 20260718163704_add_order_tracking
+
+REKONSILIASI SUMBER DATA GANDA (dikonfirmasi user satu-per-satu):
+  Beberapa domain punya 2-3 versi mock berbeda tersebar di constants.ts /
+  landing.ts / layanan.ts / testimoni.ts / tentang.ts (nama sama, isi beda) —
+  sudah diputuskan mana yang jadi source of truth:
+    ~ Tim: versi constants.ts (Bambang Prasetyo dkk, 6 orang) — dipakai
+      admin/tim CRUD
+    ~ Testimoni: versi constants.ts (6) sbg utama; video testimonial
+      di-skip (gak ada teks testimoni asli, cuma nama+durasi)
+    ~ Klien/Partner: 8 yg punya file logo asli di landing.ts (Bank Mandiri
+      & BRI di constants.ts di-drop krn gak ada logo)
+    ~ Kategori layanan: id pakai skema layanan.ts ("pendirian-perusahaan",
+      bukan "pendirian-pt" dari testimoni.ts)
+    ~ Menu navigasi & footer: versi landing.ts (7 item header, termasuk
+      Testimoni & Promo yg ketinggalan di constants.ts NAV_ITEMS lama)
+    ~ Harga promo "Paket Hemat": Rp 3.500.000 (versi constants.ts)
+
+SEED DATA (prisma/seed.ts, extend — Super Admin seed v2.0.0 tetap):
+  + Settings (singleton) — dari COMPANY_INFO; seoTitle/seoDescription/
+    seoKeywords blm ada di mock -> placeholder, perlu direvisi
+  + Menu+MenuItem — header (7 top-level, Layanan 5 children) & footer (3 kolom)
+  + ServiceCategory (4) + Service (18) — kategori 13 dari layanan.ts, 6
+    sisanya (pt-perorangan/cv-firma/pma/npwp-badan-pkp/pendaftaran-merk/
+    virtual-office) judgment call krn gak ada di layanan.ts; detailContent
+    asli cuma 3 slug (pendirian-pt/nib/izin-usaha), 15 lainnya null
+  + TeamMember (6), Testimonial (6, categoryId sebagian ditebak dari isi
+    konten krn constants.ts gak punya field category)
+  + Media + Partner (8, logo file asli di public/images/clients/)
+  + Faq (6 GLOBAL + 4 KONTAK)
+  + PromoBanner (3) + PromoPackage (3, harga asli dari promo.ts — bukan
+    FALLBACK_PRICES placeholder di layanan-detail.ts yg sengaja di-skip)
+  + Cta (1 default + 3 varian, dari mock admin/cta-banner)
+  + Category (5) + BlogPost (8) — views ("1.284"->1284) & tanggal Indonesia
+    di-parse ke tipe asli; content pakai excerpt sbg placeholder (5/8 blm
+    ada body lengkap); detailContent asli utk 3 slug (blog-detail.ts,
+    panduan-legalitas.ts, panduan-nib.ts)
+  + Inquiry (6, dari admin/inquiry inline SEED, waktu relatif dikonversi
+    ke timestamp mundur perkiraan)
+  + Page (8, dari admin/pages inline SEED)
+  + Order (3, dari tracking.ts MOCK_ORDERS)
+  ~ Helper stripIcons(): objek konten kaya (LAYANAN_DETAILS, ARTICLE_DETAILS,
+    dll) nyimpen komponen ikon Lucide yg bukan JSON-serializable — dibuang
+    dulu sblm disimpan ke kolom Json
+
+DI-SKIP (bukan bug, sengaja belum di-seed):
+  - ServicePackage: FALLBACK_PRICES di layanan-detail.ts eksplisit ditandai
+    placeholder ("belum dikonfirmasi klien")
+  - Testimonial video (5): gak ada teks testimoni asli
+  - Tag/PostTag, AuditLog, PageView, DailyStat: gak ada mock data sama sekali
+
+VERIFIKASI:
+  ~ tsc --noEmit bersih
+  ~ Query spot-check tiap model: row count sesuai ekspektasi, relasi FK
+    (ServiceCategory<->Service, Media<->Partner, serviceId di PromoPackage
+    & Inquiry) resolve dengan benar
+
+CATATAN LANJUTAN:
+  - Ini murni isi database — halaman publik & admin panel masih baca dari
+    mock arrays seperti biasa, belum ada tampilan yang berubah
+  - Menyambungkan tiap modul admin (Blog, Layanan, Tim, dst) ke data Prisma
+    ini adalah v2.2.0
+  - Belum dicoba deploy ke Rumahweb, masih dev lokal XAMPP
+
+====================================================
+
 [2026-07-18] v2.0.0 — Backend Prisma/MariaDB + Better Auth (Login & Pengguna Tersambung)
 ----------------------------------------------------
 STATUS   : DONE — backend infra jalan di dev lokal (XAMPP MariaDB), belum deploy
