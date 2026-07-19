@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import PageHero from "@/components/shared/PageHero";
 import TestimoniStatsBar from "@/components/sections/TestimoniStatsBar";
 import TestimoniGridSection from "@/components/sections/TestimoniGridSection";
+import { getPublicTestimonials } from "@/lib/testimonials-data";
 
 /* ─── Lazy load sections below the fold (reuse dari homepage) ─── */
 const VideoTestimonialsSection = dynamic(
@@ -24,7 +25,9 @@ export const metadata: Metadata = {
 };
 
 /* ─── Halaman Testimoni Klien (desain baru) ─── */
-export default function TestimoniPage() {
+export default async function TestimoniPage() {
+  const { gridTestimonials, videoTestimonials } = await getPublicTestimonials();
+
   return (
     <>
       {/* 1. Hero + breadcrumb */}
@@ -44,10 +47,10 @@ export default function TestimoniPage() {
       <TestimoniStatsBar />
 
       {/* 3. Grid testimoni + filter kategori */}
-      <TestimoniGridSection />
+      <TestimoniGridSection testimonials={gridTestimonials} />
 
       {/* 4. Video testimoni (reuse homepage) */}
-      <VideoTestimonialsSection />
+      <VideoTestimonialsSection videos={videoTestimonials} />
 
       {/* 5. Klien kami (reuse homepage) */}
       <ClientsSection />

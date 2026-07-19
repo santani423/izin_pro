@@ -5,6 +5,63 @@ CHANGELOG — IzinPro CMS Project
 Format: [YYYY-MM-DD] Versi — Deskripsi
 ====================================================
 
+[2026-07-19] v2.2.7 — Migrasi Testimonial ke Prisma + Video Testimoni di Admin
+----------------------------------------------------
+STATUS   : DONE
+PROJECT  : izinpro-cms/
+SUMBER   : Diskusi user — menu Testimoni di admin & section publik "Video
+           Testimoni Klien" ternyata masih full mock (belum ada Prisma sama
+           sekali), padahal model Testimonial di schema sudah lengkap
+           (isVideo/videoUrl/duration). User minta full migrasi: admin bisa
+           CRUD video testimoni (toggle + URL + durasi), dan section publik
+           diambil dari database, bukan data mock lagi
+
+DITAMBAHKAN:
+  + src/lib/actions/testimonials.ts (BARU) — create/update/toggle-active/
+    soft-delete Testimonial, pola sama dengan services.ts/partners.ts
+    (requireContentEditor, ActionResult, revalidatePath, audit trail
+    createdBy/updatedBy)
+  + src/lib/testimonials-data.ts (BARU) — getPublicTestimonials(), satu
+    query Prisma dipecah jadi 3 bentuk data sesuai kebutuhan section:
+    carousel teks (homepage), grid berfilter kategori (/testimoni), video
+  + TestimoniPageClient.tsx dirombak dari mock useState jadi CRUD asli
+    tersambung server actions di atas — form tambah field kategori
+    (Select dari ServiceCategory), toggle "Ini video testimoni" + input
+    URL video & durasi (muncul kondisional kalau toggle aktif), badge
+    "Video" di kartu list
+  ~ admin/testimoni/page.tsx: fetch testimonial & category asli dari
+    Prisma (dulu comment-nya sendiri bilang "belum tersambung Prisma")
+  ~ VideoTestimonialsSection, TestimonialsSection (homepage),
+    TestimoniGridSection (/testimoni): masing-masing sekarang terima data
+    lewat props dari Prisma, bukan import LANDING_VIDEO_TESTIMONIALS/
+    LANDING_TESTIMONIALS/TESTIMONI_ITEMS lagi; filter kategori grid
+    diturunkan dinamis dari kategori yang benar-benar dipakai (bukan
+    daftar statis TESTIMONI_CATEGORIES)
+  ~ homepage & /testimoni page.tsx jadi async Server Component, fetch via
+    getPublicTestimonials() lalu diteruskan sebagai props
+  ~ prisma/seed.ts: 4 dari 6 testimoni seed (Andi Setiawan, Siti
+    Nurhaliza, Budi Santoso, Rina Wijaya) ditandai isVideo=true + durasi
+    (dulu cuma ada di mock LANDING_VIDEO_TESTIMONIALS) — database yang
+    sudah jalan diupdate langsung lewat SQL biar konsisten tanpa reseed
+  - Hapus dead code: LANDING_TESTIMONIALS, LANDING_VIDEO_TESTIMONIALS
+    (lib/landing.ts), TESTIMONI_ITEMS, TESTIMONI_CATEGORIES (lib/testimoni.ts)
+
+DI LUAR SCOPE (belum dikerjakan):
+  - Upload foto klien (Testimonial.photoMediaId) — form masih pakai avatar
+    inisial+gradient, belum ada file upload kayak Partner.logoMediaId
+  - LayananDetailTestimonialsSection (testimoni di halaman detail layanan)
+    masih data statis per-layanan (layanan-detail.ts), sumber data beda &
+    gak disinggung di request
+
+VERIFIKASI:
+  ~ tsc --noEmit bersih
+  ~ Manual test lewat dev server: login admin, GET /, /testimoni,
+    /admin/testimoni semua 200 — nama klien, section "Video Testimoni
+    Klien", kategori "Pendirian Perusahaan", dan badge "Video" di admin
+    tampil sesuai data database (6 testimoni, 4 di antaranya video)
+
+====================================================
+
 [2026-07-19] v2.2.6 — Halaman Profil Saya (Foto/Nama/Password) + Pengguna Difilter per Role
 ----------------------------------------------------
 STATUS   : DONE

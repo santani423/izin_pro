@@ -8,38 +8,50 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SectionHeading } from "@/components/shared/SectionHeading";
-import { LANDING_TESTIMONIALS, type LandingTestimonial } from "@/lib/landing";
 import { cn } from "@/lib/utils";
+
+export interface TestimonialData {
+  id: string;
+  name: string;
+  role: string;
+  content: string;
+  rating: number;
+}
 
 const PAGE_SIZE = 4; // jumlah kartu per slide di desktop (sesuai desain)
 const AUTO_SLIDE_MS = 5000;
 
 /* Bagi testimoni menjadi halaman-halaman berisi PAGE_SIZE kartu */
-function chunk(items: LandingTestimonial[], size: number) {
-  const pages: LandingTestimonial[][] = [];
+function chunk(items: TestimonialData[], size: number) {
+  const pages: TestimonialData[][] = [];
   for (let i = 0; i < items.length; i += size) {
     pages.push(items.slice(i, i + size));
   }
   return pages;
 }
 
-const PAGES = chunk(LANDING_TESTIMONIALS, PAGE_SIZE);
-
 /* ─── Testimoni Klien — carousel dengan prev/next + auto-slide ─── */
-export default function TestimonialsSection() {
+export default function TestimonialsSection({
+  testimonials,
+}: {
+  testimonials: TestimonialData[];
+}) {
   const [page, setPage] = useState(0);
   const [paused, setPaused] = useState(false);
   const prefersReducedMotion = useReducedMotion();
+  const pages = chunk(testimonials, PAGE_SIZE);
 
-  const prev = () => setPage((p) => (p - 1 + PAGES.length) % PAGES.length);
-  const next = () => setPage((p) => (p + 1) % PAGES.length);
+  const prev = () => setPage((p) => (p - 1 + pages.length) % pages.length);
+  const next = () => setPage((p) => (p + 1) % pages.length);
 
   /* Auto-slide — berhenti saat di-hover atau user memilih reduced motion */
   useEffect(() => {
-    if (paused || prefersReducedMotion || PAGES.length <= 1) return;
+    if (paused || prefersReducedMotion || pages.length <= 1) return;
     const timer = setInterval(next, AUTO_SLIDE_MS);
     return () => clearInterval(timer);
-  }, [paused, prefersReducedMotion]);
+  }, [paused, prefersReducedMotion, pages.length]);
+
+  if (testimonials.length === 0) return null;
 
   return (
     <section id="testimoni" className="bg-brand-surface">
@@ -59,13 +71,13 @@ export default function TestimonialsSection() {
           className="flex transition-transform duration-500 ease-out"
           style={{ transform: `translateX(-${page * 100}%)` }}
         >
-          {PAGES.map((testimonials, pageIndex) => (
+          {pages.map((pageItems, pageIndex) => (
             <div
               key={pageIndex}
               className="grid w-full shrink-0 grid-cols-1 gap-5 px-1 sm:grid-cols-2 lg:grid-cols-4"
               aria-hidden={page !== pageIndex}
             >
-              {testimonials.map((testimonial) => (
+              {pageItems.map((testimonial) => (
                 <Card
                   key={testimonial.id}
                   className="h-full rounded-xl border-border/60 py-0"
@@ -85,7 +97,7 @@ export default function TestimonialsSection() {
                     </div>
 
                     <blockquote className="mt-3 flex-1 text-sm leading-relaxed text-foreground">
-                      {testimonial.quote}
+                      {testimonial.content}
                     </blockquote>
 
                     <figcaption className="mt-5 flex items-center gap-3">
@@ -132,7 +144,7 @@ export default function TestimonialsSection() {
           role="tablist"
           aria-label="Navigasi halaman testimoni"
         >
-          {PAGES.map((_, i) => (
+          {pages.map((_, i) => (
             <button
               key={i}
               type="button"

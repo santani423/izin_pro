@@ -202,6 +202,15 @@ const TESTIMONIAL_CATEGORY_BY_NAME: Record<string, string> = {
   "Rina Wijaya": "perizinan-lainnya",
 };
 
+/** 4 testimoni ini sebelumnya cuma ada di mock LANDING_VIDEO_TESTIMONIALS —
+ * sekarang jadi Testimonial asli dengan isVideo=true (durasi dipertahankan). */
+const TESTIMONIAL_VIDEO_DURATION_BY_NAME: Record<string, string> = {
+  "Andi Setiawan": "1:28",
+  "Siti Nurhaliza": "1:15",
+  "Budi Santoso": "1:32",
+  "Rina Wijaya": "1:27",
+};
+
 async function main() {
   /* ═══ 1. Super Admin (sudah ada dari v2.0.0, idempotent) ═══ */
   const adminEmail = "admin@izinpro.co.id";
@@ -373,6 +382,7 @@ async function main() {
   for (let i = 0; i < TESTIMONIALS.length; i++) {
     const t = TESTIMONIALS[i];
     const categorySlug = TESTIMONIAL_CATEGORY_BY_NAME[t.name];
+    const videoDuration = TESTIMONIAL_VIDEO_DURATION_BY_NAME[t.name];
     await prisma.testimonial.create({
       data: {
         name: t.name,
@@ -381,6 +391,8 @@ async function main() {
         content: t.content,
         rating: t.rating,
         categoryId: categorySlug ? categoryIdBySlug[categorySlug] : null,
+        isVideo: Boolean(videoDuration),
+        duration: videoDuration ?? null,
         sortOrder: i,
         createdById: admin.id,
         updatedById: admin.id,
