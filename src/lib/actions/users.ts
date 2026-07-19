@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { canManageUser } from "@/lib/permissions";
+import { canManageUser, visibleUserRoles } from "@/lib/permissions";
 import type { Role } from "@prisma/client";
 
 export type ActionResult = { ok: true } | { ok: false; message: string };
@@ -33,6 +33,9 @@ export async function createUserAction(data: {
 }): Promise<ActionResult> {
   try {
     const session = await requireAdmin();
+    if (!visibleUserRoles(session.user.role as Role).includes(data.role)) {
+      return { ok: false, message: "Anda tidak punya izin membuat pengguna dengan role ini." };
+    }
     const result = await auth.api.signUpEmail({
       body: { email: data.email, password: data.password, name: data.name },
     });
@@ -62,10 +65,10 @@ export async function updateUserAction(
     const target = await prisma.user.findUnique({ where: { id } });
     if (!target) return { ok: false, message: "Pengguna tidak ditemukan." };
     if (!canManageUser(session.user.role as Role, target.role)) {
-      return { ok: false, message: "Anda tidak punya izin mengubah akun Super Admin." };
+      return { ok: false, message: "Anda tidak punya izin mengubah akun ini." };
     }
-    if (data.role === "SUPER_ADMIN" && session.user.role !== "SUPER_ADMIN") {
-      return { ok: false, message: "Cuma Super Admin yang bisa menjadikan pengguna lain Super Admin." };
+    if (!visibleUserRoles(session.user.role as Role).includes(data.role)) {
+      return { ok: false, message: "Anda tidak punya izin mengubah pengguna ke role ini." };
     }
     await prisma.user.update({
       where: { id },
@@ -94,7 +97,7 @@ export async function toggleUserActiveAction(id: string, isActive: boolean): Pro
     const target = await prisma.user.findUnique({ where: { id } });
     if (!target) return { ok: false, message: "Pengguna tidak ditemukan." };
     if (!canManageUser(session.user.role as Role, target.role)) {
-      return { ok: false, message: "Anda tidak punya izin mengubah status akun Super Admin." };
+      return { ok: false, message: "Anda tidak punya izin mengubah status akun ini." };
     }
     await prisma.user.update({ where: { id }, data: { isActive, updatedById: session.user.id } });
     revalidatePath("/admin/users");
@@ -116,7 +119,7 @@ export async function deleteUserAction(id: string): Promise<ActionResult> {
     const target = await prisma.user.findUnique({ where: { id } });
     if (!target) return { ok: false, message: "Pengguna tidak ditemukan." };
     if (!canManageUser(session.user.role as Role, target.role)) {
-      return { ok: false, message: "Anda tidak punya izin menghapus akun Super Admin." };
+      return { ok: false, message: "Anda tidak punya izin menghapus akun ini." };
     }
     await prisma.user.update({
       where: { id },

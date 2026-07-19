@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { canAccessAdminRoute } from "@/lib/permissions";
+import { canAccessAdminRoute, visibleUserRoles } from "@/lib/permissions";
 import type { Role } from "@prisma/client";
 import UsersManager from "./UsersManager";
 
@@ -18,7 +18,7 @@ export default async function AdminUsersPage() {
   }
 
   const users = await prisma.user.findMany({
-    where: { deletedAt: null },
+    where: { deletedAt: null, role: { in: visibleUserRoles(role) } },
     orderBy: { createdAt: "desc" },
     include: {
       createdBy: { select: { name: true } },

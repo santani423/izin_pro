@@ -12,6 +12,7 @@ const AUTH_PAGES = ["/admin/login"];
 /* Judul & subjudul header per menu — dipakai otomatis oleh layout */
 const PAGE_META: Record<string, { title: string; subtitle?: string }> = {
   "/admin/dashboard": { title: "Dashboard", subtitle: "Selamat datang kembali, Super Admin!" },
+  "/admin/profile": { title: "Profil Saya", subtitle: "Kelola nama dan password akun Anda" },
   "/admin/analitik": { title: "Analitik", subtitle: "Data kunjungan dan performa website" },
   "/admin/users": { title: "Pengguna", subtitle: "Kelola akun admin dan hak akses (role)" },
   "/admin/pages": { title: "Halaman", subtitle: "Kelola semua halaman statis website" },

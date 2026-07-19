@@ -5,6 +5,51 @@ CHANGELOG — IzinPro CMS Project
 Format: [YYYY-MM-DD] Versi — Deskripsi
 ====================================================
 
+[2026-07-19] v2.2.6 — Halaman Profil Saya (Foto/Nama/Password) + Pengguna Difilter per Role
+----------------------------------------------------
+STATUS   : DONE
+PROJECT  : izinpro-cms/
+SUMBER   : Diskusi user — 3 hal: (1) Author/Editor perlu halaman buat ganti
+           nama & password sendiri krn gak punya akses menu Pengguna,
+           (2) Admin cuma boleh lihat/kelola user Editor & Author (gak
+           boleh lihat/buat Admin atau Super Admin), (3) Super Admin cuma
+           boleh lihat/kelola Admin, Editor, Author (Super Admin lain
+           disembunyikan dari list & gak bisa dibuat lewat UI)
+
+DITAMBAHKAN:
+  + src/app/admin/profile/ (BARU) — halaman "Profil Saya", bisa diakses
+    SEMUA role, dibuka dari dropdown avatar header + menu sidebar baru
+    (grup "Akun"). Ganti nama & foto profil pakai authClient.updateUser,
+    ganti password pakai authClient.changePassword (Better Auth) — email
+    ditampilkan read-only, gak bisa diubah sendiri
+  + src/lib/actions/profile.ts (BARU) — upload foto profil (PNG/JPG/WebP,
+    maks 2MB) disimpan ke public/uploads/avatars/, hapus file lama
+    otomatis kalau diganti; ada juga aksi hapus foto (balik ke fallback
+    inisial)
+  + Preview foto profil ukuran penuh (klik avatar → modal), + konfirmasi
+    sebelum hapus foto (reuse ConfirmDeleteDialog)
+  + src/lib/permissions.ts: visibleUserRoles(viewerRole) — satu sumber
+    kebenaran baru utk role apa yg boleh dilihat/dikelola di halaman
+    Pengguna; canManageUser sekarang diturunkan dari fungsi ini (Admin jadi
+    gak bisa kelola akun Admin lain juga, bukan cuma Super Admin)
+  ~ admin/users/page.tsx: query Prisma difilter role: { in: visibleUserRoles(role) }
+    — Admin cuma lihat Editor/Author, Super Admin cuma lihat Admin/Editor/Author
+  ~ UsersManager.tsx: dropdown role & filter chip toolbar ikut visibleUserRoles
+    (opsi role yg gak boleh di-assign gak muncul lagi di dropdown)
+  ~ src/lib/actions/users.ts: createUserAction/updateUserAction nolak di
+    server kalau role yg mau di-assign gak termasuk visibleUserRoles milik
+    actor (dulu cuma dicegah di client)
+  ~ AdminHeader.tsx: avatar di header nampilin foto profil (kalau ada),
+    bukan cuma inisial lagi
+
+VERIFIKASI:
+  ~ tsc --noEmit & eslint bersih
+  ~ Manual test lewat dev server (upload foto, ganti nama, hapus foto) —
+    log server nunjukin updateProfilePhotoAction/removeProfilePhotoAction
+    sukses tanpa error
+
+====================================================
+
 [2026-07-19] v2.2.5 — Sidebar Sesuai Role + Proteksi Hierarki Antar-User
 ----------------------------------------------------
 STATUS   : DONE

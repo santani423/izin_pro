@@ -15,6 +15,7 @@ import type { Role } from "@prisma/client";
  */
 export const ADMIN_ROUTE_ROLES: Record<string, Role[]> = {
   "/admin/dashboard": ["SUPER_ADMIN", "ADMIN", "EDITOR", "AUTHOR"],
+  "/admin/profile": ["SUPER_ADMIN", "ADMIN", "EDITOR", "AUTHOR"],
   "/admin/blog": ["SUPER_ADMIN", "ADMIN", "EDITOR", "AUTHOR"],
   "/admin/media": ["SUPER_ADMIN", "ADMIN", "EDITOR", "AUTHOR"],
   "/admin/analitik": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
@@ -38,10 +39,23 @@ export function canAccessAdminRoute(role: Role | string, href: string): boolean 
   return allowed.includes(role as Role);
 }
 
+/* ─── Role yg boleh dilihat & dikelola (list + create/edit) di halaman
+ * /admin/users, tergantung role yg lagi login ───
+ *   SUPER_ADMIN — lihat & kelola Admin, Editor, Author (Super Admin lain
+ *                 disembunyikan; ganti profil Super Admin sendiri lewat
+ *                 halaman Profil Saya)
+ *   ADMIN       — lihat & kelola Editor, Author saja (gak bisa lihat/buat
+ *                 Admin atau Super Admin)
+ * EDITOR/AUTHOR gak pernah sampe sini (ketahan canAccessAdminRoute duluan). */
+export function visibleUserRoles(viewerRole: Role | string): Role[] {
+  if (viewerRole === "SUPER_ADMIN") return ["ADMIN", "EDITOR", "AUTHOR"];
+  if (viewerRole === "ADMIN") return ["EDITOR", "AUTHOR"];
+  return [];
+}
+
 /* ─── Hierarki antar-user: siapa boleh ubah/hapus/nonaktifkan siapa ───
- * Cuma SUPER_ADMIN yg boleh modifikasi akun SUPER_ADMIN lain (termasuk
- * dirinya sendiri — tapi self-action punya guard terpisah di users.ts). */
+ * Turunan dari visibleUserRoles — kalau role targetnya gak kelihatan di
+ * list actor, actor juga gak boleh memodifikasinya lewat action manapun. */
 export function canManageUser(actorRole: Role | string, targetRole: Role | string): boolean {
-  if (targetRole === "SUPER_ADMIN" && actorRole !== "SUPER_ADMIN") return false;
-  return true;
+  return visibleUserRoles(actorRole).includes(targetRole as Role);
 }

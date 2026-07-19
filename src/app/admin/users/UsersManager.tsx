@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Search, Pencil, Trash2, MoreHorizontal, Eye, EyeOff, Lock } from "lucide-react";
 import { toast } from "sonner";
 import type { Role, User } from "@prisma/client";
-import { canManageUser } from "@/lib/permissions";
+import { canManageUser, visibleUserRoles } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,8 +44,6 @@ const ROLE_LABEL: Record<Role, string> = {
   EDITOR: "Editor",
   AUTHOR: "Author",
 };
-
-const ROLES: Role[] = ["SUPER_ADMIN", "ADMIN", "EDITOR", "AUTHOR"];
 
 const ROLE_STYLE: Record<Role, { badge: string; avatar: string }> = {
   SUPER_ADMIN: { badge: "bg-violet-50 text-violet-600", avatar: "bg-violet-100 text-violet-600" },
@@ -110,10 +108,11 @@ export default function UsersManager({
   const [toDelete, setToDelete] = useState<User | null>(null);
   const [showPass, setShowPass] = useState(false);
 
-  /* Cuma Super Admin yg boleh kelola akun Super Admin lain (termasuk edit
-   * role jadi Super Admin) — samain dgn guard di src/lib/actions/users.ts */
+  /* Cuma Super Admin yg boleh kelola akun Admin/Editor/Author (Super Admin
+   * lain gak pernah kelihatan di list ini) — samain dgn guard di
+   * src/lib/actions/users.ts */
   const canManage = (u: User) => canManageUser(currentUserRole, u.role);
-  const selectableRoles = currentUserRole === "SUPER_ADMIN" ? ROLES : ROLES.filter((r) => r !== "SUPER_ADMIN");
+  const selectableRoles = visibleUserRoles(currentUserRole);
 
   const filtered = initialUsers.filter((u) => {
     const q = search.toLowerCase();
@@ -218,7 +217,7 @@ export default function UsersManager({
             />
           </div>
           <div className="flex items-center gap-1 p-1 bg-gray-200 rounded-xl w-fit overflow-x-auto">
-            {(["Semua", ...ROLES] as const).map((r) => (
+            {(["Semua", ...selectableRoles] as const).map((r) => (
               <button
                 key={r}
                 onClick={() => setFilter(r)}
@@ -324,7 +323,7 @@ export default function UsersManager({
                       ) : (
                         <span
                           className="p-1.5 text-gray-300"
-                          title="Cuma Super Admin yang bisa mengelola akun ini"
+                          title="Anda tidak punya izin mengelola akun ini"
                         >
                           <Lock size={14} />
                         </span>

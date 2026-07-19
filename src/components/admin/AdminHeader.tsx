@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, Search, Menu, X, ChevronDown, LogOut, User, Settings } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +32,7 @@ export default function AdminHeader({ title, subtitle }: AdminHeaderProps) {
   const { data: session } = useSession();
   const displayName = session?.user?.name ?? "...";
   const displayEmail = session?.user?.email ?? "";
+  const displayImage = session?.user?.image;
 
   const notifications = [
     { id: 1, text: "Inquiry baru dari Budi Santoso", time: "5 menit lalu", unread: true },
@@ -123,6 +124,7 @@ export default function AdminHeader({ title, subtitle }: AdminHeaderProps) {
         <DropdownMenu>
           <DropdownMenuTrigger className="flex items-center gap-2 pl-1 pr-2 sm:pr-3 py-1.5 rounded-full hover:bg-gray-50 transition-colors outline-none">
             <Avatar className="w-9 h-9">
+              {displayImage && <AvatarImage src={displayImage} alt={displayName} />}
               <AvatarFallback className="bg-primary text-white text-xs font-bold">
                 {initialsOf(displayName)}
               </AvatarFallback>
@@ -136,7 +138,7 @@ export default function AdminHeader({ title, subtitle }: AdminHeaderProps) {
           <DropdownMenuContent align="end" className="w-48 rounded-2xl">
             <DropdownMenuGroup>
               <DropdownMenuLabel className="text-xs text-gray-400">Akun Saya</DropdownMenuLabel>
-              <DropdownMenuItem className="text-sm cursor-pointer gap-2">
+              <DropdownMenuItem className="text-sm cursor-pointer gap-2" onClick={() => router.push("/admin/profile")}>
                 <User size={14} className="text-gray-400" />
                 Profil
               </DropdownMenuItem>
