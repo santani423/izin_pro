@@ -5,6 +5,66 @@ CHANGELOG — IzinPro CMS Project
 Format: [YYYY-MM-DD] Versi — Deskripsi
 ====================================================
 
+[2026-07-19] v2.2.8 — Tab Testimoni/Video Terpisah + Upload Thumbnail + Video Player Asli
+----------------------------------------------------
+STATUS   : DONE
+PROJECT  : izinpro-cms/
+SUMBER   : Lanjutan v2.2.7 — user minta menu Testimoni admin dipisah jadi 2
+           tab krn CRUD teks & video beda kebutuhan field, thumbnail video
+           testimoni upload gambar (bukan URL manual), dan pop-up video
+           publik/Tentang Kami yang tadinya blank hitam pas loading dikasih
+           loading state + video YouTube asli (dulu cuma placeholder
+           gradient)
+
+DITAMBAHKAN:
+  + prisma/schema.prisma: Testimonial.thumbnailUrl (baru), Testimonial.
+    content & Testimonial.rating jadi opsional (video testimoni gak butuh
+    field itu) — migration manual (bukan `migrate dev`) krn drift schema
+    vs DB hasil restore mysqldump dari XAMPP, lihat migrations/
+    20260719182357_* & 20260719210655_*
+  + uploadTestimonialThumbnailAction() (actions/testimonials.ts) — upload
+    gambar thumbnail video testimoni, pola sama dgn saveLogoFile di
+    actions/partners.ts (simpan ke public/uploads/testimonials/ + catat
+    di Media)
+  + TestimoniPageClient.tsx dirombak: 2 tab terpisah (Testimoni / Video
+    Testimoni) pakai komponen Tabs, masing-masing tab punya tombol tambah
+    & grid sendiri
+    - Tab Testimoni: kartu avatar+rating+konten seperti sebelumnya, form
+      tetap ada Isi Testimoni & Rating
+    - Tab Video Testimoni: kartu sekarang tampilkan thumbnail 16:9 + ikon
+      play + badge durasi (bukan lagi avatar+rating+konten kosong), klik
+      kartu buka pop-up embed YouTube; form ganti field Isi Testimoni/
+      Rating dgn upload gambar thumbnail (preview kecil di form, diklik
+      buka pop-up preview ukuran penuh)
+  ~ VideoTestimonialsSection (publik) & VideoDialog (dipakai AboutSection
+    "Tentang Kami"): pop-up video sekarang render iframe YouTube asli dari
+    videoUrl (helper getYouTubeEmbedUrl, support watch/shorts/youtu.be),
+    bukan cuma gradient+ikon play statis; overlay skeleton loading nutup
+    layar sampai iframe selesai load (`onLoad`) biar gak blank hitam;
+    kartu video pakai thumbnailUrl kalau ada, fallback gradient
+  ~ prisma/seed.ts: 4 testimoni video (Andi Setiawan dkk) sekarang juga
+    diisi videoUrl + content/rating null; tambah 6 testimoni teks baru
+    (Hendra Wijaya, Maya Anggraini, Rudi Hartono, Fitriani Kusuma, Agus
+    Prasetyo, Nia Ramadhani) biar tab Testimoni gak cuma sisa 2 —
+    database yang sudah jalan diupdate langsung lewat SQL, seed.ts
+    disamakan biar fresh install konsisten
+  + .gitignore: /public/uploads/ (file upload runtime, bukan source code)
+
+DI LUAR SCOPE (belum dikerjakan):
+  - Resize/konversi WebP otomatis utk upload thumbnail (masih simpan file
+    apa adanya, sama kayak upload logo Partner) — direncanakan v2.3.0
+    bareng Media Library + Sharp.js
+  - Thumbnail video testimoni masih 1 field URL biasa, belum pakai relasi
+    Media (Testimonial.photoMediaId yg sudah ada di schema masih nganggur)
+
+VERIFIKASI:
+  ~ tsc --noEmit bersih di setiap tahap perubahan
+  ~ Manual test lewat dev server: login admin, upload thumbnail sukses
+    (file tersimpan + preview di form), 8 testimoni teks + 4 video tampil
+    sesuai tab masing-masing
+
+====================================================
+
 [2026-07-19] v2.2.7 — Migrasi Testimonial ke Prisma + Video Testimoni di Admin
 ----------------------------------------------------
 STATUS   : DONE

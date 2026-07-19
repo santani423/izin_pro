@@ -19,8 +19,8 @@ export async function getPublicTestimonials() {
       id: t.id,
       name: t.name,
       role: [t.role, t.company].filter(Boolean).join(", "),
-      content: t.content,
-      rating: t.rating,
+      content: t.content ?? "",
+      rating: t.rating ?? 0,
     }));
 
   const gridTestimonials: TestimoniGridItem[] = rows
@@ -29,7 +29,7 @@ export async function getPublicTestimonials() {
       id: t.id,
       name: t.name,
       role: [t.role, t.company].filter(Boolean).join(", "),
-      content: t.content,
+      content: t.content ?? "",
       categoryId: t.categoryId,
       categoryName: t.category?.name ?? null,
     }));
@@ -43,6 +43,8 @@ export async function getPublicTestimonials() {
       name: t.name,
       role: [t.role, t.company].filter(Boolean).join(", "),
       duration: t.duration ?? "",
+      videoUrl: t.videoUrl,
+      thumbnailUrl: t.thumbnailUrl,
     }));
 
   return { textTestimonials, gridTestimonials, videoTestimonials };

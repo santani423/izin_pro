@@ -203,13 +203,77 @@ const TESTIMONIAL_CATEGORY_BY_NAME: Record<string, string> = {
 };
 
 /** 4 testimoni ini sebelumnya cuma ada di mock LANDING_VIDEO_TESTIMONIALS —
- * sekarang jadi Testimonial asli dengan isVideo=true (durasi dipertahankan). */
+ * sekarang jadi Testimonial asli dengan isVideo=true (durasi dipertahankan,
+ * content/rating jadi null krn video testimoni gak butuh field itu lagi
+ * sejak v2.2.8). videoUrl sama utk keempatnya — placeholder sampai klien
+ * kasih video asli per klien. */
 const TESTIMONIAL_VIDEO_DURATION_BY_NAME: Record<string, string> = {
   "Andi Setiawan": "1:28",
   "Siti Nurhaliza": "1:15",
   "Budi Santoso": "1:32",
   "Rina Wijaya": "1:27",
 };
+const TESTIMONIAL_VIDEO_URL = "https://www.youtube.com/watch?v=JihfflYaZWY";
+
+/** 6 testimoni teks tambahan (v2.2.8) — user minta tab "Testimoni" jangan
+ * cuma sisa 2 (Deni Hermawan, Laila Mahmud) setelah 4 lainnya dipindah jadi
+ * video testimoni. */
+const ADDITIONAL_TEXT_TESTIMONIALS = [
+  {
+    name: "Hendra Wijaya",
+    role: "Owner",
+    company: "UD Sumber Rezeki",
+    content:
+      "Pengurusan izin operasional toko kami jadi jauh lebih mudah lewat IzinPro. Tim-nya sabar jelasin tiap tahapan sampai selesai.",
+    rating: 5,
+    categorySlug: "perizinan-operasional",
+  },
+  {
+    name: "Maya Anggraini",
+    role: "Direktur",
+    company: "PT Cipta Sentosa",
+    content:
+      "Pendirian PT kami rampung dalam waktu singkat, semua dokumen legalnya rapi dan sesuai regulasi terbaru. IzinPro benar-benar paham kebutuhan pengusaha.",
+    rating: 5,
+    categorySlug: "pendirian-perusahaan",
+  },
+  {
+    name: "Rudi Hartono",
+    role: "Founder",
+    company: "CV Berkah Jaya",
+    content:
+      "NIB usaha kami keluar lebih cepat dari perkiraan. Komunikasi tim IzinPro juga enak, selalu update progress tanpa perlu ditanya duluan.",
+    rating: 5,
+    categorySlug: "perizinan-usaha",
+  },
+  {
+    name: "Fitriani Kusuma",
+    role: "Owner",
+    company: "Toko Fitri Fashion",
+    content:
+      "Awalnya bingung soal sertifikasi halal buat produk kami, untung ada IzinPro yang bantu dari konsultasi sampai terbit. Prosesnya jelas, gak berbelit.",
+    rating: 4,
+    categorySlug: "perizinan-lainnya",
+  },
+  {
+    name: "Agus Prasetyo",
+    role: "CEO",
+    company: "PT Global Teknindo",
+    content:
+      "Izin lingkungan untuk pabrik kami biasanya ribet, tapi IzinPro bantu urus semua persyaratannya dengan rapi dan tepat waktu. Recommended banget.",
+    rating: 5,
+    categorySlug: "perizinan-operasional",
+  },
+  {
+    name: "Nia Ramadhani",
+    role: "Manajer",
+    company: "CV Anugerah Sejahtera",
+    content:
+      "Tim IzinPro membantu kami dari nol sampai badan usaha resmi berdiri. Konsultasinya gratis dan benar-benar informatif, jadi paham alur perizinannya.",
+    rating: 5,
+    categorySlug: "pendirian-perusahaan",
+  },
+];
 
 async function main() {
   /* ═══ 1. Super Admin (sudah ada dari v2.0.0, idempotent) ═══ */
@@ -377,21 +441,22 @@ async function main() {
   }
   console.log(`${TEAM_MEMBERS.length} TeamMember di-seed.`);
 
-  /* ═══ 8. Testimonial (6, teks — video testimonial di-skip krn gak ada
-   * teks testimoni asli, cuma nama+durasi) ═══ */
+  /* ═══ 8. Testimonial (6 dari mock + 4 jadi video + 6 teks tambahan v2.2.8) ═══ */
   for (let i = 0; i < TESTIMONIALS.length; i++) {
     const t = TESTIMONIALS[i];
     const categorySlug = TESTIMONIAL_CATEGORY_BY_NAME[t.name];
     const videoDuration = TESTIMONIAL_VIDEO_DURATION_BY_NAME[t.name];
+    const isVideo = Boolean(videoDuration);
     await prisma.testimonial.create({
       data: {
         name: t.name,
         role: t.role,
         company: t.company,
-        content: t.content,
-        rating: t.rating,
+        content: isVideo ? null : t.content,
+        rating: isVideo ? null : t.rating,
         categoryId: categorySlug ? categoryIdBySlug[categorySlug] : null,
-        isVideo: Boolean(videoDuration),
+        isVideo,
+        videoUrl: isVideo ? TESTIMONIAL_VIDEO_URL : null,
         duration: videoDuration ?? null,
         sortOrder: i,
         createdById: admin.id,
@@ -399,7 +464,24 @@ async function main() {
       },
     });
   }
-  console.log(`${TESTIMONIALS.length} Testimonial di-seed.`);
+  for (let i = 0; i < ADDITIONAL_TEXT_TESTIMONIALS.length; i++) {
+    const t = ADDITIONAL_TEXT_TESTIMONIALS[i];
+    await prisma.testimonial.create({
+      data: {
+        name: t.name,
+        role: t.role,
+        company: t.company,
+        content: t.content,
+        rating: t.rating,
+        categoryId: categoryIdBySlug[t.categorySlug] ?? null,
+        isVideo: false,
+        sortOrder: TESTIMONIALS.length + i,
+        createdById: admin.id,
+        updatedById: admin.id,
+      },
+    });
+  }
+  console.log(`${TESTIMONIALS.length + ADDITIONAL_TEXT_TESTIMONIALS.length} Testimonial di-seed.`);
 
   /* ═══ 9. Media (logo partner) + Partner (8, cuma yg punya file logo asli) ═══ */
   const publicDir = path.join(process.cwd(), "public");

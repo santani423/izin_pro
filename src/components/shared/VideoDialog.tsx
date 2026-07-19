@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Play } from "lucide-react";
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 interface VideoDialogProps {
@@ -24,12 +25,16 @@ export function VideoDialog({
   thumbnailClassName,
 }: VideoDialogProps) {
   const [open, setOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   return (
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setIsLoading(true);
+          setOpen(true);
+        }}
         aria-label={`Putar video: ${title}`}
         className="group relative block w-full overflow-hidden rounded-2xl shadow-sm"
       >
@@ -51,13 +56,19 @@ export function VideoDialog({
         <DialogContent className="w-full max-w-[calc(100%-2rem)] overflow-hidden p-0 sm:max-w-3xl">
           <DialogTitle className="sr-only">{title}</DialogTitle>
           {open && (
-            <iframe
-              src={`${videoUrl}?autoplay=1`}
-              title={title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="aspect-video w-full"
-            />
+            <div className="relative aspect-video w-full">
+              {isLoading && (
+                <Skeleton className="absolute inset-0 rounded-none" />
+              )}
+              <iframe
+                src={`${videoUrl}?autoplay=1`}
+                title={title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                onLoad={() => setIsLoading(false)}
+                className="size-full"
+              />
+            </div>
           )}
         </DialogContent>
       </Dialog>

@@ -374,14 +374,15 @@ model Testimonial {
   name         String
   role         String?
   company      String?
-  content      String           @db.Text
-  rating       Int
+  content      String?          @db.Text
+  rating       Int?
   categoryId   String?
   category     ServiceCategory? @relation(fields: [categoryId], references: [id])
   photoMediaId String?
   photoMedia   Media?           @relation("TestimonialPhoto", fields: [photoMediaId], references: [id])
   isVideo      Boolean          @default(false)
   videoUrl     String?
+  thumbnailUrl String?
   duration     String?
   isActive     Boolean          @default(true)
   sortOrder    Int              @default(0)
