@@ -22,35 +22,39 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { BLOG_POSTS } from "@/lib/constants";
-import { BLOG_TOPICS, getBlogCategories, getReadTime } from "@/lib/blog";
+import { BLOG_TOPICS } from "@/lib/blog";
+import type { PublicBlogPost, BlogCategory } from "@/lib/blog-data";
 
 const PAGE_SIZE = 4;
 
 /* ─── Katalog artikel — search bar, sidebar & grid (client) ─── */
-export default function BlogCatalogSection() {
+export default function BlogCatalogSection({
+  posts,
+  categories,
+}: {
+  posts: PublicBlogPost[];
+  categories: BlogCategory[];
+}) {
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("Semua Artikel");
   const [sortNewest, setSortNewest] = useState(true);
   const [page, setPage] = useState(1);
   const [subscribed, setSubscribed] = useState(false);
 
-  const categories = getBlogCategories();
-
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
-    const posts = BLOG_POSTS.filter((post) => {
+    const result = posts.filter((post) => {
       const matchQuery =
         q === "" ||
         post.title.toLowerCase().includes(q) ||
         post.excerpt.toLowerCase().includes(q);
       const matchCategory =
-        activeCategory === "Semua Artikel" || post.category === activeCategory;
+        activeCategory === "Semua Artikel" || post.categoryName === activeCategory;
       return matchQuery && matchCategory;
     });
-    /* BLOG_POSTS sudah urut terbaru → terlama */
-    return sortNewest ? posts : [...posts].reverse();
-  }, [query, activeCategory, sortNewest]);
+    /* posts sudah urut terbaru → terlama (orderBy publishedAt desc) */
+    return sortNewest ? result : [...result].reverse();
+  }, [posts, query, activeCategory, sortNewest]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -243,25 +247,35 @@ export default function BlogCatalogSection() {
                   key={post.id}
                   className="group h-full gap-0 overflow-hidden rounded-xl border-border/60 py-0 transition-shadow hover:shadow-md"
                 >
-                  {/* Placeholder thumbnail — gradient per artikel */}
-                  <div
-                    role="img"
-                    aria-label={`Thumbnail artikel ${post.title}`}
-                    className={`relative aspect-[16/9] w-full bg-gradient-to-br ${post.gradient}`}
-                  >
+                  {/* Thumbnail — gambar unggulan kalau ada, gradient sbg fallback */}
+                  <div className="relative aspect-[16/9] w-full overflow-hidden">
+                    {post.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={post.imageUrl}
+                        alt={`Thumbnail artikel ${post.title}`}
+                        className="size-full object-cover"
+                      />
+                    ) : (
+                      <div
+                        role="img"
+                        aria-label={`Thumbnail artikel ${post.title}`}
+                        className={`size-full bg-gradient-to-br ${post.gradient}`}
+                      />
+                    )}
                     <span className="absolute left-3 top-3 rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-white">
-                      {post.category}
+                      {post.categoryName}
                     </span>
                   </div>
                   <CardContent className="flex h-full flex-col px-4 pb-5 pt-4">
                     <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                       <span className="inline-flex items-center gap-1">
                         <CalendarDays className="size-3.5" aria-hidden="true" />
-                        {post.date}
+                        {post.dateLabel}
                       </span>
                       <span className="inline-flex items-center gap-1">
                         <Clock className="size-3.5" aria-hidden="true" />
-                        {getReadTime(post)}
+                        {post.readTimeLabel}
                       </span>
                     </p>
                     <h3 className="mt-2 text-base font-bold leading-snug text-foreground">

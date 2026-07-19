@@ -76,14 +76,19 @@ export default function AdminMediaPage() {
       <div className="p-6 lg:p-8 space-y-6">
         {/* ─── Toolbar ─── */}
         <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <Input
-              placeholder="Cari file..."
-              className="pl-9 rounded-xl"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+          <div className="flex gap-2 flex-1">
+            <div className="relative flex-1">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Input
+                placeholder="Cari file..."
+                className="pl-9 rounded-xl h-10"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <Button type="button" className="rounded-xl h-10 flex-shrink-0">
+              Search
+            </Button>
           </div>
           <div className="flex gap-2">
             <div className="flex border border-gray-200 rounded-xl overflow-hidden">

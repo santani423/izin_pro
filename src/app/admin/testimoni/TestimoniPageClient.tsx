@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Pencil, Trash2, Star, Video, Upload, Play } from "lucide-react";
+import { Plus, Pencil, Trash2, Star, Video, Upload, Play, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { toast } from "sonner";
 import type { ServiceCategory, Testimonial } from "@prisma/client";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ConfirmDeleteDialog from "@/components/admin/ConfirmDeleteDialog";
+import { cn } from "@/lib/utils";
 import {
   createTestimonialAction,
   deleteTestimonialAction,
@@ -50,6 +51,17 @@ const AVATAR_COLORS = [
 
 function getInitials(name: string) {
   return name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+}
+
+function matchesSearch(t: TestimonialWithRelations, query: string) {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return (
+    t.name.toLowerCase().includes(q) ||
+    (t.role ?? "").toLowerCase().includes(q) ||
+    (t.company ?? "").toLowerCase().includes(q) ||
+    (t.content ?? "").toLowerCase().includes(q)
+  );
 }
 
 /** Konversi link YouTube (watch/short/embed) jadi URL embed. */
@@ -90,6 +102,112 @@ interface FormState {
 }
 
 const NO_CATEGORY = "__none__";
+const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
+
+function Pagination({
+  page,
+  totalPages,
+  onPageChange,
+  pageSize,
+  onPageSizeChange,
+}: {
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  pageSize: number;
+  onPageSizeChange: (size: number) => void;
+}) {
+  const [jumpValue, setJumpValue] = useState("");
+
+  const jumpToPage = () => {
+    const n = Number(jumpValue);
+    if (Number.isInteger(n) && n >= 1 && n <= totalPages) {
+      onPageChange(n);
+    }
+    setJumpValue("");
+  };
+
+  return (
+    <nav aria-label="Navigasi halaman" className="flex flex-wrap items-center justify-center gap-2 pt-2">
+      <button
+        type="button"
+        disabled={page === 1}
+        onClick={() => onPageChange(page - 1)}
+        className="inline-flex items-center gap-1 rounded-lg border border-admin-line bg-white px-2.5 py-1.5 text-xs font-medium text-black transition-colors hover:border-primary/40 hover:text-primary disabled:pointer-events-none disabled:opacity-50"
+      >
+        <ChevronLeft size={14} aria-hidden="true" />
+        Sebelumnya
+      </button>
+      {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+        <button
+          key={n}
+          type="button"
+          aria-current={n === page ? "page" : undefined}
+          onClick={() => onPageChange(n)}
+          className={cn(
+            "size-8 rounded-lg text-xs font-semibold transition-colors",
+            n === page
+              ? "bg-primary text-white"
+              : "border border-admin-line bg-white text-black hover:border-primary/40 hover:text-primary",
+          )}
+        >
+          {n}
+        </button>
+      ))}
+      <button
+        type="button"
+        disabled={page === totalPages}
+        onClick={() => onPageChange(page + 1)}
+        className="inline-flex items-center gap-1 rounded-lg border border-admin-line bg-white px-2.5 py-1.5 text-xs font-medium text-black transition-colors hover:border-primary/40 hover:text-primary disabled:pointer-events-none disabled:opacity-50"
+      >
+        Selanjutnya
+        <ChevronRight size={14} aria-hidden="true" />
+      </button>
+
+      {/* Loncat langsung ke halaman tertentu */}
+      <div className="flex items-center gap-1.5 ml-1">
+        <span className="text-xs text-black">Ke halaman</span>
+        <input
+          type="number"
+          min={1}
+          max={totalPages}
+          value={jumpValue}
+          onChange={(e) => setJumpValue(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && jumpToPage()}
+          placeholder={String(page)}
+          className="h-8 w-14 rounded-lg border border-admin-line bg-white px-2 text-center text-xs text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+          aria-label="Loncat ke nomor halaman"
+        />
+        <button
+          type="button"
+          onClick={jumpToPage}
+          className="rounded-lg border border-admin-line bg-white px-2.5 py-1.5 text-xs font-medium text-black transition-colors hover:border-primary/40 hover:text-primary"
+        >
+          Go
+        </button>
+      </div>
+
+      {/* Ukuran halaman */}
+      <div className="flex items-center gap-1.5 ml-1">
+        <span className="text-xs text-black">per halaman</span>
+        <Select
+          items={Object.fromEntries(PAGE_SIZE_OPTIONS.map((n) => [String(n), String(n)]))}
+          value={String(pageSize)}
+          onValueChange={(v) => v && onPageSizeChange(Number(v))}
+        >
+          <SelectTrigger className="h-8 w-16 rounded-lg border border-admin-line bg-white px-2 text-xs font-medium text-black hover:border-primary/40 focus-visible:border-primary focus-visible:ring-primary/20">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent alignItemWithTrigger={false} align="end">
+            {PAGE_SIZE_OPTIONS.map((n) => (
+              <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </nav>
+  );
+}
 
 const emptyForm = (isVideo: boolean): FormState => ({
   id: "",
@@ -120,6 +238,12 @@ export default function TestimoniPageClient({
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
   const [previewThumbnail, setPreviewThumbnail] = useState<string | null>(null);
   const [previewVideo, setPreviewVideo] = useState<TestimonialWithRelations | null>(null);
+  const [textPage, setTextPage] = useState(1);
+  const [videoPage, setVideoPage] = useState(1);
+  const [textPageSize, setTextPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
+  const [videoPageSize, setVideoPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
+  const [textSearch, setTextSearch] = useState("");
+  const [videoSearch, setVideoSearch] = useState("");
 
   const openForm = (t: TestimonialWithRelations | null, isVideo: boolean) => {
     setForm(
@@ -223,8 +347,22 @@ export default function TestimoniPageClient({
     });
   };
 
-  const textTestimonials = initialTestimonials.filter((t) => !t.isVideo);
-  const videoTestimonials = initialTestimonials.filter((t) => t.isVideo);
+  const textTestimonials = initialTestimonials.filter((t) => !t.isVideo && matchesSearch(t, textSearch));
+  const videoTestimonials = initialTestimonials.filter((t) => t.isVideo && matchesSearch(t, videoSearch));
+
+  const textTotalPages = Math.max(1, Math.ceil(textTestimonials.length / textPageSize));
+  const textCurrentPage = Math.min(textPage, textTotalPages);
+  const textPageItems = textTestimonials.slice(
+    (textCurrentPage - 1) * textPageSize,
+    textCurrentPage * textPageSize,
+  );
+
+  const videoTotalPages = Math.max(1, Math.ceil(videoTestimonials.length / videoPageSize));
+  const videoCurrentPage = Math.min(videoPage, videoTotalPages);
+  const videoPageItems = videoTestimonials.slice(
+    (videoCurrentPage - 1) * videoPageSize,
+    videoCurrentPage * videoPageSize,
+  );
 
   const renderTextGrid = (list: TestimonialWithRelations[]) => (
     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -395,26 +533,84 @@ export default function TestimoniPageClient({
 
         {/* ─── Tab Testimoni (teks) ─── */}
         <TabsContent value="teks" className="space-y-4 mt-4">
-          <div className="flex justify-between items-center">
-            <p className="text-sm text-gray-500">{textTestimonials.length} testimoni</p>
-            <Button size="sm" className="gap-1.5 rounded-xl" onClick={() => openForm(null, false)}>
+          <div className="flex flex-col sm:flex-row justify-between gap-3">
+            <div className="flex gap-2 sm:w-96">
+              <div className="relative flex-1">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Input
+                  placeholder="Cari nama, perusahaan, atau isi testimoni..."
+                  className="pl-9 rounded-xl h-10"
+                  value={textSearch}
+                  onChange={(e) => {
+                    setTextSearch(e.target.value);
+                    setTextPage(1);
+                  }}
+                />
+              </div>
+              <Button type="button" className="rounded-xl h-10 flex-shrink-0">
+                Search
+              </Button>
+            </div>
+            <Button size="sm" className="gap-1.5 rounded-xl self-start sm:self-auto" onClick={() => openForm(null, false)}>
               <Plus size={14} />
               Tambah Testimoni
             </Button>
           </div>
-          {renderTextGrid(textTestimonials)}
+          <p className="text-sm text-gray-500">
+            Menampilkan {textPageItems.length} dari {textTestimonials.length} testimoni
+          </p>
+          {renderTextGrid(textPageItems)}
+          <Pagination
+            page={textCurrentPage}
+            totalPages={textTotalPages}
+            onPageChange={setTextPage}
+            pageSize={textPageSize}
+            onPageSizeChange={(size) => {
+              setTextPageSize(size);
+              setTextPage(1);
+            }}
+          />
         </TabsContent>
 
         {/* ─── Tab Video Testimoni ─── */}
         <TabsContent value="video" className="space-y-4 mt-4">
-          <div className="flex justify-between items-center">
-            <p className="text-sm text-gray-500">{videoTestimonials.length} video testimoni</p>
-            <Button size="sm" className="gap-1.5 rounded-xl" onClick={() => openForm(null, true)}>
+          <div className="flex flex-col sm:flex-row justify-between gap-3">
+            <div className="flex gap-2 sm:w-96">
+              <div className="relative flex-1">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Input
+                  placeholder="Cari nama atau perusahaan..."
+                  className="pl-9 rounded-xl h-10"
+                  value={videoSearch}
+                  onChange={(e) => {
+                    setVideoSearch(e.target.value);
+                    setVideoPage(1);
+                  }}
+                />
+              </div>
+              <Button type="button" className="rounded-xl h-10 flex-shrink-0">
+                Search
+              </Button>
+            </div>
+            <Button size="sm" className="gap-1.5 rounded-xl self-start sm:self-auto" onClick={() => openForm(null, true)}>
               <Plus size={14} />
               Tambah Video Testimoni
             </Button>
           </div>
-          {renderVideoGrid(videoTestimonials)}
+          <p className="text-sm text-gray-500">
+            Menampilkan {videoPageItems.length} dari {videoTestimonials.length} video testimoni
+          </p>
+          {renderVideoGrid(videoPageItems)}
+          <Pagination
+            page={videoCurrentPage}
+            totalPages={videoTotalPages}
+            onPageChange={setVideoPage}
+            pageSize={videoPageSize}
+            onPageSizeChange={(size) => {
+              setVideoPageSize(size);
+              setVideoPage(1);
+            }}
+          />
         </TabsContent>
       </Tabs>
 

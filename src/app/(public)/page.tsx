@@ -5,6 +5,7 @@ import ServicesSection from "@/components/sections/ServicesSection";
 import PromoSection from "@/components/sections/PromoSection";
 import AboutSection from "@/components/sections/AboutSection";
 import { getPublicTestimonials } from "@/lib/testimonials-data";
+import { getPublicBlogPosts } from "@/lib/blog-data";
 
 /* ─── Lazy load sections below the fold ─── */
 const ArticlesSection = dynamic(() => import("@/components/sections/ArticlesSection"));
@@ -27,6 +28,7 @@ export const metadata: Metadata = {
 /* ─── Halaman Beranda (desain baru) ─── */
 export default async function HomePage() {
   const { textTestimonials, videoTestimonials } = await getPublicTestimonials();
+  const blogPosts = (await getPublicBlogPosts()).slice(0, 4);
 
   return (
     <>
@@ -43,7 +45,7 @@ export default async function HomePage() {
       <AboutSection />
 
       {/* 5. Artikel Terbaru */}
-      <ArticlesSection />
+      <ArticlesSection posts={blogPosts} />
 
       {/* 6. Lokasi Kami */}
       <LocationSection />

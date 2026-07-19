@@ -30,7 +30,7 @@ const PAGE_META: Record<string, { title: string; subtitle?: string }> = {
   "/admin/settings": { title: "Pengaturan", subtitle: "Konfigurasi website dan informasi perusahaan" },
 };
 
-/* Rute turunan (mis. /admin/blog/baru) mewarisi meta induknya */
+/* Rute turunan (mis. /admin/blog/new) mewarisi meta induknya */
 function pageMeta(pathname: string) {
   if (PAGE_META[pathname]) return PAGE_META[pathname];
   const parent = Object.keys(PAGE_META).find((p) => pathname.startsWith(p + "/"));

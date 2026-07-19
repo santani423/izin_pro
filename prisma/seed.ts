@@ -673,8 +673,19 @@ async function main() {
       }) as object,
   };
 
-  for (const post of BLOG_POSTS) {
-    await prisma.blogPost.create({
+  /* Tag (v2.2.8) — dipakai admin CRUD blog baru (TagPicker), belum ada
+   * data tag sama sekali sebelumnya. 2 tag dilekatkan per artikel biar
+   * picker & tampilan publik ada contoh isinya sejak awal. */
+  const BLOG_TAG_NAMES = ["NIB", "OSS", "PT", "CV", "Legalitas", "Perizinan", "UMKM", "Pajak"];
+  const tagIdByName: Record<string, string> = {};
+  for (const name of BLOG_TAG_NAMES) {
+    const created = await prisma.tag.create({ data: { name, slug: slugify(name) } });
+    tagIdByName[name] = created.id;
+  }
+
+  for (let i = 0; i < BLOG_POSTS.length; i++) {
+    const post = BLOG_POSTS[i];
+    const createdPost = await prisma.blogPost.create({
       data: {
         slug: post.slug,
         title: post.title,
@@ -692,8 +703,19 @@ async function main() {
         updatedById: admin.id,
       },
     });
+    const tagNames = [
+      BLOG_TAG_NAMES[i % BLOG_TAG_NAMES.length],
+      BLOG_TAG_NAMES[(i + 3) % BLOG_TAG_NAMES.length],
+    ];
+    for (const tagName of tagNames) {
+      await prisma.postTag.create({
+        data: { postId: createdPost.id, tagId: tagIdByName[tagName] },
+      });
+    }
   }
-  console.log(`${blogCategoryNames.length} Category + ${BLOG_POSTS.length} BlogPost di-seed.`);
+  console.log(
+    `${blogCategoryNames.length} Category + ${BLOG_TAG_NAMES.length} Tag + ${BLOG_POSTS.length} BlogPost di-seed.`,
+  );
 
   /* ═══ 15. Inquiry (6, dari mock admin/inquiry inline SEED) ═══ */
   const now = new Date();

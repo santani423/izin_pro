@@ -3,6 +3,7 @@ import dynamic from "next/dynamic";
 
 import PageHero from "@/components/shared/PageHero";
 import BlogCatalogSection from "@/components/sections/BlogCatalogSection";
+import { getPublicBlogPosts, getBlogCategories } from "@/lib/blog-data";
 
 /* ─── Lazy load section below the fold ─── */
 const CtaSection = dynamic(() => import("@/components/sections/CtaSection"));
@@ -17,7 +18,9 @@ export const metadata: Metadata = {
 };
 
 /* ─── Halaman Artikel / Blog (desain baru) ─── */
-export default function BlogPage() {
+export default async function BlogPage() {
+  const [posts, categories] = await Promise.all([getPublicBlogPosts(), getBlogCategories()]);
+
   return (
     <>
       {/* 1. Hero + breadcrumb */}
@@ -34,7 +37,7 @@ export default function BlogPage() {
       />
 
       {/* 2. Search + sidebar + grid artikel */}
-      <BlogCatalogSection />
+      <BlogCatalogSection posts={posts} categories={categories} />
 
       {/* 3. CTA Banner */}
       <CtaSection

@@ -5,6 +5,117 @@ CHANGELOG — IzinPro CMS Project
 Format: [YYYY-MM-DD] Versi — Deskripsi
 ====================================================
 
+[2026-07-20] v2.3.1 — Pagination + Search Konsisten di Semua List Admin
+----------------------------------------------------
+STATUS   : DONE
+PROJECT  : izinpro-cms/
+SUMBER   : Awalnya diminta cuma di tabel Blog & Testimoni, lalu diminta
+           diterapkan bertahap ke hampir semua menu admin yang punya
+           daftar data — biar UX-nya konsisten di seluruh panel admin
+
+DITAMBAHKAN:
+  + Komponen Pagination (lokal per file, belum diekstrak jadi shared
+    component) — Sebelumnya/nomor halaman/Selanjutnya, input "Ke halaman"
+    + tombol Go buat loncat langsung, dropdown "per halaman" (5/10/20/50).
+    Navigasi selalu tampil (tombol otomatis disabled kalau gak perlu,
+    gak lagi hilang total pas cuma 1 halaman)
+  + Search input + tombol "Search" (hijau solid, tanpa ikon) di tiap
+    halaman list, filter client-side, reset ke halaman 1 tiap kali
+    search/filter berubah
+  + Footer teks konsisten "Menampilkan X dari Y [item]"
+  ~ Diterapkan ke: /admin/blog, /admin/testimoni (tab Testimoni & Video
+    Testimoni), /admin/users, /admin/inquiry, /admin/pages, /admin/layanan,
+    /admin/tim, /admin/klien, /admin/cta-banner (bagian "Varian per
+    Halaman"), /admin/promo, /admin/faq
+  ~ /admin/media cuma dapat search+tombol (belum pagination, gak diminta)
+
+VERIFIKASI:
+  ~ tsc --noEmit + eslint bersih di setiap file yang diubah
+  ~ Manual test oleh user langsung di browser (bukan saya) — beberapa
+    iterasi perbaikan kontras warna (bg-white + teks hitam) dan bug
+    input "Ke halaman" ke-disable gak sengaja, sudah diperbaiki
+
+====================================================
+
+[2026-07-20] v2.3.0 — Migrasi Blog ke Prisma + CRUD Halaman Penuh (standar baru)
+----------------------------------------------------
+STATUS   : DONE
+PROJECT  : izinpro-cms/
+SUMBER   : Blog itu satu-satunya menu admin yang belum pernah dimigrasi ke
+           Prisma (masih 100% mock dari constants.ts, termasuk halaman
+           publiknya). User minta: (1) form CRUD-nya dipindah dari pola
+           modal/popup ke halaman terpisah krn field-nya banyak & kompleks
+           (kategori, tag, gambar unggulan, editor rich text, status+
+           tanggal terbit, SEO) — sekalian jadi standar buat menu admin
+           lain yang kompleks ke depannya, (2) pakai editor rich text
+           beneran (Tiptap), (3) halaman publik /blog ikut disambungkan
+           biar hasil CRUD admin beneran kelihatan live
+
+DITAMBAHKAN:
+  + src/lib/actions/blog.ts (BARU) — create/update/delete (soft delete)/
+    toggle status/upload gambar unggulan & gambar inline editor/cari &
+    buat tag baru. Role AUTHOR ikut diizinkan (beda dari CONTENT_EDITOR_
+    ROLES di actions lain), publishedAt cuma di-set sekali pas pertama
+    kali PUBLISHED (republish gak reset tanggal terbit asli)
+  + src/app/admin/blog/ dirombak total: page.tsx (list, server) +
+    BlogPageClient.tsx (BARU, tabel+search+pagination) + new/page.tsx
+    (BARU, form artikel baru) + [slug]/edit/page.tsx (BARU, form edit
+    pakai slug di URL bukan id biar rapi) + BlogFormPageClient.tsx (BARU,
+    form gabungan create/edit — standar baru utk CRUD kompleks)
+  + src/components/admin/TagPicker.tsx (BARU) — multi-select tag, wrap
+    @base-ui/react/combobox mode multiple, search async + bikin tag baru
+    on-the-fly
+  + src/components/admin/RichTextEditor.tsx (BARU) — wrapper Tiptap
+    (bold/italic/heading/list/quote/link/gambar/undo-redo), simpan HTML
+    polos ke BlogPost.content
+  + src/lib/blog-data.ts (BARU) — getPublicBlogPosts/getPublicBlogPostBySlug
+    (sekalian increment views)/getBlogCategories/getBlogSlugsForSitemap,
+    pola sama dgn testimonials-data.ts
+  ~ Publik disambungkan ke Prisma: BlogCatalogSection, blog/page.tsx,
+    blog/[slug]/page.tsx (badan artikel ganti dari BlogDetailBodySection
+    block-based ke BlogDetailProseSection BARU yg render HTML Tiptap via
+    @tailwindcss/typography), sitemap.ts (lastModified sekarang beneran
+    dari updatedAt, dulu selalu new Date())
+  ~ Section "Artikel Terbaru" homepage ternyata dipegang ArticlesSection.tsx
+    (baca LANDING_ARTICLES dari lib/landing.ts), BUKAN BlogSection.tsx yg
+    saya kira tadinya — BlogSection.tsx ternyata dead code (gak dipakai di
+    manapun), dihapus. LANDING_ARTICLES di landing.ts ikut dihapus
+  ~ prisma/seed.ts: tambah 8 Tag + PostTag (2 tag per artikel) — sebelumnya
+    Tag/PostTag ada di schema tapi kosong total
+  + Dependency baru: @tiptap/react, @tiptap/pm, @tiptap/starter-kit,
+    @tiptap/extension-image, @tiptap/extension-placeholder,
+    @tailwindcss/typography (@tiptap/extension-link sempat dipasang lalu
+    di-uninstall lagi krn StarterKit v3 udah bawa Link bawaan — dulu
+    sempat dobel & muncul warning)
+  x Fix bug hydration mismatch di AdminHeader.tsx — useSession() bisa
+    punya data dari cache client duluan sementara SSR gak pernah tau soal
+    session ini, ketahuan gak sengaja pas testing halaman blog padahal
+    bug-nya ada di semua halaman admin. Pakai useSyncExternalStore biar
+    render pertama di client selalu samain dulu sama SSR
+  ~ URL dirapikan: /admin/blog/baru → /admin/blog/new, dan
+    /admin/blog/[id]/edit → /admin/blog/[slug]/edit (slug lebih enak
+    dibaca drpd cuid panjang)
+
+DI LUAR SCOPE (belum dikerjakan):
+  - 2 artikel statis (panduan-lengkap-mengurus-nib-melalui-oss,
+    legalitas-lengkap-bisnis-makin-terpercaya) sengaja gak disentuh,
+    tetap baca data sendiri kayak sebelumnya
+  - blog-detail.ts & BlogDetailBodySection.tsx (sistem lama block-based)
+    dibiarkan ada tapi udah gak dipakai — belum dihapus, biar diff sesi
+    ini gampang direview. Cleanup nanti terpisah
+  - Resize/konversi WebP otomatis utk upload gambar (masih simpan file
+    apa adanya) — rencana v2.3.x bareng Media Library beneran
+
+VERIFIKASI:
+  ~ tsc --noEmit bersih di tiap fase (server actions → admin pages →
+    publik)
+  ~ Manual test oleh user: login role AUTHOR bisa akses semua rute blog
+    (regression test fix permission nested-route), CRUD artikel dgn
+    tag+gambar+editor lengkap, artikel yang dipublish beneran muncul di
+    /blog & homepage
+
+====================================================
+
 [2026-07-19] v2.2.8 — Tab Testimoni/Video Terpisah + Upload Thumbnail + Video Player Asli
 ----------------------------------------------------
 STATUS   : DONE

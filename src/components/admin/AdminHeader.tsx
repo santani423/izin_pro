@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, Search, Menu, X, ChevronDown, LogOut, User, Settings } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -30,9 +30,19 @@ export default function AdminHeader({ title, subtitle }: AdminHeaderProps) {
   const { toggle, toggleCollapse } = useAdminSidebar();
   const router = useRouter();
   const { data: session } = useSession();
-  const displayName = session?.user?.name ?? "...";
-  const displayEmail = session?.user?.email ?? "";
-  const displayImage = session?.user?.image;
+  /* useSession() bisa langsung punya data dari cache client saat render
+   * pertama (mis. setelah navigasi client-side), sedangkan SSR gak pernah
+   * tahu session ini sama sekali -> mismatch hydration. Tahan tampilan
+   * sampai after-mount supaya render pertama di client selalu sama dgn
+   * server (placeholder), baru nama asli muncul sesudahnya. */
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+  const displayName = mounted ? session?.user?.name ?? "..." : "...";
+  const displayEmail = mounted ? session?.user?.email ?? "" : "";
+  const displayImage = mounted ? session?.user?.image : undefined;
 
   const notifications = [
     { id: 1, text: "Inquiry baru dari Budi Santoso", time: "5 menit lalu", unread: true },

@@ -143,66 +143,6 @@ export const ABOUT_DESCRIPTION =
 /* Video profil IzinPro (format embed YouTube) */
 export const ABOUT_VIDEO_URL = "https://www.youtube.com/embed/kXz2t48t4zo";
 
-/* ─── Artikel ─── */
-export interface LandingArticle {
-  id: string;
-  category: string;
-  views: string;
-  date: string;
-  title: string;
-  excerpt: string;
-  href: string;
-  /** Kelas gradient Tailwind untuk thumbnail placeholder */
-  gradient: string;
-}
-
-export const LANDING_ARTICLES: LandingArticle[] = [
-  {
-    id: "art-1",
-    category: "Perizinan",
-    views: "1.284",
-    date: "24 Januari 2025",
-    title: "Cara Mudah Membuat NIB Online 2025 — Panduan Lengkap",
-    excerpt:
-      "Nomor Induk Berusaha (NIB) adalah identitas resmi bagi pelaku usaha di Indonesia. Simak panduan lengkap cara membuatnya secara online.",
-    href: "/blog/cara-mudah-membuat-nib-online-2024",
-    gradient: "from-lime-500 to-green-800",
-  },
-  {
-    id: "art-2",
-    category: "Tips Bisnis",
-    views: "856",
-    date: "20 Januari 2025",
-    title: "5 Tips Memilih Badan Usaha yang Tepat untuk Bisnis Anda",
-    excerpt:
-      "Pemilihan badan usaha sangat mempengaruhi legalitas, pajak, dan pertumbuhan bisnis. Pelajari perbedaan tiap jenisnya di sini.",
-    href: "/blog/tips-memilih-badan-usaha",
-    gradient: "from-blue-500 to-blue-800",
-  },
-  {
-    id: "art-3",
-    category: "Peraturan",
-    views: "2.147",
-    date: "18 Januari 2025",
-    title: "Update Terbaru Peraturan Perizinan Usaha 2025 yang Wajib Diketahui",
-    excerpt:
-      "Pemerintah merilis sejumlah pembaruan regulasi perizinan usaha. Pastikan bisnis Anda tetap compliant dengan peraturan terbaru.",
-    href: "/blog/update-peraturan-perizinan-2025",
-    gradient: "from-orange-500 to-orange-800",
-  },
-  {
-    id: "art-4",
-    category: "Perizinan",
-    views: "743",
-    date: "15 Januari 2025",
-    title: "Apa itu OSS? Penjelasan Lengkap Sistem Perizinan Terintegrasi",
-    excerpt:
-      "Online Single Submission (OSS) adalah sistem perizinan terintegrasi di Indonesia. Pelajari cara kerjanya dan manfaatnya bagi usaha Anda.",
-    href: "/blog/apa-itu-oss-penjelasan-lengkap",
-    gradient: "from-purple-500 to-purple-800",
-  },
-];
-
 /* ─── Kontak (derivasi dari COMPANY_INFO agar satu sumber data) ─── */
 export interface LandingContactInfo {
   address: string;
