@@ -1,11 +1,11 @@
 "use server";
 
 import { headers } from "next/headers";
-import { revalidatePath } from "next/cache";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { revalidateAdminPaths } from "@/lib/admin-guard";
 import type { ActionResult } from "./users";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "avatars");
@@ -46,7 +46,7 @@ export async function updateProfilePhotoAction(formData: FormData): Promise<Acti
       await fs.unlink(path.join(process.cwd(), "public", before.image)).catch(() => {});
     }
 
-    revalidatePath("/admin/profile");
+    revalidateAdminPaths("/profile");
     return { ok: true };
   } catch (e) {
     return { ok: false, message: errorMessage(e, "Gagal mengunggah foto profil.") };
@@ -67,7 +67,7 @@ export async function removeProfilePhotoAction(): Promise<ActionResult> {
       await fs.unlink(path.join(process.cwd(), "public", before.image)).catch(() => {});
     }
 
-    revalidatePath("/admin/profile");
+    revalidateAdminPaths("/profile");
     return { ok: true };
   } catch (e) {
     return { ok: false, message: errorMessage(e, "Gagal menghapus foto profil.") };

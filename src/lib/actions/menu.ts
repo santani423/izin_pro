@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { revalidateAdminPaths } from "@/lib/admin-guard";
 import type { Role } from "@prisma/client";
 
 export type ActionResult = { ok: true } | { ok: false; message: string };
@@ -27,7 +28,7 @@ function errorMessage(e: unknown, fallback: string) {
  * dipakai SEMUA halaman publik, jadi revalidate type "layout" (bukan cuma
  * "/" doang) supaya ke-refresh di semua halaman, bukan cuma homepage. */
 function revalidateMenuConsumers() {
-  revalidatePath("/admin/menu");
+  revalidateAdminPaths("/menu");
   revalidatePath("/", "layout");
 }
 

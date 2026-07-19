@@ -3,62 +3,14 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard, FileText, Newspaper, Image as ImageIcon, Users, Settings,
-  Star, Megaphone, Package, HelpCircle, BarChart3, ChevronRight, X,
-  Inbox, Headset, UserCog, Building2, Menu as MenuIcon, UserCircle,
-} from "lucide-react";
+import { ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { COMPANY_INFO } from "@/lib/constants";
+import { ADMIN_NAV_GROUPS } from "@/lib/admin-nav";
 import { useAdminSidebar } from "@/contexts/AdminSidebarContext";
 import { useSession } from "@/lib/auth-client";
 import { canAccessAdminRoute } from "@/lib/permissions";
 import type { Role } from "@prisma/client";
-
-const navGroups = [
-  {
-    label: "Utama",
-    items: [
-      { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-      { label: "Analitik", href: "/admin/analitik", icon: BarChart3 },
-      { label: "Inquiry", href: "/admin/inquiry", icon: Inbox },
-    ],
-  },
-  {
-    label: "Konten",
-    items: [
-      { label: "Halaman", href: "/admin/pages", icon: FileText },
-      { label: "Menu", href: "/admin/menu", icon: MenuIcon },
-      { label: "Blog & Artikel", href: "/admin/blog", icon: Newspaper },
-      { label: "Media Library", href: "/admin/media", icon: ImageIcon },
-    ],
-  },
-  {
-    label: "Company Profile",
-    items: [
-      { label: "Layanan", href: "/admin/layanan", icon: Package },
-      { label: "Tim", href: "/admin/tim", icon: Users },
-      { label: "Testimoni", href: "/admin/testimoni", icon: Star },
-      { label: "Promo / Banner", href: "/admin/promo", icon: Megaphone },
-      { label: "Klien", href: "/admin/klien", icon: Building2 },
-      { label: "CTA Banner", href: "/admin/cta-banner", icon: Headset },
-      { label: "FAQ", href: "/admin/faq", icon: HelpCircle },
-    ],
-  },
-  {
-    label: "Sistem",
-    items: [
-      { label: "Pengguna", href: "/admin/users", icon: UserCog },
-      { label: "Pengaturan", href: "/admin/settings", icon: Settings },
-    ],
-  },
-  {
-    label: "Akun",
-    items: [
-      { label: "Profil Saya", href: "/admin/profile", icon: UserCircle },
-    ],
-  },
-];
 
 /* ─── Sidebar Admin Panel ─── */
 export default function AdminSidebar() {
@@ -68,13 +20,16 @@ export default function AdminSidebar() {
   // useSession() client-side gak nge-infer custom additionalFields (role) di
   // tipenya walau datanya beneran ada di response — cast manual di sini.
   const role = (session?.user as { role?: Role } | undefined)?.role;
+  // Panel (admin/editor/author) diambil dari segmen pertama URL yg aktif —
+  // bukan dari role — supaya link sidebar selalu ikut prefix yg lagi dipakai.
+  const panel = pathname.split("/")[1] || "admin";
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
   /* Sembunyikan menu yg gak boleh diakses role ini — belum tau role (session
    * lom kebaca) -> tampilin semua dulu spy gak "flash" kosong, page.tsx tetap
    * jadi penjaga terakhir kalau nekat buka URL langsung. */
-  const visibleGroups = navGroups
+  const visibleGroups = ADMIN_NAV_GROUPS
     .map((group) => ({
       ...group,
       items: role ? group.items.filter((item) => canAccessAdminRoute(role, item.href)) : group.items,
@@ -136,25 +91,28 @@ export default function AdminSidebar() {
               </div>
             )}
             <ul className="space-y-0.5">
-              {group.items.map(({ label, href, icon: Icon }) => (
-                <li key={href}>
-                  <Link
-                    href={href}
-                    onClick={close}
-                    title={collapsed ? label : undefined}
-                    className={cn(
-                      "flex items-center rounded-xl text-sm font-medium transition-all",
-                      collapsed ? "justify-center w-10 h-10 mx-auto" : "gap-3 px-3 py-2.5",
-                      isActive(href)
-                        ? "bg-primary/10 text-primary"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-                    )}
-                  >
-                    <Icon size={17} className="flex-shrink-0" />
-                    {!collapsed && <span className="flex-1">{label}</span>}
-                  </Link>
-                </li>
-              ))}
+              {group.items.map(({ label, href, icon: Icon }) => {
+                const fullHref = `/${panel}${href}`;
+                return (
+                  <li key={href}>
+                    <Link
+                      href={fullHref}
+                      onClick={close}
+                      title={collapsed ? label : undefined}
+                      className={cn(
+                        "flex items-center rounded-xl text-sm font-medium transition-all",
+                        collapsed ? "justify-center w-10 h-10 mx-auto" : "gap-3 px-3 py-2.5",
+                        isActive(fullHref)
+                          ? "bg-primary/10 text-primary"
+                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                      )}
+                    >
+                      <Icon size={17} className="flex-shrink-0" />
+                      {!collapsed && <span className="flex-1">{label}</span>}
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ))}

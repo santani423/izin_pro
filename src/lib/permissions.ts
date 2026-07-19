@@ -1,9 +1,23 @@
 import type { Role } from "@prisma/client";
 
-/* ─── Matrix akses admin per role — SATU sumber kebenaran ───
- * Dipakai di 2 tempat: AdminSidebar.tsx (sembunyikan menu yg gak boleh
- * diakses) & tiap page.tsx di src/app/admin (redirect kalau nekat buka URL
- * langsung).
+/* ─── Panel URL per role (v2.4.0) ───
+ * SUPER_ADMIN & ADMIN pakai /admin/..., EDITOR pakai /editor/...,
+ * AUTHOR pakai /author/... — satu tree halaman (src/app/[panel]) dipakai
+ * bertiga, panel mana yg dipakai ditentukan role, bukan pilihan bebas user
+ * (lihat requirePanelAccess di admin-guard.ts). */
+export type AdminPanel = "admin" | "editor" | "author";
+
+export function getRolePanel(role: Role | string): AdminPanel {
+  if (role === "EDITOR") return "editor";
+  if (role === "AUTHOR") return "author";
+  return "admin"; // SUPER_ADMIN, ADMIN, dan fallback
+}
+
+/* ─── Matrix akses menu per role — SATU sumber kebenaran ───
+ * Key di sini adalah SUFFIX rute (tanpa prefix panel), mis. "/blog" cocok
+ * utk /admin/blog, /editor/blog, maupun /author/blog. Dipakai di 2 tempat:
+ * AdminSidebar.tsx (sembunyikan menu yg gak boleh diakses) & tiap page.tsx
+ * di src/app/[panel] (redirect kalau nekat buka URL langsung).
  * Kalau nambah menu admin baru, cukup tambahin satu baris di sini —
  * gak perlu ubah 2 tempat terpisah.
  *
@@ -14,28 +28,28 @@ import type { Role } from "@prisma/client";
  *   AUTHOR      — CUMA Dashboard, Blog & Artikel, Media Library
  */
 export const ADMIN_ROUTE_ROLES: Record<string, Role[]> = {
-  "/admin/dashboard": ["SUPER_ADMIN", "ADMIN", "EDITOR", "AUTHOR"],
-  "/admin/profile": ["SUPER_ADMIN", "ADMIN", "EDITOR", "AUTHOR"],
-  "/admin/blog": ["SUPER_ADMIN", "ADMIN", "EDITOR", "AUTHOR"],
-  "/admin/media": ["SUPER_ADMIN", "ADMIN", "EDITOR", "AUTHOR"],
-  "/admin/analitik": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
-  "/admin/inquiry": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
-  "/admin/pages": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
-  "/admin/layanan": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
-  "/admin/tim": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
-  "/admin/testimoni": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
-  "/admin/promo": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
-  "/admin/klien": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
-  "/admin/cta-banner": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
-  "/admin/faq": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
-  "/admin/menu": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
-  "/admin/users": ["SUPER_ADMIN", "ADMIN"],
-  "/admin/settings": ["SUPER_ADMIN", "ADMIN"], // ADMIN boleh akses tapi view-only, diatur terpisah di page-nya
+  "/dashboard": ["SUPER_ADMIN", "ADMIN", "EDITOR", "AUTHOR"],
+  "/profile": ["SUPER_ADMIN", "ADMIN", "EDITOR", "AUTHOR"],
+  "/blog": ["SUPER_ADMIN", "ADMIN", "EDITOR", "AUTHOR"],
+  "/media": ["SUPER_ADMIN", "ADMIN", "EDITOR", "AUTHOR"],
+  "/analitik": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
+  "/inquiry": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
+  "/pages": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
+  "/layanan": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
+  "/tim": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
+  "/testimoni": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
+  "/promo": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
+  "/klien": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
+  "/cta-banner": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
+  "/faq": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
+  "/menu": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
+  "/users": ["SUPER_ADMIN", "ADMIN"],
+  "/settings": ["SUPER_ADMIN", "ADMIN"], // ADMIN boleh akses tapi view-only, diatur terpisah di page-nya
 };
 
 export function canAccessAdminRoute(role: Role | string, href: string): boolean {
   const allowed = ADMIN_ROUTE_ROLES[href];
-  if (!allowed) return true; // rute yg gak terdaftar (mis. /admin, /admin/login) -> gak dibatasi di sini
+  if (!allowed) return true; // rute yg gak terdaftar (mis. root panel) -> gak dibatasi di sini
   return allowed.includes(role as Role);
 }
 

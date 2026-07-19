@@ -6,6 +6,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { revalidateAdminPaths } from "@/lib/admin-guard";
 import type { Role } from "@prisma/client";
 
 export type ActionResult = { ok: true } | { ok: false; message: string };
@@ -83,7 +84,7 @@ export async function createPartnerAction(formData: FormData): Promise<ActionRes
         updatedById: session.user.id,
       },
     });
-    revalidatePath("/admin/klien");
+    revalidateAdminPaths("/klien");
     revalidatePath("/");
     revalidatePath("/testimoni");
     return { ok: true };
@@ -114,7 +115,7 @@ export async function updatePartnerAction(id: string, formData: FormData): Promi
     } else {
       await prisma.partner.update({ where: { id }, data: { name, updatedById: session.user.id } });
     }
-    revalidatePath("/admin/klien");
+    revalidateAdminPaths("/klien");
     revalidatePath("/");
     revalidatePath("/testimoni");
     return { ok: true };
@@ -127,7 +128,7 @@ export async function togglePartnerActiveAction(id: string, isActive: boolean): 
   try {
     const session = await requireContentEditor();
     await prisma.partner.update({ where: { id }, data: { isActive, updatedById: session.user.id } });
-    revalidatePath("/admin/klien");
+    revalidateAdminPaths("/klien");
     revalidatePath("/");
     revalidatePath("/testimoni");
     return { ok: true };
@@ -147,7 +148,7 @@ export async function deletePartnerAction(id: string): Promise<ActionResult> {
       data: { deletedAt: new Date(), updatedById: session.user.id },
     });
 
-    revalidatePath("/admin/klien");
+    revalidateAdminPaths("/klien");
     revalidatePath("/");
     revalidatePath("/testimoni");
     return { ok: true };

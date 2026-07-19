@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Lock, Mail, ArrowRight } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { getRolePanel } from "@/lib/permissions";
+import type { Role } from "@prisma/client";
 
 /* ─── Akun Super Admin hasil `npx prisma db seed` (dev lokal) ─── */
 const SEEDED_EMAIL = "admin@izinpro.co.id";
@@ -22,7 +24,7 @@ export default function AdminLoginPage() {
     setError("");
     setLoading(true);
 
-    const { error: signInError } = await authClient.signIn.email({ email, password });
+    const { data, error: signInError } = await authClient.signIn.email({ email, password });
 
     if (signInError) {
       setError(signInError.message ?? "Email atau password salah. Coba periksa kembali.");
@@ -30,7 +32,11 @@ export default function AdminLoginPage() {
       return;
     }
 
-    router.replace("/admin/dashboard");
+    // Panel tujuan (admin/editor/author) ditentukan role akun, bukan pilihan
+    // bebas user — lihat getRolePanel di permissions.ts.
+    const role = (data?.user as { role?: Role } | undefined)?.role;
+    const panel = role ? getRolePanel(role) : "admin";
+    router.replace(`/${panel}/dashboard`);
     router.refresh();
   };
 

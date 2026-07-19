@@ -6,6 +6,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { revalidateAdminPaths } from "@/lib/admin-guard";
 import type { Role } from "@prisma/client";
 
 export type ActionResult = { ok: true } | { ok: false; message: string };
@@ -31,7 +32,7 @@ function slugify(s: string) {
 }
 
 function revalidateBlogPaths(slug?: string, oldSlug?: string) {
-  revalidatePath("/admin/blog");
+  revalidateAdminPaths("/blog");
   revalidatePath("/");
   revalidatePath("/blog");
   if (slug) revalidatePath(`/blog/${slug}`);

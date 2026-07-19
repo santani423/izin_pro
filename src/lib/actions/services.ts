@@ -1,9 +1,9 @@
 "use server";
 
 import { headers } from "next/headers";
-import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { revalidateAdminPaths } from "@/lib/admin-guard";
 import type { Role } from "@prisma/client";
 
 export type ActionResult = { ok: true } | { ok: false; message: string };
@@ -58,7 +58,7 @@ export async function createServiceAction(data: ServiceFormData): Promise<Action
         updatedById: session.user.id,
       },
     });
-    revalidatePath("/admin/layanan");
+    revalidateAdminPaths("/layanan");
     return { ok: true };
   } catch (e) {
     return { ok: false, message: errorMessage(e, "Gagal menambahkan layanan.") };
@@ -82,7 +82,7 @@ export async function updateServiceAction(id: string, data: ServiceFormData): Pr
         updatedById: session.user.id,
       },
     });
-    revalidatePath("/admin/layanan");
+    revalidateAdminPaths("/layanan");
     return { ok: true };
   } catch (e) {
     return { ok: false, message: errorMessage(e, "Gagal memperbarui layanan.") };
@@ -93,7 +93,7 @@ export async function toggleServiceActiveAction(id: string, isActive: boolean): 
   try {
     const session = await requireContentEditor();
     await prisma.service.update({ where: { id }, data: { isActive, updatedById: session.user.id } });
-    revalidatePath("/admin/layanan");
+    revalidateAdminPaths("/layanan");
     return { ok: true };
   } catch (e) {
     return { ok: false, message: errorMessage(e, "Gagal mengubah status layanan.") };
@@ -108,7 +108,7 @@ export async function deleteServiceAction(id: string): Promise<ActionResult> {
       where: { id },
       data: { deletedAt: new Date(), updatedById: session.user.id },
     });
-    revalidatePath("/admin/layanan");
+    revalidateAdminPaths("/layanan");
     return { ok: true };
   } catch (e) {
     return { ok: false, message: errorMessage(e, "Gagal menghapus layanan.") };

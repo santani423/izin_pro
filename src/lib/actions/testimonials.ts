@@ -6,6 +6,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { revalidateAdminPaths } from "@/lib/admin-guard";
 import type { Role } from "@prisma/client";
 
 export type ActionResult = { ok: true } | { ok: false; message: string };
@@ -25,7 +26,7 @@ function errorMessage(e: unknown, fallback: string) {
 }
 
 function revalidateTestimoniPaths() {
-  revalidatePath("/admin/testimoni");
+  revalidateAdminPaths("/testimoni");
   revalidatePath("/");
   revalidatePath("/testimoni");
 }

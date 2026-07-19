@@ -1,10 +1,10 @@
 "use server";
 
 import { headers } from "next/headers";
-import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { canManageUser, visibleUserRoles } from "@/lib/permissions";
+import { revalidateAdminPaths } from "@/lib/admin-guard";
 import type { Role } from "@prisma/client";
 
 export type ActionResult = { ok: true } | { ok: false; message: string };
@@ -49,7 +49,7 @@ export async function createUserAction(data: {
         updatedById: session.user.id,
       },
     });
-    revalidatePath("/admin/users");
+    revalidateAdminPaths("/users");
     return { ok: true };
   } catch (e) {
     return { ok: false, message: errorMessage(e, "Gagal menambahkan pengguna.") };
@@ -81,7 +81,7 @@ export async function updateUserAction(
         updatedById: session.user.id,
       },
     });
-    revalidatePath("/admin/users");
+    revalidateAdminPaths("/users");
     return { ok: true };
   } catch (e) {
     return { ok: false, message: errorMessage(e, "Gagal memperbarui pengguna.") };
@@ -100,7 +100,7 @@ export async function toggleUserActiveAction(id: string, isActive: boolean): Pro
       return { ok: false, message: "Anda tidak punya izin mengubah status akun ini." };
     }
     await prisma.user.update({ where: { id }, data: { isActive, updatedById: session.user.id } });
-    revalidatePath("/admin/users");
+    revalidateAdminPaths("/users");
     return { ok: true };
   } catch (e) {
     return { ok: false, message: errorMessage(e, "Gagal mengubah status pengguna.") };
@@ -125,7 +125,7 @@ export async function deleteUserAction(id: string): Promise<ActionResult> {
       where: { id },
       data: { deletedAt: new Date(), isActive: false, updatedById: session.user.id },
     });
-    revalidatePath("/admin/users");
+    revalidateAdminPaths("/users");
     return { ok: true };
   } catch (e) {
     return { ok: false, message: errorMessage(e, "Gagal menghapus pengguna.") };

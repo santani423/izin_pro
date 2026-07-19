@@ -6,11 +6,10 @@ import { CalendarDays, Clock } from "lucide-react";
 import PageHero from "@/components/shared/PageHero";
 import BlogDetailProseSection from "@/components/sections/BlogDetailProseSection";
 import { getPublicBlogPostBySlug, getPublicBlogPosts } from "@/lib/blog-data";
-import { PANDUAN_NIB_SLUG } from "@/lib/panduan-nib";
 import { PANDUAN_LEGALITAS_SLUG } from "@/lib/panduan-legalitas";
 
 /* Slug dengan route statis sendiri — dikeluarkan dari route dinamis */
-const STATIC_ARTICLE_SLUGS = [PANDUAN_NIB_SLUG, PANDUAN_LEGALITAS_SLUG];
+const STATIC_ARTICLE_SLUGS = [PANDUAN_LEGALITAS_SLUG];
 
 /* ─── Lazy load section below the fold ─── */
 const CtaSection = dynamic(() => import("@/components/sections/CtaSection"));

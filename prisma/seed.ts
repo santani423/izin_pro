@@ -86,21 +86,6 @@ import { PROMO_PACKAGES } from "../src/lib/promo";
 import { getLayananDetail } from "../src/lib/layanan-detail";
 import { getArticleDetail } from "../src/lib/blog-detail";
 import {
-  PANDUAN_NIB_HERO,
-  PANDUAN_NIB_CHIPS,
-  PANDUAN_NIB_SUMMARY,
-  PANDUAN_NIB_NAV,
-  PANDUAN_NIB_INTRO,
-  PANDUAN_NIB_SYARAT_LEAD,
-  PANDUAN_NIB_SYARAT,
-  PANDUAN_NIB_LANGKAH_LEAD,
-  PANDUAN_NIB_LANGKAH,
-  PANDUAN_NIB_INFO,
-  PANDUAN_NIB_FAQ,
-  PANDUAN_NIB_HELP,
-  PANDUAN_NIB_RELATED,
-} from "../src/lib/panduan-nib";
-import {
   PANDUAN_LEGALITAS_HERO,
   PANDUAN_LEGALITAS_CHIPS,
   PANDUAN_LEGALITAS_NAV,
@@ -629,6 +614,153 @@ async function main() {
   });
   console.log("4 Cta (default + 3 varian) di-seed.");
 
+  /* Konten HTML asli (v2.3.2) — hasil konversi dari panduan-nib.ts,
+   * panduan-legalitas.ts & blog-detail.ts (3 artikel), + 1 artikel baru
+   * (apa-itu-oss) yang ditulis manual krn belum ada sumber sebelumnya.
+   * Menggantikan placeholder `content: post.excerpt` utk 4 slug ini saja. */
+  const RICH_BLOG_CONTENT: Record<string, string> = {
+    "cara-mudah-membuat-nib-online-2024": `
+<h2>Apa itu NIB?</h2>
+<p>NIB (Nomor Induk Berusaha) adalah identitas resmi pelaku usaha yang diterbitkan oleh pemerintah melalui sistem OSS (Online Single Submission). NIB berlaku sebagai Tanda Daftar Perusahaan (TDP), Angka Pengenal Importir (API), dan akses kepabeanan dalam satu nomor identitas.</p>
+<h2>Syarat Mengurus NIB</h2>
+<p>Siapkan dokumen dan data berikut sebelum memulai pendaftaran NIB melalui OSS.</p>
+<ul>
+<li><p><strong>KTP Penanggung Jawab</strong> — KTP masih berlaku.</p></li>
+<li><p><strong>NPWP (Jika ada)</strong> — Lampirkan NPWP perusahaan atau pribadi.</p></li>
+<li><p><strong>Email Aktif</strong> — Digunakan untuk verifikasi dan notifikasi.</p></li>
+<li><p><strong>Nomor Handphone Aktif</strong> — Untuk menerima kode OTP.</p></li>
+<li><p><strong>Aktivitas Usaha</strong> — Tentukan jenis dan bidang usaha Anda.</p></li>
+<li><p><strong>Alamat Usaha</strong> — Alamat lengkap sesuai dokumen legal.</p></li>
+</ul>
+<h2>Langkah Mengurus NIB Melalui OSS</h2>
+<p>Ikuti langkah-langkah berikut untuk mendapatkan NIB dengan mudah.</p>
+<ol>
+<li><p><strong>Buat Akun OSS</strong> — Kunjungi oss.go.id dan daftar akun baru.</p></li>
+<li><p><strong>Login ke OSS</strong> — Login menggunakan email dan password yang telah didaftarkan.</p></li>
+<li><p><strong>Lengkapi Data</strong> — Isi data pelaku usaha, data usaha, dan data penanggung jawab.</p></li>
+<li><p><strong>Pilih KBLI</strong> — Pilih kode KBLI sesuai dengan bidang usaha Anda.</p></li>
+<li><p><strong>Perizinan Berusaha</strong> — Pilih jenis perizinan yang dibutuhkan (NIB, Izin Usaha, atau Izin Komersial).</p></li>
+<li><p><strong>Cek & Terbitkan NIB</strong> — Periksa data yang telah diisi. Jika sudah benar, NIB akan terbit secara otomatis.</p></li>
+</ol>
+<h2>Biaya &amp; Waktu Proses</h2>
+<ul>
+<li><p><strong>Biaya: GRATIS</strong> — Pendaftaran NIB melalui sistem OSS tidak dikenakan biaya apapun.</p></li>
+<li><p><strong>Waktu Proses: 1–3 Hari Kerja</strong> — Proses penerbitan NIB biasanya memakan waktu 1–3 hari kerja setelah semua data lengkap.</p></li>
+</ul>
+<h2>FAQ Seputar NIB</h2>
+<h3>Apakah NIB wajib untuk semua jenis usaha?</h3>
+<p>Ya, semua pelaku usaha — dari UMK hingga perusahaan besar — wajib memiliki NIB sebagai legalitas dasar menjalankan usaha.</p>
+<h3>Apakah NIB berlaku selamanya?</h3>
+<p>Ya, NIB berlaku selama usaha tetap berjalan dan tidak ada perubahan data yang belum dilaporkan.</p>
+<h3>Apakah NIB sama dengan SIUP?</h3>
+<p>Berbeda. NIB adalah identitas pelaku usaha, sedangkan SIUP adalah izin operasional perdagangan. Untuk banyak bidang usaha, fungsi SIUP kini sudah tercakup dalam NIB berbasis risiko.</p>
+<h3>Apakah NIB bisa berubah?</h3>
+<p>Bisa. Perubahan data usaha (alamat, KBLI, modal, dsb.) dapat dilakukan melalui menu perubahan di sistem OSS.</p>
+<h3>Apakah NIB bisa diurus sendiri?</h3>
+<p>Bisa, melalui oss.go.id secara gratis. Namun jika ingin praktis dan bebas salah input, tim IzinPro siap membantu prosesnya sampai terbit.</p>
+<h3>Apa yang harus dilakukan jika data NIB salah?</h3>
+<p>Segera lakukan perbaikan data melalui sistem OSS, atau hubungi tim IzinPro untuk didampingi proses koreksinya.</p>
+`.trim(),
+    "panduan-lengkap-mengurus-nib-melalui-oss": `
+<h2>Apa itu NIB?</h2>
+<p>NIB (Nomor Induk Berusaha) adalah identitas resmi pelaku usaha yang diterbitkan oleh pemerintah melalui sistem OSS (Online Single Submission). NIB berlaku sebagai Tanda Daftar Perusahaan (TDP), Angka Pengenal Importir (API), dan akses kepabeanan dalam satu nomor identitas.</p>
+<h2>Syarat Mengurus NIB</h2>
+<p>Siapkan dokumen dan data berikut sebelum memulai pendaftaran NIB melalui OSS.</p>
+<div data-type="card-grid" data-items='[{"icon":"id-card","title":"KTP Penanggung Jawab","description":"KTP masih berlaku."},{"icon":"file-check","title":"NPWP (Jika ada)","description":"Lampirkan NPWP perusahaan atau pribadi."},{"icon":"mail","title":"Email Aktif","description":"Digunakan untuk verifikasi dan notifikasi."},{"icon":"smartphone","title":"Nomor Handphone Aktif","description":"Untuk menerima kode OTP."},{"icon":"network","title":"Aktivitas Usaha","description":"Tentukan jenis dan bidang usaha Anda."},{"icon":"house","title":"Alamat Usaha","description":"Alamat lengkap sesuai dokumen legal."}]' class="not-prose my-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6"><div class="flex h-full flex-col items-center rounded-xl border border-gray-200 px-3 py-4 text-center"><div class="flex size-9 items-center justify-center rounded-lg border border-primary/30 text-primary"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4"><path d="M16 10h2"></path><path d="M16 14h2"></path><path d="M6.17 15a3 3 0 0 1 5.66 0"></path><circle cx="9" cy="11" r="2"></circle><rect x="2" y="5" width="20" height="14" rx="2"></rect></svg></div><p class="mt-2 text-xs font-bold text-gray-900">KTP Penanggung Jawab</p><p class="mt-1 text-[11px] leading-relaxed text-gray-500">KTP masih berlaku.</p></div><div class="flex h-full flex-col items-center rounded-xl border border-gray-200 px-3 py-4 text-center"><div class="flex size-9 items-center justify-center rounded-lg border border-primary/30 text-primary"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"></path><path d="M14 2v5a1 1 0 0 0 1 1h5"></path><path d="m9 15 2 2 4-4"></path></svg></div><p class="mt-2 text-xs font-bold text-gray-900">NPWP (Jika ada)</p><p class="mt-1 text-[11px] leading-relaxed text-gray-500">Lampirkan NPWP perusahaan atau pribadi.</p></div><div class="flex h-full flex-col items-center rounded-xl border border-gray-200 px-3 py-4 text-center"><div class="flex size-9 items-center justify-center rounded-lg border border-primary/30 text-primary"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"></path><rect x="2" y="4" width="20" height="16" rx="2"></rect></svg></div><p class="mt-2 text-xs font-bold text-gray-900">Email Aktif</p><p class="mt-1 text-[11px] leading-relaxed text-gray-500">Digunakan untuk verifikasi dan notifikasi.</p></div><div class="flex h-full flex-col items-center rounded-xl border border-gray-200 px-3 py-4 text-center"><div class="flex size-9 items-center justify-center rounded-lg border border-primary/30 text-primary"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect><path d="M12 18h.01"></path></svg></div><p class="mt-2 text-xs font-bold text-gray-900">Nomor Handphone Aktif</p><p class="mt-1 text-[11px] leading-relaxed text-gray-500">Untuk menerima kode OTP.</p></div><div class="flex h-full flex-col items-center rounded-xl border border-gray-200 px-3 py-4 text-center"><div class="flex size-9 items-center justify-center rounded-lg border border-primary/30 text-primary"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4"><rect x="16" y="16" width="6" height="6" rx="1"></rect><rect x="2" y="16" width="6" height="6" rx="1"></rect><rect x="9" y="2" width="6" height="6" rx="1"></rect><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"></path><path d="M12 12V8"></path></svg></div><p class="mt-2 text-xs font-bold text-gray-900">Aktivitas Usaha</p><p class="mt-1 text-[11px] leading-relaxed text-gray-500">Tentukan jenis dan bidang usaha Anda.</p></div><div class="flex h-full flex-col items-center rounded-xl border border-gray-200 px-3 py-4 text-center"><div class="flex size-9 items-center justify-center rounded-lg border border-primary/30 text-primary"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg></div><p class="mt-2 text-xs font-bold text-gray-900">Alamat Usaha</p><p class="mt-1 text-[11px] leading-relaxed text-gray-500">Alamat lengkap sesuai dokumen legal.</p></div></div>
+<h2>Langkah Mengurus NIB Melalui OSS</h2>
+<p>Ikuti langkah-langkah berikut untuk mendapatkan NIB dengan mudah.</p>
+<div data-type="step-list" data-items='[{"icon":"user-plus","title":"Buat Akun OSS","description":"Kunjungi oss.go.id dan daftar akun baru."},{"icon":"log-in","title":"Login ke OSS","description":"Login menggunakan email dan password yang telah didaftarkan."},{"icon":"file-text","title":"Lengkapi Data","description":"Isi data pelaku usaha, data usaha, dan data penanggung jawab."},{"icon":"list-checks","title":"Pilih KBLI","description":"Pilih Kode KBLI sesuai dengan bidang usaha Anda."},{"icon":"file-check","title":"Perizinan Berusaha","description":"Pilih jenis perizinan yang dibutuhkan (NIB, Izin Usaha, atau Izin Komersial)."},{"icon":"badge-check","title":"Cek &amp; Terbitkan NIB","description":"Periksa data yang telah diisi. Jika sudah benar, NIB akan terbit secara otomatis."}]' class="not-prose my-4 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-6"><div class="relative flex flex-col items-center text-center"><div class="absolute left-[calc(50%+1.875rem)] right-[calc(-50%+1.875rem)] top-[1.375rem] hidden -translate-y-1/2 items-center lg:flex" aria-hidden="true"><span class="flex-1 border-t-2 border-dashed border-primary/40"></span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="-ml-1.5 shrink-0 text-primary/60"><path d="m9 18 6-6-6-6"></path></svg></div><div class="relative"><span class="grid size-11 place-items-center rounded-full border border-primary/30 bg-white text-primary shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" x2="19" y1="8" y2="14"></line><line x1="22" x2="16" y1="11" y2="11"></line></svg></span><span class="absolute -left-1.5 -top-1 grid size-5 place-items-center rounded-full bg-primary text-[10px] font-bold text-white">1</span></div><p class="mt-2 text-xs font-bold text-gray-900">Buat Akun OSS</p><p class="mt-1 text-[11px] leading-relaxed text-gray-500">Kunjungi oss.go.id dan daftar akun baru.</p></div><div class="relative flex flex-col items-center text-center"><div class="absolute left-[calc(50%+1.875rem)] right-[calc(-50%+1.875rem)] top-[1.375rem] hidden -translate-y-1/2 items-center lg:flex" aria-hidden="true"><span class="flex-1 border-t-2 border-dashed border-primary/40"></span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="-ml-1.5 shrink-0 text-primary/60"><path d="m9 18 6-6-6-6"></path></svg></div><div class="relative"><span class="grid size-11 place-items-center rounded-full border border-primary/30 bg-white text-primary shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-5"><path d="m10 17 5-5-5-5"></path><path d="M15 12H3"></path><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path></svg></span><span class="absolute -left-1.5 -top-1 grid size-5 place-items-center rounded-full bg-primary text-[10px] font-bold text-white">2</span></div><p class="mt-2 text-xs font-bold text-gray-900">Login ke OSS</p><p class="mt-1 text-[11px] leading-relaxed text-gray-500">Login menggunakan email dan password yang telah didaftarkan.</p></div><div class="relative flex flex-col items-center text-center"><div class="absolute left-[calc(50%+1.875rem)] right-[calc(-50%+1.875rem)] top-[1.375rem] hidden -translate-y-1/2 items-center lg:flex" aria-hidden="true"><span class="flex-1 border-t-2 border-dashed border-primary/40"></span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="-ml-1.5 shrink-0 text-primary/60"><path d="m9 18 6-6-6-6"></path></svg></div><div class="relative"><span class="grid size-11 place-items-center rounded-full border border-primary/30 bg-white text-primary shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-5"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"></path><path d="M14 2v5a1 1 0 0 0 1 1h5"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg></span><span class="absolute -left-1.5 -top-1 grid size-5 place-items-center rounded-full bg-primary text-[10px] font-bold text-white">3</span></div><p class="mt-2 text-xs font-bold text-gray-900">Lengkapi Data</p><p class="mt-1 text-[11px] leading-relaxed text-gray-500">Isi data pelaku usaha, data usaha, dan data penanggung jawab.</p></div><div class="relative flex flex-col items-center text-center"><div class="absolute left-[calc(50%+1.875rem)] right-[calc(-50%+1.875rem)] top-[1.375rem] hidden -translate-y-1/2 items-center lg:flex" aria-hidden="true"><span class="flex-1 border-t-2 border-dashed border-primary/40"></span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="-ml-1.5 shrink-0 text-primary/60"><path d="m9 18 6-6-6-6"></path></svg></div><div class="relative"><span class="grid size-11 place-items-center rounded-full border border-primary/30 bg-white text-primary shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-5"><path d="M13 5h8"></path><path d="M13 12h8"></path><path d="M13 19h8"></path><path d="m3 17 2 2 4-4"></path><path d="m3 7 2 2 4-4"></path></svg></span><span class="absolute -left-1.5 -top-1 grid size-5 place-items-center rounded-full bg-primary text-[10px] font-bold text-white">4</span></div><p class="mt-2 text-xs font-bold text-gray-900">Pilih KBLI</p><p class="mt-1 text-[11px] leading-relaxed text-gray-500">Pilih Kode KBLI sesuai dengan bidang usaha Anda.</p></div><div class="relative flex flex-col items-center text-center"><div class="absolute left-[calc(50%+1.875rem)] right-[calc(-50%+1.875rem)] top-[1.375rem] hidden -translate-y-1/2 items-center lg:flex" aria-hidden="true"><span class="flex-1 border-t-2 border-dashed border-primary/40"></span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="-ml-1.5 shrink-0 text-primary/60"><path d="m9 18 6-6-6-6"></path></svg></div><div class="relative"><span class="grid size-11 place-items-center rounded-full border border-primary/30 bg-white text-primary shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-5"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"></path><path d="M14 2v5a1 1 0 0 0 1 1h5"></path><path d="m9 15 2 2 4-4"></path></svg></span><span class="absolute -left-1.5 -top-1 grid size-5 place-items-center rounded-full bg-primary text-[10px] font-bold text-white">5</span></div><p class="mt-2 text-xs font-bold text-gray-900">Perizinan Berusaha</p><p class="mt-1 text-[11px] leading-relaxed text-gray-500">Pilih jenis perizinan yang dibutuhkan (NIB, Izin Usaha, atau Izin Komersial).</p></div><div class="relative flex flex-col items-center text-center"><div class="relative"><span class="grid size-11 place-items-center rounded-full border border-primary/30 bg-white text-primary shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-5"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"></path><path d="m9 12 2 2 4-4"></path></svg></span><span class="absolute -left-1.5 -top-1 grid size-5 place-items-center rounded-full bg-primary text-[10px] font-bold text-white">6</span></div><p class="mt-2 text-xs font-bold text-gray-900">Cek &amp; Terbitkan NIB</p><p class="mt-1 text-[11px] leading-relaxed text-gray-500">Periksa data yang telah diisi. Jika sudah benar, NIB akan terbit secara otomatis.</p></div></div>
+<h2>Biaya &amp; Waktu Proses</h2>
+<div data-type="info-box" data-items='[{"label":"Biaya","value":"GRATIS","description":"Pendaftaran NIB melalui sistem OSS tidak dikenakan biaya apapun."},{"label":"Waktu Proses","value":"1–3 Hari Kerja","description":"Proses penerbitan NIB biasanya memakan waktu 1–3 hari kerja setelah semua data lengkap."}]' class="not-prose my-4 grid grid-cols-1 gap-3 sm:grid-cols-2"><div class="rounded-xl border border-primary/20 bg-primary/5 p-4"><p class="text-xs font-medium text-gray-500">Biaya</p><p class="mt-1 text-lg font-bold text-primary">GRATIS</p><p class="mt-1 text-xs leading-relaxed text-gray-500">Pendaftaran NIB melalui sistem OSS tidak dikenakan biaya apapun.</p></div><div class="rounded-xl border border-primary/20 bg-primary/5 p-4"><p class="text-xs font-medium text-gray-500">Waktu Proses</p><p class="mt-1 text-lg font-bold text-primary">1–3 Hari Kerja</p><p class="mt-1 text-xs leading-relaxed text-gray-500">Proses penerbitan NIB biasanya memakan waktu 1–3 hari kerja setelah semua data lengkap.</p></div></div>
+<h2>FAQ Seputar NIB</h2>
+<div data-type="faq-list" data-items='[{"question":"Apakah NIB wajib untuk semua jenis usaha?","answer":"Ya. Setiap pelaku usaha, baik perorangan maupun badan usaha, wajib memiliki NIB sebagai identitas resmi untuk menjalankan kegiatan usaha secara legal di Indonesia."},{"question":"Apakah NIB berlaku selamanya?","answer":"Ya. NIB berlaku selama pelaku usaha masih menjalankan kegiatan usahanya dan tidak dicabut oleh pemerintah karena pelanggaran ketentuan."},{"question":"Apakah NIB sama dengan SIUP?","answer":"Tidak. NIB adalah identitas pelaku usaha, sedangkan SIUP adalah izin operasional perdagangan. Sejak berlakunya OSS, fungsi SIUP untuk sebagian besar usaha telah tergantikan oleh NIB dan perizinan berusaha berbasis risiko."},{"question":"Apakah NIB bisa berubah?","answer":"Bisa. Data NIB dapat diperbarui melalui sistem OSS apabila terjadi perubahan data usaha, misalnya perubahan alamat, bidang usaha (KBLI), atau penanggung jawab."},{"question":"Apakah NIB bisa diurus sendiri?","answer":"Bisa. Pendaftaran NIB dapat dilakukan sendiri melalui oss.go.id tanpa biaya. Namun jika ingin proses lebih cepat dan bebas kendala teknis, Anda dapat menggunakan jasa profesional seperti IzinPro."},{"question":"Apa yang harus dilakukan jika data NIB salah?","answer":"Segera lakukan perbaikan data melalui menu perubahan di sistem OSS. Pastikan seluruh data sesuai dokumen legal agar tidak menghambat proses perizinan berikutnya."}]' class="not-prose my-4 divide-y divide-gray-200 rounded-xl border border-gray-200"><details class="group p-4"><summary class="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-gray-900">Apakah NIB wajib untuk semua jenis usaha?<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-gray-400 transition-transform group-open:rotate-180"><path d="m6 9 6 6 6-6"></path></svg></summary><p class="mt-2 text-xs leading-relaxed text-gray-500">Ya. Setiap pelaku usaha, baik perorangan maupun badan usaha, wajib memiliki NIB sebagai identitas resmi untuk menjalankan kegiatan usaha secara legal di Indonesia.</p></details><details class="group p-4"><summary class="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-gray-900">Apakah NIB berlaku selamanya?<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-gray-400 transition-transform group-open:rotate-180"><path d="m6 9 6 6 6-6"></path></svg></summary><p class="mt-2 text-xs leading-relaxed text-gray-500">Ya. NIB berlaku selama pelaku usaha masih menjalankan kegiatan usahanya dan tidak dicabut oleh pemerintah karena pelanggaran ketentuan.</p></details><details class="group p-4"><summary class="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-gray-900">Apakah NIB sama dengan SIUP?<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-gray-400 transition-transform group-open:rotate-180"><path d="m6 9 6 6 6-6"></path></svg></summary><p class="mt-2 text-xs leading-relaxed text-gray-500">Tidak. NIB adalah identitas pelaku usaha, sedangkan SIUP adalah izin operasional perdagangan. Sejak berlakunya OSS, fungsi SIUP untuk sebagian besar usaha telah tergantikan oleh NIB dan perizinan berusaha berbasis risiko.</p></details><details class="group p-4"><summary class="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-gray-900">Apakah NIB bisa berubah?<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-gray-400 transition-transform group-open:rotate-180"><path d="m6 9 6 6 6-6"></path></svg></summary><p class="mt-2 text-xs leading-relaxed text-gray-500">Bisa. Data NIB dapat diperbarui melalui sistem OSS apabila terjadi perubahan data usaha, misalnya perubahan alamat, bidang usaha (KBLI), atau penanggung jawab.</p></details><details class="group p-4"><summary class="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-gray-900">Apakah NIB bisa diurus sendiri?<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-gray-400 transition-transform group-open:rotate-180"><path d="m6 9 6 6 6-6"></path></svg></summary><p class="mt-2 text-xs leading-relaxed text-gray-500">Bisa. Pendaftaran NIB dapat dilakukan sendiri melalui oss.go.id tanpa biaya. Namun jika ingin proses lebih cepat dan bebas kendala teknis, Anda dapat menggunakan jasa profesional seperti IzinPro.</p></details><details class="group p-4"><summary class="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-gray-900">Apa yang harus dilakukan jika data NIB salah?<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-gray-400 transition-transform group-open:rotate-180"><path d="m6 9 6 6 6-6"></path></svg></summary><p class="mt-2 text-xs leading-relaxed text-gray-500">Segera lakukan perbaikan data melalui menu perubahan di sistem OSS. Pastikan seluruh data sesuai dokumen legal agar tidak menghambat proses perizinan berikutnya.</p></details></div>
+`.trim(),
+    "legalitas-lengkap-bisnis-makin-terpercaya": `
+<h2>Mengapa Legalitas Usaha Itu Penting?</h2>
+<p>Dengan legalitas yang lengkap, bisnis Anda akan lebih kredibel, terhindar dari risiko hukum, dan membuka lebih banyak peluang, seperti akses pendanaan, kemitraan, dan tender proyek.</p>
+<ul>
+<li><p>Menambah kepercayaan pelanggan &amp; mitra</p></li>
+<li><p>Memenuhi persyaratan tender &amp; kerjasama</p></li>
+<li><p>Menghindari sanksi &amp; masalah hukum</p></li>
+<li><p>Mendukung pertumbuhan bisnis jangka panjang</p></li>
+</ul>
+<h2>Legalitas Usaha yang Kami Tangani</h2>
+<ul>
+<li><p><strong>Pendirian PT</strong> — Dirikan PT secara legal dan profesional.</p></li>
+<li><p><strong>NIB (Nomor Induk Berusaha)</strong> — Langkah awal legalitas melalui sistem OSS.</p></li>
+<li><p><strong>Izin Usaha</strong> — Berbagai jenis izin usaha sesuai bidang bisnis Anda.</p></li>
+<li><p><strong>Izin Komersial &amp; Operasional</strong> — Untuk kegiatan komersial dan operasional perusahaan.</p></li>
+<li><p><strong>Sertifikat Standar (SS)</strong> — Sertifikat standar untuk meningkatkan kredibilitas produk/jasa.</p></li>
+<li><p><strong>Izin Impor</strong> — Urus izin impor dengan mudah dan sesuai regulasi.</p></li>
+<li><p><strong>Izin Lingkungan</strong> — Dokumen lingkungan untuk menjamin kelestarian dan kepatuhan.</p></li>
+<li><p><strong>Perizinan Lainnya</strong> — Berbagai perizinan lain sesuai kebutuhan bisnis Anda.</p></li>
+</ul>
+<h2>Proses Layanan Kami</h2>
+<ol>
+<li><p><strong>Konsultasi</strong> — Sampaikan kebutuhan legalitas usaha Anda.</p></li>
+<li><p><strong>Analisis Kebutuhan</strong> — Kami analisis jenis legalitas yang dibutuhkan.</p></li>
+<li><p><strong>Pengumpulan Data</strong> — Siapkan dan kumpulkan dokumen yang diperlukan.</p></li>
+<li><p><strong>Proses Pengurusan</strong> — Kami urus legalitas Anda hingga selesai.</p></li>
+<li><p><strong>Dokumen Terbit</strong> — Legalitas terbit dan siap digunakan.</p></li>
+<li><p><strong>Pendampingan</strong> — Kami dampingi hingga legalitas aktif &amp; sesuai.</p></li>
+</ol>
+<h2>Mengapa Memilih IzinPro?</h2>
+<ul>
+<li><p><strong>Tim Profesional &amp; Berpengalaman</strong> — Berpengalaman mengurus ribuan legalitas usaha berbagai bidang.</p></li>
+<li><p><strong>Proses Cepat &amp; Efisien</strong> — Proses pengurusan cepat, efisien, dan tepat waktu.</p></li>
+<li><p><strong>Aman &amp; Terpercaya</strong> — Dokumen dijamin resmi, aman, dan sesuai regulasi.</p></li>
+<li><p><strong>Konsultasi Gratis</strong> — Konsultasi gratis untuk semua kebutuhan legalitas Anda.</p></li>
+<li><p><strong>Harga Transparan</strong> — Biaya jelas, tanpa biaya tambahan tersembunyi.</p></li>
+</ul>
+<h2>FAQ Seputar Legalitas Usaha</h2>
+<h3>Apa saja legalitas usaha yang wajib dimiliki?</h3>
+<p>Minimal setiap usaha wajib memiliki NIB sebagai identitas pelaku usaha. Selebihnya tergantung jenis dan skala bisnis — misalnya akta pendirian untuk badan usaha, izin usaha sesuai bidang, sertifikat standar, hingga izin komersial &amp; operasional.</p>
+<h3>Apakah legalitas berlaku di seluruh Indonesia?</h3>
+<p>Ya. Legalitas yang diterbitkan melalui sistem OSS berlaku secara nasional. Namun beberapa kegiatan usaha tertentu tetap memerlukan izin tambahan dari pemerintah daerah setempat.</p>
+<h3>Berapa lama proses pengurusan legalitas usaha?</h3>
+<p>Tergantung jenis legalitasnya — NIB bisa terbit dalam hitungan hari, sedangkan pendirian PT lengkap dengan izin turunannya umumnya membutuhkan 1–2 minggu selama dokumen persyaratan lengkap.</p>
+<h3>Apakah saya perlu datang ke kantor?</h3>
+<p>Tidak perlu. Seluruh proses dapat dilakukan secara online — mulai dari konsultasi, pengumpulan dokumen, hingga penerbitan legalitas. Tim kami akan memandu Anda di setiap tahap.</p>
+<h3>Apakah bisa mengurus legalitas jika usaha masih baru?</h3>
+<p>Sangat bisa. Justru sebaiknya legalitas diurus sejak awal usaha berdiri agar bisnis berjalan aman, kredibel, dan siap mengambil peluang kerjasama maupun pendanaan.</p>
+<h3>Bagaimana jika dokumen usaha saya belum lengkap?</h3>
+<p>Tidak masalah. Tim kami akan membantu meninjau dokumen yang sudah ada, memberi tahu kekurangannya, dan mendampingi Anda melengkapinya hingga proses pengurusan bisa berjalan.</p>
+`.trim(),
+    "apa-itu-oss-penjelasan-lengkap": `
+<h2>Apa itu OSS?</h2>
+<p>OSS (Online Single Submission) adalah sistem perizinan berusaha terintegrasi yang dikelola oleh Kementerian Investasi/BKPM. Melalui OSS, pelaku usaha bisa mengurus berbagai jenis perizinan — mulai dari NIB, izin usaha, hingga izin komersial atau operasional — dalam satu platform online, tanpa perlu datang ke banyak instansi berbeda.</p>
+<p>Sistem ini menerapkan pendekatan perizinan berbasis risiko (risk-based approach), di mana jenis dan jumlah izin yang dibutuhkan sebuah usaha disesuaikan dengan tingkat risiko kegiatan usahanya — rendah, menengah, atau tinggi.</p>
+<h2>Manfaat OSS bagi Pelaku Usaha</h2>
+<ul>
+<li><p><strong>Proses Lebih Cepat</strong> — Tidak perlu mengurus izin satu per satu ke berbagai instansi.</p></li>
+<li><p><strong>Transparan</strong> — Status dan progres perizinan dapat dipantau langsung secara online.</p></li>
+<li><p><strong>Terintegrasi</strong> — Data usaha tersimpan dalam satu sistem dan dapat digunakan untuk berbagai jenis perizinan.</p></li>
+<li><p><strong>Berlaku Nasional</strong> — Perizinan yang terbit melalui OSS diakui di seluruh wilayah Indonesia.</p></li>
+</ul>
+<h2>Cara Kerja Sistem OSS</h2>
+<p>Secara umum, alur penggunaan OSS dimulai dari pembuatan akun, pengisian data pelaku usaha dan data usaha (termasuk kode KBLI sesuai bidang usaha), hingga penerbitan dokumen perizinan berbasis tingkat risiko usaha yang terdeteksi otomatis oleh sistem.</p>
+<p>Setelah data lengkap dan sesuai, OSS akan menerbitkan NIB sebagai identitas dasar pelaku usaha, yang kemudian dapat dilanjutkan dengan izin usaha atau izin komersial/operasional sesuai kebutuhan.</p>
+<h2>Siapa yang Wajib Menggunakan OSS?</h2>
+<p>Seluruh pelaku usaha di Indonesia — baik perorangan (UMK) maupun badan usaha seperti PT dan CV — wajib mendaftarkan usahanya melalui OSS untuk mendapatkan NIB dan perizinan berusaha yang sah.</p>
+<h2>Perizinan Apa Saja yang Bisa Diurus Lewat OSS?</h2>
+<ul>
+<li><p><strong>NIB (Nomor Induk Berusaha)</strong> — Identitas dasar pelaku usaha.</p></li>
+<li><p><strong>Izin Usaha</strong> — Izin untuk menjalankan kegiatan usaha sesuai bidangnya.</p></li>
+<li><p><strong>Izin Komersial &amp; Operasional</strong> — Izin tambahan sebelum usaha mulai beroperasi secara komersial.</p></li>
+<li><p><strong>Sertifikat Standar</strong> — Untuk usaha dengan tingkat risiko menengah hingga tinggi.</p></li>
+</ul>
+<h2>FAQ Seputar OSS</h2>
+<h3>Apakah pendaftaran di OSS berbayar?</h3>
+<p>Tidak. Pendaftaran akun dan penerbitan NIB melalui OSS tidak dikenakan biaya apapun.</p>
+<h3>Apakah OSS bisa diakses kapan saja?</h3>
+<p>Ya. OSS dapat diakses secara online 24 jam melalui oss.go.id menggunakan perangkat apa saja yang terhubung internet.</p>
+<h3>Apa bedanya OSS dengan NIB?</h3>
+<p>OSS adalah sistemnya, sedangkan NIB adalah salah satu dokumen yang diterbitkan melalui sistem OSS. Selain NIB, OSS juga menerbitkan izin usaha dan izin komersial/operasional.</p>
+<h3>Apakah saya perlu bantuan profesional untuk mengurus OSS?</h3>
+<p>Tidak wajib, karena OSS bisa diurus sendiri secara gratis. Namun jika ingin memastikan data terisi tepat dan proses berjalan lancar tanpa kendala teknis, Anda bisa menggunakan bantuan tim profesional seperti IzinPro.</p>
+`.trim(),
+  };
+
   /* ═══ 14. Category + BlogPost (8) ═══ */
   const blogCategoryNames = Array.from(new Set(BLOG_POSTS.map((p) => p.category)));
   const categoryIdByName: Record<string, string> = {};
@@ -642,22 +774,6 @@ async function main() {
   const richDetailBuilders: Record<string, () => object> = {
     "cara-mudah-membuat-nib-online-2024": () =>
       stripIcons(getArticleDetail("cara-mudah-membuat-nib-online-2024")) as object,
-    "panduan-lengkap-mengurus-nib-melalui-oss": () =>
-      stripIcons({
-        hero: PANDUAN_NIB_HERO,
-        chips: PANDUAN_NIB_CHIPS,
-        summary: PANDUAN_NIB_SUMMARY,
-        nav: PANDUAN_NIB_NAV,
-        intro: PANDUAN_NIB_INTRO,
-        syaratLead: PANDUAN_NIB_SYARAT_LEAD,
-        syarat: PANDUAN_NIB_SYARAT,
-        langkahLead: PANDUAN_NIB_LANGKAH_LEAD,
-        langkah: PANDUAN_NIB_LANGKAH,
-        info: PANDUAN_NIB_INFO,
-        faq: PANDUAN_NIB_FAQ,
-        help: PANDUAN_NIB_HELP,
-        related: PANDUAN_NIB_RELATED,
-      }) as object,
     "legalitas-lengkap-bisnis-makin-terpercaya": () =>
       stripIcons({
         hero: PANDUAN_LEGALITAS_HERO,
@@ -690,10 +806,10 @@ async function main() {
         slug: post.slug,
         title: post.title,
         excerpt: post.excerpt,
-        // Belum ada body artikel lengkap utk 5/8 post — pakai excerpt sbg
-        // placeholder sampai konten asli tersedia (lihat detailContent utk 3
-        // artikel yg sudah punya rich content).
-        content: post.excerpt,
+        // Belum ada body artikel lengkap utk sisa post — pakai excerpt sbg
+        // placeholder sampai konten asli tersedia (lihat RICH_BLOG_CONTENT
+        // utk 4 artikel yg sudah punya konten asli/lengkap).
+        content: RICH_BLOG_CONTENT[post.slug] ?? post.excerpt,
         detailContent: richDetailBuilders[post.slug]?.(),
         categoryId: categoryIdByName[post.category],
         authorId: admin.id,

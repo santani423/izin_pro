@@ -5,6 +5,169 @@ CHANGELOG — IzinPro CMS Project
 Format: [YYYY-MM-DD] Versi — Deskripsi
 ====================================================
 
+[2026-07-20] v2.7.0 — Panel Admin per Role (/admin, /editor, /author)
+----------------------------------------------------
+STATUS   : DONE
+PROJECT  : izinpro-cms/
+SUMBER   : User minta URL admin panel beda prefix sesuai role yang login:
+           SUPER_ADMIN/ADMIN tetap /admin/..., EDITOR pindah ke /editor/...,
+           AUTHOR ke /author/... — berlaku ke SEMUA menu (bukan cuma
+           dashboard), dan tiap role cuma boleh akses prefix-nya sendiri
+           (dikonfirmasi lewat AskUserQuestion, bukan asumsi)
+
+DITAMBAHKAN:
+  + src/app/admin/* dipindah ke src/app/[panel]/* (dynamic segment
+    Next.js) — satu tree halaman dipakai bertiga (admin/editor/author),
+    bukan 3x lipat file per role. Login TETAP statis di /admin/login
+    (satu pintu masuk buat semua role, gak ikut prefix)
+  + src/lib/admin-guard.ts (BARU) — requirePanelAccess(panel, suffix)
+    dipanggil di tiap page.tsx: redirect ke /admin/login kalau belum
+    login, atau ke dashboard panel yg BENAR kalau nyasar ke panel/rute
+    yang bukan haknya (mis. EDITOR buka /admin/blog langsung)
+  + src/lib/permissions.ts — getRolePanel(role) (peta role ke
+    admin/editor/author), key ADMIN_ROUTE_ROLES diganti dari path
+    lengkap (/admin/blog) jadi suffix (/blog) biar satu matrix cocok
+    dipakai di 3 panel sekaligus
+  ~ Redirect setelah login sekarang berdasarkan role: SUPER_ADMIN/ADMIN
+    -> /admin/dashboard, EDITOR -> /editor/dashboard, AUTHOR ->
+    /author/dashboard
+  ~ Sidebar, command palette (search header v2.4.0), dan semua link
+    internal form Blog (kembali/simpan/batal/preview) sekarang ikut
+    prefix panel yg lagi aktif, gak lagi hardcode /admin/...
+  ~ revalidatePath di 7 file src/lib/actions/*.ts (blog, layanan, klien,
+    menu, users, profile, testimoni) diperluas mencakup ketiga prefix
+    panel via helper revalidateAdminPaths(), biar cache gak nyangkut
+    basi di panel lain abis ada yg edit data
+  ~ src/proxy.ts matcher diperluas mencakup /editor/:path* &
+    /author/:path*, robots.txt ikut disallow keduanya
+  ~ dashboard/page.tsx & media/page.tsx (sebelumnya monolitik client,
+    gak ada guard akses sama sekali) dipecah jadi server wrapper +
+    client component biar konsisten dgn pola halaman admin lain & bisa
+    dikasih requirePanelAccess
+
+DI LUAR SCOPE (sesuai pilihan user):
+  - SUPER_ADMIN/ADMIN gak bisa "intip" tampilan /editor/... atau
+    /author/... — akses ketat per-role, gak ada cross-access
+
+VERIFIKASI:
+  ~ tsc --noEmit + eslint bersih di seluruh file yg disentuh (~40 file)
+  ~ Dev server jalan bersih setelah pemindahan folder besar-besaran
+  ~ Manual test tiap role oleh user langsung di browser (belum saya
+    test sendiri)
+
+====================================================
+
+[2026-07-20] v2.6.0 — Sinkronisasi Konten Artikel NIB/OSS + Migrasi Halaman Statis
+----------------------------------------------------
+STATUS   : DONE
+PROJECT  : izinpro-cms/
+SUMBER   : User kirim 4 PDF (screenshot artikel dari versi lama/produksi
+           situs) minta konten aslinya "disinkronkan ke backend". Ketahuan
+           field content di Prisma cuma berisi excerpt pendek — bukan
+           artikel lengkap, padahal artikel aslinya udah ada tersimpan di
+           kode lama (blog-detail.ts, panduan-nib.ts, panduan-legalitas.ts)
+
+DITAMBAHKAN:
+  ~ Konten asli 4 artikel dipindah ke BlogPost.content (HTML Tiptap) +
+    prisma/seed.ts: cara-mudah-membuat-nib-online-2024,
+    panduan-lengkap-mengurus-nib-melalui-oss,
+    legalitas-lengkap-bisnis-makin-terpercaya (dari kode lama), dan
+    apa-itu-oss-penjelasan-lengkap (ditulis baru krn gak ada sumber
+    sebelumnya, sebelumnya cuma dapet fallback generik)
+  ~ Artikel panduan-lengkap-mengurus-nib-melalui-oss dipindah dari
+    halaman statis custom (komponen React sendiri) ke halaman dinamis
+    Prisma standar (/blog/[slug]) — dihapus: src/lib/panduan-nib.ts,
+    PanduanNibHeroSection.tsx, PanduanNibBodySection.tsx, route
+    statisnya
+  ~ Konten "Syarat Mengurus NIB" & "Langkah Mengurus NIB" di artikel itu
+    dikonversi dari bullet list polos ke Card Grid & Step List block
+    (lihat v2.5.0), styling disamakan dgn desain aslinya (kartu rata
+    tengah, ikon outline, grid 6 kolom, panah penghubung antar step) +
+    ikon asli per item (IdCard, FileCheck, Mail, dst)
+  ~ FAQ artikel yg sama dikonversi ke FAQ List block (accordion)
+
+DI LUAR SCOPE:
+  - legalitas-lengkap-bisnis-makin-terpercaya sengaja TETAP statis
+    (pilihan user) — field content di database sudah benar tapi gak
+    berefek ke tampilan publik selama masih pakai halaman custom
+  - cara-mudah-membuat-nib-online-2024 & apa-itu-oss-penjelasan-lengkap
+    masih pakai bullet list biasa (belum dikonversi ke card block)
+
+VERIFIKASI:
+  ~ tsc --noEmit + eslint bersih tiap perubahan konten
+  ~ Update konten langsung ke DB pakai script sekali-pakai (dihapus
+    lagi abis dipakai) + disinkronkan manual ke prisma/seed.ts
+
+====================================================
+
+[2026-07-20] v2.5.0 — Rich Text Editor: Custom Block (Card Grid/Step List/Info Box/FAQ) + UX Form Blog
+----------------------------------------------------
+STATUS   : DONE
+PROJECT  : izinpro-cms/
+SUMBER   : User kasih referensi desain editor artikel (gambar) minta
+           diterapkan — layout 2 kolom, toolbar lebih lengkap, dan yg
+           utama: card/step block biar konten kaya (kartu bersyarat, step
+           bernomor+ikon, FAQ accordion) masih bisa diedit lewat CMS,
+           bukan cuma jadi bullet list polos
+
+DITAMBAHKAN:
+  ~ Layout form Blog jadi 2 kolom (judul+editor di kiri lebar, metadata
+    di kanan), tinggi editor otomatis menyamai tinggi sidebar (CSS grid
+    stretch)
+  + Toolbar RichTextEditor dilengkapi: dropdown heading (Normal
+    Text/H2/H3), Underline, Kode inline, Highlight, Tabel, dan mode
+    fullscreen
+  + src/components/admin/tiptap-blocks.tsx (BARU) — 4 custom Tiptap
+    Node: Card Grid, Step List, Info Box, FAQ List (accordion pakai
+    <details>/<summary> native, gak perlu JS tambahan di publik). Tiap
+    blok bisa diedit langsung di editor (tambah/hapus item per blok),
+    HTML hasilnya bawa class Tailwind sendiri (dibangun di renderHTML)
+    jadi tampil sama persis di halaman publik tanpa parsing tambahan
+  + src/components/admin/tiptap-icons.ts (BARU) — 27 ikon pilihan
+    (disalin dari source lucide-react jadi data path SVG mentah) buat
+    Card Grid & Step List; picker-nya pakai Base UI Popover (mengambang
+    beneran, gak lagi dorong layout kartu turun)
+  + Cover Image: klik gambar yg sudah diupload buka popup preview besar
+    + tombol hapus (batal pakai gambar tsb tanpa harus save dulu)
+  + Tabel Blog admin: aksi "View" (ikon mata) di kolom Aksi, buka
+    artikel di publik (tab baru), nonaktif+tooltip kalau masih draft
+  ~ Klik Simpan di halaman edit sekarang TETAP di halaman edit (gak
+    lagi redirect ke list) — kalau slug diubah & disimpan, URL otomatis
+    dibetulkan lewat router.replace
+  + Tombol Preview di halaman edit — buka /blog/{slug} versi publik di
+    tab baru, aktif cuma kalau artikel sudah tersimpan & berstatus
+    Published
+
+VERIFIKASI:
+  ~ tsc --noEmit + eslint bersih di tiap tahap
+
+====================================================
+
+[2026-07-20] v2.4.0 — Search Global Admin (Command Palette)
+----------------------------------------------------
+STATUS   : DONE
+PROJECT  : izinpro-cms/
+SUMBER   : Tombol search di sebelah ikon notifikasi di AdminHeader selama
+           ini cuma dekorasi (gak ada fungsinya sama sekali). User minta
+           diaktifkan
+
+DITAMBAHKAN:
+  + src/lib/admin-nav.ts (BARU) — daftar menu admin (label/href/icon)
+    diekstrak jadi satu sumber, dipakai bareng AdminSidebar & AdminHeader
+    (sebelumnya AdminSidebar punya definisi menu sendiri, terpisah)
+  + Command palette di AdminHeader — klik search box atau tekan
+    Ctrl/Cmd+K buka dialog, ketik buat filter menu (nama menu, ikut
+    hormati hak akses role lewat canAccessAdminRoute), navigasi pakai
+    panah atas/bawah + Enter, atau klik langsung
+  + Tombol search versi mobile (ikon doang) — sebelumnya search box
+    cuma muncul di layar besar dan hilang total di mobile tanpa
+    pengganti
+
+VERIFIKASI:
+  ~ tsc --noEmit + eslint bersih
+
+====================================================
+
 [2026-07-20] v2.3.1 — Pagination + Search Konsisten di Semua List Admin
 ----------------------------------------------------
 STATUS   : DONE
