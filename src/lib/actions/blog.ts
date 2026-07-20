@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import fs from "node:fs/promises";
 import path from "node:path";
+import sharp from "sharp";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { revalidateAdminPaths } from "@/lib/admin-guard";
@@ -196,8 +197,14 @@ export async function deleteBlogPostAction(id: string): Promise<ActionResult> {
   }
 }
 
-const IMAGE_MAX_BYTES = 2 * 1024 * 1024; // 2MB
+const IMAGE_MAX_BYTES = 2 * 1024 * 1024; // 2MB — batas file yang diunggah user, sebelum resize
 const IMAGE_ALLOWED_MIME = ["image/png", "image/jpeg", "image/webp"];
+
+/* Gambar apa pun ukurannya (mis. 500x300) diresize turun kalau melebihi sisi
+ * terpanjang ini — menjaga rasio asli, gak pernah upscale gambar kecil.
+ * Crop ke rasio tampilan (mis. kotak buat Info Box) diatur lewat CSS
+ * object-cover di tempat render, bukan di sini. */
+const IMAGE_MAX_DIMENSION = 1600;
 
 async function saveUploadedImage(file: File, subDir: string, uploaderId: string) {
   if (!IMAGE_ALLOWED_MIME.includes(file.type)) {
@@ -210,12 +217,21 @@ async function saveUploadedImage(file: File, subDir: string, uploaderId: string)
   await fs.mkdir(uploadDir, { recursive: true });
   const ext = path.extname(file.name) || ".jpg";
   const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
-  const buffer = Buffer.from(await file.arrayBuffer());
+  const original = Buffer.from(await file.arrayBuffer());
+  const buffer = await sharp(original)
+    .rotate() // auto-orient berdasarkan EXIF (foto dari HP sering kesimpan miring)
+    .resize({
+      width: IMAGE_MAX_DIMENSION,
+      height: IMAGE_MAX_DIMENSION,
+      fit: "inside",
+      withoutEnlargement: true,
+    })
+    .toBuffer();
   await fs.writeFile(path.join(uploadDir, fileName), buffer);
 
   const url = `/uploads/${subDir}/${fileName}`;
   const media = await prisma.media.create({
-    data: { fileName, url, mimeType: file.type, sizeBytes: file.size, uploadedById: uploaderId },
+    data: { fileName, url, mimeType: file.type, sizeBytes: buffer.length, uploadedById: uploaderId },
   });
   return media;
 }

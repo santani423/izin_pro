@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Node, mergeAttributes } from "@tiptap/core";
 import { ReactNodeViewRenderer, NodeViewWrapper, type NodeViewProps } from "@tiptap/react";
 import type { DOMOutputSpec } from "@tiptap/pm/model";
 import { Popover } from "@base-ui/react/popover";
-import { Plus, Trash2, X, ImageOff } from "lucide-react";
+import { Plus, Trash2, X, ImageOff, ImagePlus } from "lucide-react";
 import { ICON_COMPONENTS, ICON_NAMES, iconSvgSpec } from "@/components/admin/tiptap-icons";
+import { uploadBlogContentImageAction } from "@/lib/actions/blog";
 import { cn } from "@/lib/utils";
 
 /** Blok kustom Tiptap — "kartu" (card grid / step list / info box) yang bisa
@@ -37,7 +38,7 @@ function IconPickerButton({
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger
         onKeyDown={stop}
-        className="mb-2 grid size-8 place-items-center rounded-lg border border-dashed border-admin-line text-gray-400 hover:border-primary/40 hover:text-primary"
+        className="grid size-8 shrink-0 place-items-center rounded-lg border border-dashed border-admin-line text-gray-400 hover:border-primary/40 hover:text-primary"
         aria-label="Pilih ikon"
         title="Pilih ikon"
       >
@@ -88,6 +89,76 @@ function IconPickerButton({
   );
 }
 
+function ImageUploadField({
+  value,
+  onChange,
+}: {
+  value?: string;
+  onChange: (url: string) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const stop = (e: React.SyntheticEvent) => e.stopPropagation();
+
+  const handleFile = async (file: File) => {
+    setUploading(true);
+    const fd = new FormData();
+    fd.append("image", file);
+    const res = await uploadBlogContentImageAction(fd);
+    setUploading(false);
+    if (res.ok) onChange(res.url);
+  };
+
+  const openPicker = (e: React.SyntheticEvent) => {
+    stop(e);
+    if (!uploading) inputRef.current?.click();
+  };
+
+  return (
+    <div className="mb-2" onKeyDown={stop}>
+      {value ? (
+        <div className="relative">
+          <img
+            src={value}
+            alt=""
+            className="h-24 w-full rounded-md border border-admin-line object-cover"
+          />
+          <button
+            type="button"
+            onClick={openPicker}
+            disabled={uploading}
+            className="absolute inset-x-0 bottom-0 rounded-b-md bg-black/50 py-1 text-center text-[10px] font-semibold text-white disabled:pointer-events-none"
+          >
+            {uploading ? "Mengunggah..." : "Ganti gambar"}
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={openPicker}
+          disabled={uploading}
+          className="flex h-24 w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed border-admin-line text-gray-400 hover:border-primary/40 hover:text-primary disabled:pointer-events-none"
+        >
+          <ImagePlus size={16} />
+          <span className="text-[10px] font-semibold">{uploading ? "Mengunggah..." : "Unggah gambar"}</span>
+        </button>
+      )}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        className="hidden"
+        onClick={stop}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleFile(file);
+          e.target.value = "";
+        }}
+      />
+    </div>
+  );
+}
+
 function ItemsEditor({
   items,
   onChange,
@@ -95,6 +166,8 @@ function ItemsEditor({
   addLabel,
   emptyItem,
   showIcon,
+  numbered,
+  showImage,
 }: {
   items: BlockItem[];
   onChange: (items: BlockItem[]) => void;
@@ -102,6 +175,8 @@ function ItemsEditor({
   addLabel: string;
   emptyItem: BlockItem;
   showIcon?: boolean;
+  numbered?: boolean;
+  showImage?: boolean;
 }) {
   const updateItem = (idx: number, key: string, value: string) => {
     onChange(items.map((it, i) => (i === idx ? { ...it, [key]: value } : it)));
@@ -123,11 +198,26 @@ function ItemsEditor({
           >
             <X size={12} />
           </button>
-          {showIcon && (
-            <IconPickerButton
-              value={item.icon || undefined}
-              onChange={(name) => updateItem(idx, "icon", name ?? "")}
+          {showImage && (
+            <ImageUploadField
+              value={item.image || undefined}
+              onChange={(url) => updateItem(idx, "image", url)}
             />
+          )}
+          {(numbered || showIcon) && (
+            <div className="mb-2 flex items-center gap-2">
+              {numbered && (
+                <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary text-[11px] font-bold text-white">
+                  {idx + 1}
+                </span>
+              )}
+              {showIcon && (
+                <IconPickerButton
+                  value={item.icon || undefined}
+                  onChange={(name) => updateItem(idx, "icon", name ?? "")}
+                />
+              )}
+            </div>
           )}
           {fields.map((f) =>
             f.type === "textarea" ? (
@@ -281,6 +371,7 @@ function StepListView({ node, updateAttributes, deleteNode }: NodeViewProps) {
         ]}
         addLabel="Tambah Langkah"
         emptyItem={{ icon: "", title: "", description: "" }}
+        numbered
         showIcon
       />
     </BlockShell>
@@ -404,7 +495,9 @@ function InfoBoxView({ node, updateAttributes, deleteNode }: NodeViewProps) {
           { key: "description", placeholder: "Keterangan...", type: "textarea" },
         ]}
         addLabel="Tambah Info"
-        emptyItem={{ label: "", value: "", description: "" }}
+        emptyItem={{ icon: "", image: "", label: "", value: "", description: "" }}
+        showIcon
+        showImage
       />
     </BlockShell>
   );
@@ -438,14 +531,35 @@ export const InfoBox = Node.create({
       "div",
       mergeAttributes(HTMLAttributes, {
         "data-type": "info-box",
-        class: "not-prose my-4 grid grid-cols-1 gap-3 sm:grid-cols-2",
+        class: "not-prose my-4 grid grid-cols-1 gap-4 sm:grid-cols-2",
       }),
       ...items.map((item) => [
         "div",
-        { class: "rounded-xl border border-primary/20 bg-primary/5 p-4" },
-        ["p", { class: "text-xs font-medium text-gray-500" }, item.label || ""],
-        ["p", { class: "mt-1 text-lg font-bold text-primary" }, item.value || ""],
-        ["p", { class: "mt-1 text-xs leading-relaxed text-gray-500" }, item.description || ""],
+        { class: "flex items-center gap-4 rounded-xl bg-brand-surface px-5 py-5" },
+        [
+          "div",
+          { class: "min-w-0 flex-1" },
+          [
+            "p",
+            { class: "flex items-center gap-1.5 text-xs font-semibold text-foreground" },
+            ...(item.icon ? [iconSvgSpec(item.icon, "size-3.5 text-primary")] : []),
+            item.label || "",
+          ],
+          ["p", { class: "mt-2 text-2xl font-extrabold tracking-tight text-primary" }, item.value || ""],
+          ["p", { class: "mt-1.5 text-sm leading-relaxed text-muted-foreground" }, item.description || ""],
+        ],
+        item.image
+          ? [
+              "img",
+              {
+                src: item.image,
+                alt: item.label || "",
+                width: "112",
+                height: "112",
+                class: "h-24 w-24 shrink-0 rounded-lg object-cover sm:h-28 sm:w-28",
+              },
+            ]
+          : "",
       ]),
     ];
   },

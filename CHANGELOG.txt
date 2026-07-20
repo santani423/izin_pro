@@ -5,6 +5,52 @@ CHANGELOG — IzinPro CMS Project
 Format: [YYYY-MM-DD] Versi — Deskripsi
 ====================================================
 
+[2026-07-20] v2.8.0 — Step List Bernomor, Info Box Ikon+Gambar, Resize Upload
+----------------------------------------------------
+STATUS   : DONE
+PROJECT  : izinpro-cms/
+SUMBER   : User minta nomor urut kelihatan pas edit block Step List di
+           editor blog, lalu minta block Info Box bisa upload gambar per
+           card — ternyata desain publiknya harus disamakan persis ke
+           desain lama (kartu horizontal + ikon + ilustrasi kanan, dari
+           PanduanNibBodySection.tsx sebelum migrasi ke CMS, dikirim user
+           lewat potongan HTML halaman publik)
+
+DITAMBAHKAN:
+  + src/components/admin/tiptap-blocks.tsx: badge nomor urut (1, 2, 3, ...)
+    di tiap card Step List pas diedit di admin — sebelumnya nomor cuma
+    kelihatan di hasil render publik, gak kelihatan pas nulis konten
+  + Block Info Box sekarang punya ikon (icon picker, sama kayak Card
+    Grid/Step List) + upload gambar ilustrasi per card. renderHTML()-nya
+    dirombak total supaya hasil publik persis desain lama: card
+    horizontal (flex items-center, bg-brand-surface), ikon nempel di
+    label, gambar kecil (112x112, object-cover kotak) nempel di kanan —
+    sebelumnya cuma label/value/deskripsi teks polos tanpa ikon/gambar
+  + ImageUploadField (komponen baru) buat upload gambar per card, pakai
+    action uploadBlogContentImageAction yang sudah ada (dipakai juga
+    buat gambar inline artikel) — tombol upload pakai ref+onClick
+    (bukan label htmlFor+input tersembunyi) krn ProseMirror nahan aksi
+    default klik label di dalam NodeView, jadi dialog file gak kebuka
+  + src/lib/actions/blog.ts: saveUploadedImage() sekarang resize gambar
+    upload (fitur/thumbnail artikel maupun gambar Info Box) pakai sharp
+    — auto-rotate ikut EXIF, sisi terpanjang dikunci maks 1600px (gak
+    upscale gambar kecil), size di tabel Media dihitung dari file hasil
+    resize. sharp ditambahkan sebagai dependency eksplisit di
+    package.json (sebelumnya cuma kebawa transitif lewat Next.js)
+  ~ Artikel "panduan-lengkap-mengurus-nib-melalui-oss" yang sudah
+    kepublish (isi HTML tersimpan di DB, bukan di-generate ulang
+    otomatis) di-patch langsung lewat script sekali-jalan biar ikut
+    desain baru — gambar yang sudah diupload user sebelumnya dipertahankan,
+    cuma ditambah ikon (Wallet/Clock) + class gambar diubah ke kotak
+    object-cover
+
+VERIFIKASI:
+  ~ tsc --noEmit + eslint bersih di semua file yang disentuh
+  ~ Dev server jalan, sisanya user test manual di browser (belum saya
+    test sendiri)
+
+====================================================
+
 [2026-07-20] v2.7.0 — Panel Admin per Role (/admin, /editor, /author)
 ----------------------------------------------------
 STATUS   : DONE
