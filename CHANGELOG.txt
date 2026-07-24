@@ -5,6 +5,31 @@ CHANGELOG — IzinPro CMS Project
 Format: [YYYY-MM-DD] Versi — Deskripsi
 ====================================================
 
+[2026-07-25] v2.8.3 — Sesi Admin Auto-Logout Setelah Idle 1 Jam
+----------------------------------------------------
+STATUS   : DONE
+PROJECT  : izinpro-cms/
+SUMBER   : User nemu sesi login admin gak pernah expire meski server dev
+           di-restart / gak dipakai lama — ternyata Better Auth default-nya
+           expiresIn 7 hari & sliding tiap 1 hari, kelamaan buat panel admin
+
+DIUBAH:
+  ~ src/lib/auth.ts: tambah opsi session di betterAuth() — expiresIn 1 jam
+    (60*60 detik), updateAge 5 menit (60*5 detik). Karena updateAge jauh
+    lebih pendek dari expiresIn, efeknya jadi idle-timeout: selama admin
+    masih aktif buka halaman minimal sekali per jam, sesi terus digeser
+    maju; kalau idle >1 jam, sesi expired & auth.api.getSession() balikin
+    null sehingga requirePanelAccess (admin-guard.ts) redirect ke
+    /admin/login
+CATATAN:
+  - Restart dev server TIDAK mempengaruhi sesi (cookie & tabel Session
+    di database independen dari proses server) — itu bukan bug, itu
+    perilaku "remember session" yang normal
+  - Sempat ketemu .next/dev/types/validator.ts korup (sisa race waktu
+    Turbopack nulis ulang file itu bareng tsc jalan) yang bikin
+    `tsc --noEmit` gagal gak berhubungan sama kode ini — sudah beres
+    setelah folder .next dihapus & di-generate ulang
+
 [2026-07-25] v2.8.2 — AUTHOR Cuma Bisa Kelola Artikel Miliknya Sendiri
 ----------------------------------------------------
 STATUS   : DONE

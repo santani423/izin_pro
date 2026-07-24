@@ -14,6 +14,14 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 6, // samakan dgn aturan di form admin/users ("Password minimal 6 karakter")
   },
+  /* Sesi admin auto-logout kalau idle 1 jam. updateAge jauh lebih pendek
+   * dari expiresIn supaya efeknya jadi idle-timeout (bukan hard deadline
+   * dari waktu login) — tiap request admin yang lolos >5 menit dari update
+   * terakhir bakal geser expiresAt jadi +1 jam lagi dari saat itu. */
+  session: {
+    expiresIn: 60 * 60, // 1 jam
+    updateAge: 60 * 5, // perpanjang tiap 5 menit sekali kalau masih aktif dipakai
+  },
   user: {
     additionalFields: {
       phone: { type: "string", required: false },
