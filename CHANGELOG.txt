@@ -5,6 +5,36 @@ CHANGELOG — IzinPro CMS Project
 Format: [YYYY-MM-DD] Versi — Deskripsi
 ====================================================
 
+[2026-07-25] v2.8.5 — Media Library Tersambung Prisma (Bukan Mock Lagi)
+----------------------------------------------------
+STATUS   : DONE
+PROJECT  : izinpro-cms/
+SUMBER   : User tanya kenapa menu Media Library gak berfungsi — ternyata
+           masih data mock dari sebelum migrasi Prisma v2.3.0, upload &
+           hapus di situ gak beneran nyimpen apa-apa
+
+DIUBAH:
+  ~ src/lib/media.ts (BARU): saveUploadedImage() & deleteUploadedFile()
+    dipindah keluar dari blog.ts jadi helper bersama, dipakai oleh Blog
+    DAN Media Library (satu aturan resize+convert-WebP, gak duplikat)
+  ~ src/lib/actions/blog.ts: import saveUploadedImage dari lib/media.ts,
+    hapus salinan lokalnya
+  ~ src/lib/actions/media.ts (BARU): uploadMediaFilesAction (upload
+    banyak file sekaligus) & deleteMediaFilesAction (hapus banyak file +
+    baris DB + file fisik; kalau ada file yg masih dipakai sbg logo
+    Partner/relasi wajib lain, dilewati & dilaporkan, bukan bikin semua
+    gagal)
+  ~ src/app/[panel]/media/page.tsx: query prisma.media.findMany() asli
+    (semua role yg akses /media liat galeri yang sama — bukan per-uploader)
+  ~ src/app/[panel]/media/MediaPageClient.tsx: terima data asli lewat
+    props, thumbnail gradient palsu diganti gambar asli, upload lewat
+    klik/drag-drop beneran nembak server action, hapus/copy URL/download
+    semua pakai data & file sungguhan
+CATATAN:
+  - Media Library tetap galeri BERSAMA (semua role yg akses /media liat &
+    bisa hapus semua file, gak dibatasi per-uploader kayak kepemilikan
+    artikel AUTHOR) — sesuai fungsinya buat reuse gambar lintas modul
+
 [2026-07-25] v2.8.4 — Cegah Back-Button ke Login/Dashboard Basi
 ----------------------------------------------------
 STATUS   : DONE
