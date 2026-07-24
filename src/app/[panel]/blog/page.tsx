@@ -9,10 +9,15 @@ export default async function AdminBlogPage({
   params: Promise<{ panel: string }>;
 }) {
   const { panel } = await params;
-  await requirePanelAccess(panel, "/blog");
+  const { session, role } = await requirePanelAccess(panel, "/blog");
 
+  /* AUTHOR (gaya WordPress) cuma boleh lihat & kelola artikel miliknya
+   * sendiri — role lain lihat semua artikel. */
   const posts = await prisma.blogPost.findMany({
-    where: { deletedAt: null },
+    where: {
+      deletedAt: null,
+      ...(role === "AUTHOR" ? { authorId: session.user.id } : {}),
+    },
     include: {
       category: true,
       author: { select: { name: true } },

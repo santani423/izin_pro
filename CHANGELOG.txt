@@ -5,6 +5,32 @@ CHANGELOG — IzinPro CMS Project
 Format: [YYYY-MM-DD] Versi — Deskripsi
 ====================================================
 
+[2026-07-25] v2.8.2 — AUTHOR Cuma Bisa Kelola Artikel Miliknya Sendiri
+----------------------------------------------------
+STATUS   : DONE
+PROJECT  : izinpro-cms/
+SUMBER   : Gap yang udah dicatat sejak v2.2.4 (lihat entri di bawah) —
+           role AUTHOR seharusnya gaya WordPress: cuma bisa tulis, edit,
+           publish, & hapus artikel miliknya sendiri, gak boleh utak-atik
+           punya AUTHOR lain. Sebelumnya cuma dibatasi di level role
+           (siapa boleh masuk menu Blog), belum di level kepemilikan record.
+
+DIUBAH:
+  ~ src/lib/actions/blog.ts: tambah assertOwnsPost() — dipanggil di
+    updateBlogPostAction, toggleBlogPostStatusAction, deleteBlogPostAction.
+    Kalau session role AUTHOR & authorId artikel beda dari user login,
+    action ditolak ("Anda hanya bisa mengelola artikel milik sendiri.").
+    Role SUPER_ADMIN/ADMIN/EDITOR gak kena batasan ini.
+  ~ src/app/[panel]/blog/page.tsx: list artikel di panel /author sekarang
+    difilter authorId = user login — AUTHOR cuma lihat artikelnya sendiri.
+    Role lain tetap lihat semua artikel.
+  ~ src/app/[panel]/blog/[slug]/edit/page.tsx: AUTHOR yang nyoba buka URL
+    edit artikel penulis lain langsung (bukan lewat list) sekarang kena
+    404, bukan malah bisa masuk ke form edit.
+CATATAN:
+  - createBlogPostAction gak berubah — authorId artikel baru udah otomatis
+    diisi dari session.user.id sejak awal.
+
 [2026-07-23] v2.8.1 — Upload Gambar Blog Auto-Convert WebP
 ----------------------------------------------------
 STATUS   : DONE

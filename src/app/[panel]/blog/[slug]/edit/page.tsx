@@ -12,7 +12,7 @@ export default async function AdminBlogEditPage({
   params: Promise<{ panel: string; slug: string }>;
 }) {
   const { panel, slug } = await params;
-  await requirePanelAccess(panel, "/blog");
+  const { session, role } = await requirePanelAccess(panel, "/blog");
 
   const [post, categories] = await Promise.all([
     prisma.blogPost.findUnique({
@@ -27,6 +27,9 @@ export default async function AdminBlogEditPage({
   ]);
 
   if (!post || post.deletedAt) notFound();
+  /* AUTHOR nyoba buka URL edit artikel penulis lain langsung -> 404,
+   * bukan cuma disembunyikan dari list (lihat blog.ts: assertOwnsPost). */
+  if (role === "AUTHOR" && post.authorId !== session.user.id) notFound();
 
   return <BlogFormPageClient mode="edit" categories={categories} post={post} panel={panel} />;
 }

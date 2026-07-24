@@ -24,6 +24,14 @@ async function requireBlogEditor() {
   return session;
 }
 
+/* AUTHOR cuma boleh ubah/hapus/publish artikel miliknya sendiri (gaya
+ * WordPress) — role lain (SUPER_ADMIN/ADMIN/EDITOR) bebas kelola semua. */
+function assertOwnsPost(session: Awaited<ReturnType<typeof requireBlogEditor>>, authorId: string) {
+  if (session.user.role === "AUTHOR" && authorId !== session.user.id) {
+    throw new Error("Anda hanya bisa mengelola artikel milik sendiri.");
+  }
+}
+
 function errorMessage(e: unknown, fallback: string) {
   return e instanceof Error ? e.message : fallback;
 }
@@ -120,6 +128,7 @@ export async function updateBlogPostAction(id: string, data: BlogPostFormData): 
 
     const current = await prisma.blogPost.findUnique({ where: { id } });
     if (!current) return { ok: false, message: "Artikel tidak ditemukan." };
+    assertOwnsPost(session, current.authorId);
 
     const slug = slugify(data.slug);
     if (slug !== current.slug) {
@@ -168,6 +177,7 @@ export async function toggleBlogPostStatusAction(
     const session = await requireBlogEditor();
     const current = await prisma.blogPost.findUnique({ where: { id } });
     if (!current) return { ok: false, message: "Artikel tidak ditemukan." };
+    assertOwnsPost(session, current.authorId);
 
     const publishedAt = status === "PUBLISHED" ? current.publishedAt ?? new Date() : current.publishedAt;
     await prisma.blogPost.update({
@@ -186,11 +196,13 @@ export async function deleteBlogPostAction(id: string): Promise<ActionResult> {
   try {
     const session = await requireBlogEditor();
     const current = await prisma.blogPost.findUnique({ where: { id } });
+    if (!current) return { ok: false, message: "Artikel tidak ditemukan." };
+    assertOwnsPost(session, current.authorId);
     await prisma.blogPost.update({
       where: { id },
       data: { deletedAt: new Date(), updatedById: session.user.id },
     });
-    revalidateBlogPaths(current?.slug);
+    revalidateBlogPaths(current.slug);
     return { ok: true };
   } catch (e) {
     return { ok: false, message: errorMessage(e, "Gagal menghapus artikel.") };
