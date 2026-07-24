@@ -5,6 +5,32 @@ CHANGELOG — IzinPro CMS Project
 Format: [YYYY-MM-DD] Versi — Deskripsi
 ====================================================
 
+[2026-07-25] v2.8.4 — Cegah Back-Button ke Login/Dashboard Basi
+----------------------------------------------------
+STATUS   : DONE
+PROJECT  : izinpro-cms/
+SUMBER   : User laporan: abis login, tombol Back browser masih nampilin
+           form login; abis logout, tombol Back masih nampilin dashboard
+           dari cache — padahal sesinya udah gak valid/gak ada
+
+DIUBAH:
+  ~ src/proxy.ts: semua respons dari proxy (redirect maupun lanjut) sekarang
+    dikasih header Cache-Control: no-store, no-cache, must-revalidate —
+    browser jadi gak nyimpen halaman /admin, /editor, /author (termasuk
+    /admin/login) di bfcache, jadi tombol Back selalu ngehit server lagi
+  ~ src/app/admin/login/page.tsx: dipecah jadi Server Component pembungkus
+    (cek session dulu -> kalau masih ada sesi valid, redirect ke dashboard
+    panel-nya) + src/app/admin/login/LoginFormClient.tsx (form login,
+    logicnya sama persis kayak sebelumnya, cuma dipindah)
+CATATAN:
+  - Kombinasi 2 perubahan di atas nutup 2 skenario: abis LOGIN pencet Back
+    -> gak balik ke form login (server component redirect ke dashboard);
+    abis LOGOUT pencet Back -> gak nampilin dashboard basi (no-store bikin
+    browser re-fetch, ketahuan sesi invalid, admin-guard.ts redirect ke
+    login)
+  - Link "Lupa password?" di form login diarahkan ke /admin/forgot-password
+    (belum ada halamannya — nunggu fitur reset password, item terpisah)
+
 [2026-07-25] v2.8.3 — Sesi Admin Auto-Logout Setelah Idle 1 Jam
 ----------------------------------------------------
 STATUS   : DONE
