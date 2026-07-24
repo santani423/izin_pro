@@ -197,7 +197,10 @@ export async function deleteBlogPostAction(id: string): Promise<ActionResult> {
   }
 }
 
-const IMAGE_MAX_BYTES = 2 * 1024 * 1024; // 2MB — batas file yang diunggah user, sebelum resize
+// 15MB — cuma guard mentah biar server gak kewalahan proses file raksasa;
+// bukan lagi ambang tolak/wajib-kecil, karena hasil akhir selalu dikompres
+// jauh di bawah ini oleh resize + convert WebP di bawah.
+const IMAGE_MAX_BYTES = 15 * 1024 * 1024;
 const IMAGE_ALLOWED_MIME = ["image/png", "image/jpeg", "image/webp"];
 
 /* Gambar apa pun ukurannya (mis. 500x300) diresize turun kalau melebihi sisi
@@ -205,18 +208,18 @@ const IMAGE_ALLOWED_MIME = ["image/png", "image/jpeg", "image/webp"];
  * Crop ke rasio tampilan (mis. kotak buat Info Box) diatur lewat CSS
  * object-cover di tempat render, bukan di sini. */
 const IMAGE_MAX_DIMENSION = 1600;
+const IMAGE_WEBP_QUALITY = 80;
 
 async function saveUploadedImage(file: File, subDir: string, uploaderId: string) {
   if (!IMAGE_ALLOWED_MIME.includes(file.type)) {
     throw new Error("Format gambar harus PNG, JPG, atau WebP.");
   }
   if (file.size > IMAGE_MAX_BYTES) {
-    throw new Error("Ukuran gambar maksimal 2MB.");
+    throw new Error("Ukuran gambar maksimal 15MB.");
   }
   const uploadDir = path.join(process.cwd(), "public", "uploads", subDir);
   await fs.mkdir(uploadDir, { recursive: true });
-  const ext = path.extname(file.name) || ".jpg";
-  const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
+  const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.webp`;
   const original = Buffer.from(await file.arrayBuffer());
   const buffer = await sharp(original)
     .rotate() // auto-orient berdasarkan EXIF (foto dari HP sering kesimpan miring)
@@ -226,12 +229,13 @@ async function saveUploadedImage(file: File, subDir: string, uploaderId: string)
       fit: "inside",
       withoutEnlargement: true,
     })
+    .webp({ quality: IMAGE_WEBP_QUALITY })
     .toBuffer();
   await fs.writeFile(path.join(uploadDir, fileName), buffer);
 
   const url = `/uploads/${subDir}/${fileName}`;
   const media = await prisma.media.create({
-    data: { fileName, url, mimeType: file.type, sizeBytes: buffer.length, uploadedById: uploaderId },
+    data: { fileName, url, mimeType: "image/webp", sizeBytes: buffer.length, uploadedById: uploaderId },
   });
   return media;
 }

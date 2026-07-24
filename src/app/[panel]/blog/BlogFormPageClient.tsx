@@ -332,7 +332,9 @@ export default function BlogFormPageClient({
                   }}
                 />
               </div>
-              <p className="mt-1 text-[11px] text-gray-400">PNG/JPG/WebP, maks 2MB. Opsional.</p>
+              <p className="mt-1 text-[11px] text-gray-400">
+                PNG/JPG/WebP, otomatis dikompres &amp; dikonversi ke WebP. Opsional.
+              </p>
 
               <Dialog open={imagePreviewOpen} onOpenChange={setImagePreviewOpen}>
                 <DialogContent className="max-w-2xl gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-2xl">

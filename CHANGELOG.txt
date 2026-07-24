@@ -5,6 +5,32 @@ CHANGELOG — IzinPro CMS Project
 Format: [YYYY-MM-DD] Versi — Deskripsi
 ====================================================
 
+[2026-07-23] v2.8.1 — Upload Gambar Blog Auto-Convert WebP
+----------------------------------------------------
+STATUS   : DONE
+PROJECT  : izinpro-cms/
+SUMBER   : User minta upload gambar cover blog gak ditolak lagi kalau lebih
+           dari 2MB — maunya otomatis dikompres/di-resize alih-alih dilempar
+           error ke user
+
+DIUBAH:
+  ~ src/lib/actions/blog.ts: saveUploadedImage() (dipakai buat cover/featured
+    image & gambar inline konten blog) sekarang gak nolak file >2MB lagi.
+    Semua upload selalu diresize (maks 1600px sisi terpanjang, dari v2.8.0)
+    DAN dikonversi ke WebP (quality 80) sebelum disimpan — fileName &
+    mimeType yang tersimpan di tabel Media sekarang selalu .webp/image/webp
+    apa pun format asli uploadnya (PNG/JPG/WebP). Batas mentah dinaikkan
+    ke 15MB (cuma guard biar server gak kewalahan proses file raksasa,
+    bukan lagi syarat "harus kecil")
+  ~ src/app/[panel]/blog/BlogFormPageClient.tsx: teks bantuan di form cover
+    diupdate ("otomatis dikompres & dikonversi ke WebP") biar gak lagi bilang
+    "maks 2MB" yang sudah gak relevan
+CATATAN:
+  - Resize masih pakai fit:"inside" (jaga rasio asli, gak crop) — kalau
+    rasio gambar upload gak cocok sama slot tampilan cover, yang motong
+    secara visual itu CSS object-cover di komponen publik (ArticlesSection,
+    BlogCatalogSection, dst), bukan di proses resize/simpan filenya
+
 [2026-07-20] v2.8.0 — Step List Bernomor, Info Box Ikon+Gambar, Resize Upload
 ----------------------------------------------------
 STATUS   : DONE
