@@ -618,6 +618,11 @@ model Settings {
   seoDescription String @db.Text
   seoKeywords    String
 
+  // Tab Maintenance — nyala = pengunjung publik cuma liat halaman
+  // "Under Maintenance", ADMIN/SUPER_ADMIN tetap bisa browsing situs asli
+  maintenanceMode    Boolean @default(false)
+  maintenanceMessage String? @db.Text // kosong = pakai pesan default di halaman maintenance
+
   // Singleton, gak pernah "dibuat" lewat admin (selalu ada dari seed) -> gak ada createdBy
   updatedById String?
   updatedBy   User?    @relation("SettingsUpdatedBy", fields: [updatedById], references: [id])
