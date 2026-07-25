@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { createAuthMiddleware, APIError } from "better-auth/api";
 import { prisma } from "@/lib/db";
+import { sendMail } from "@/lib/mailer";
 
 /* Invite-only (v1.5.4): tidak ada self sign-up publik — user dibuat manual
  * oleh Super Admin/Admin lewat menu Pengguna. emailAndPassword tetap aktif
@@ -13,6 +14,25 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 6, // samakan dgn aturan di form admin/users ("Password minimal 6 karakter")
+    resetPasswordTokenExpiresIn: 60 * 60, // link reset berlaku 1 jam
+    sendResetPassword: async ({ user, url }) => {
+      await sendMail({
+        to: user.email,
+        subject: "Reset Password Admin IzinPro",
+        text: `Halo ${user.name},\n\nAda permintaan reset password untuk akun admin IzinPro kamu. Klik link berikut buat bikin password baru (berlaku 1 jam):\n${url}\n\nKalau kamu gak merasa minta ini, abaikan aja email ini — password kamu tetap aman.`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+            <h2 style="color: #1b3309;">Reset Password Admin IzinPro</h2>
+            <p>Halo ${user.name},</p>
+            <p>Ada permintaan reset password untuk akun admin IzinPro kamu. Klik tombol di bawah buat bikin password baru (link berlaku 1 jam):</p>
+            <p style="margin: 24px 0;">
+              <a href="${url}" style="background:#5ba12b;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">Reset Password</a>
+            </p>
+            <p style="color:#888;font-size:13px;">Kalau kamu gak merasa minta ini, abaikan aja email ini — password kamu tetap aman.</p>
+          </div>
+        `,
+      });
+    },
   },
   /* Sesi admin auto-logout kalau idle 1 jam. updateAge jauh lebih pendek
    * dari expiresIn supaya efeknya jadi idle-timeout (bukan hard deadline

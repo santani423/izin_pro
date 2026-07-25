@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 
-const PUBLIC_ADMIN_PATHS = ["/admin/login"];
+const PUBLIC_ADMIN_PATHS = ["/admin/login", "/admin/forgot-password", "/admin/reset-password"];
 
 /* no-store di semua respons area admin (termasuk /admin/login) supaya
  * browser gak simpan halaman ini di bfcache — tanpa ini, tombol Back

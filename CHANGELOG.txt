@@ -5,6 +5,48 @@ CHANGELOG — IzinPro CMS Project
 Format: [YYYY-MM-DD] Versi — Deskripsi
 ====================================================
 
+[2026-07-26] v2.9.0 — Lupa Password / Reset via Email (SMTP Sendiri)
+----------------------------------------------------
+STATUS   : DONE (kode) — BUTUH kredensial SMTP asli sebelum dipakai
+PROJECT  : izinpro-cms/
+SUMBER   : Item terakhir (8/8) dari batch perbaikan user 2026-07-25 —
+           user lupa password di /admin/login harus bisa reset lewat
+           email, pakai SMTP shared hosting milik sendiri (bukan provider
+           pihak ketiga kayak Resend)
+
+DIUBAH:
+  ~ src/lib/mailer.ts (BARU): wrapper nodemailer, transporter dari env
+    SMTP_HOST/PORT/SECURE/USER/PASS/FROM
+  ~ src/lib/auth.ts: emailAndPassword.sendResetPassword terhubung ke
+    sendMail() di atas — kirim email HTML+text pakai link reset dari
+    Better Auth (resetPasswordTokenExpiresIn: 1 jam)
+  ~ src/app/admin/forgot-password/ (BARU): form input email, manggil
+    authClient.requestPasswordReset({email, redirectTo:"/admin/reset-
+    password"}). Selalu nampilin "cek email" walau emailnya gak
+    terdaftar (hindari bocorin info akun ada/gaknya)
+  ~ src/app/admin/reset-password/ (BARU): baca ?token= dari URL (link di
+    email), form password baru + konfirmasi, manggil
+    authClient.resetPassword({newPassword, token}). Nampilin "link gak
+    valid/kedaluwarsa" kalau token kosong/error
+  ~ src/proxy.ts: /admin/forgot-password & /admin/reset-password
+    ditambah ke PUBLIC_ADMIN_PATHS (wajib bisa diakses TANPA login)
+  ~ src/app/admin/login/LoginFormClient.tsx: link "Lupa password?" (dari
+    v2.8.4, sebelumnya nunjuk ke halaman yg belum ada) sekarang beneran
+    ke /admin/forgot-password
+  ~ .env / .env.example: tambah SMTP_HOST/PORT/SECURE/USER/PASS/FROM.
+    Nilai di .env LOKAL masih DUMMY (mail.izinpro.co.id dkk) — sengaja
+    diisi user biar tsc/build tetap jalan, BELUM bisa kirim email
+    beneran sampai diganti kredensial SMTP shared hosting asli
+  ~ dependency baru: nodemailer + @types/nodemailer
+CATATAN:
+  - Nama method authClient (requestPasswordReset, resetPassword)
+    divalidasi via tsc --noEmit (bukan dari dokumentasi/ingatan) — versi
+    better-auth di project ini (1.6.23) pakai nama itu, BUKAN
+    forgetPassword() yang mungkin dipakai versi/dokumentasi lain
+  - BELUM di-tes kirim email beneran (kredensial masih dummy) — begitu
+    user isi SMTP asli di .env, perlu dicoba end-to-end sekali dari
+    /admin/forgot-password
+
 [2026-07-26] v2.8.9 — Popup CRUD Konsisten di Semua Menu Admin
 ----------------------------------------------------
 STATUS   : DONE
@@ -176,7 +218,7 @@ CATATAN PENTING (drift DB dev lokal — masih berlaku, BELUM diberesin):
   DONE  5. Scheduled Post untuk Blog (lihat v2.8.7 di atas)
   DONE  6. Tambah deletedById di tabel soft-delete (lihat v2.8.8 di atas)
   DONE  7. Popup CRUD konsisten (custom, bukan SweetAlert2 — lihat v2.8.9)
-  TODO  8. Fitur lupa password / reset via email (SMTP milik user)
+  DONE  8. Lupa password/reset via email (lihat v2.9.0 — butuh SMTP asli)
 
 [2026-07-25] v2.8.5 — Media Library Tersambung Prisma (Bukan Mock Lagi)
 ----------------------------------------------------
