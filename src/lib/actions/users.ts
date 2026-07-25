@@ -123,7 +123,7 @@ export async function deleteUserAction(id: string): Promise<ActionResult> {
     }
     await prisma.user.update({
       where: { id },
-      data: { deletedAt: new Date(), isActive: false, updatedById: session.user.id },
+      data: { deletedAt: new Date(), deletedById: session.user.id, isActive: false, updatedById: session.user.id },
     });
     revalidateAdminPaths("/users");
     return { ok: true };

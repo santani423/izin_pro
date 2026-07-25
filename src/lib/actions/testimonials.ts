@@ -158,7 +158,7 @@ export async function deleteTestimonialAction(id: string): Promise<ActionResult>
     const session = await requireContentEditor();
     await prisma.testimonial.update({
       where: { id },
-      data: { deletedAt: new Date(), updatedById: session.user.id },
+      data: { deletedAt: new Date(), deletedById: session.user.id, updatedById: session.user.id },
     });
     revalidateTestimoniPaths();
     return { ok: true };

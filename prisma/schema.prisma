@@ -40,11 +40,14 @@ model User {
   createdBy     User?     @relation("UserCreatedBy", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
   updatedById   String?
   updatedBy     User?     @relation("UserUpdatedBy", fields: [updatedById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  deletedById   String?
+  deletedBy     User?     @relation("UserDeletedBy", fields: [deletedById], references: [id], onDelete: NoAction, onUpdate: NoAction)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   createdUsers    User[]     @relation("UserCreatedBy")
   updatedUsers    User[]     @relation("UserUpdatedBy")
+  deletedUsers    User[]     @relation("UserDeletedBy")
   sessions        Session[]
   accounts        Account[]
   blogPosts       BlogPost[] @relation("BlogPostAuthor")
@@ -57,6 +60,7 @@ model User {
   createdCategories        Category[]        @relation("CategoryCreatedBy")
   updatedCategories        Category[]        @relation("CategoryUpdatedBy")
   updatedBlogPosts         BlogPost[]        @relation("BlogPostUpdatedBy")
+  deletedBlogPosts         BlogPost[]        @relation("BlogPostDeletedBy")
   createdPages             Page[]            @relation("PageCreatedBy")
   updatedPages             Page[]            @relation("PageUpdatedBy")
   createdTeamMembers       TeamMember[]      @relation("TeamMemberCreatedBy")
@@ -65,12 +69,15 @@ model User {
   updatedServiceCategories ServiceCategory[] @relation("ServiceCategoryUpdatedBy")
   createdServices          Service[]         @relation("ServiceCreatedBy")
   updatedServices          Service[]         @relation("ServiceUpdatedBy")
+  deletedServices          Service[]         @relation("ServiceDeletedBy")
   createdServicePackages   ServicePackage[]  @relation("ServicePackageCreatedBy")
   updatedServicePackages   ServicePackage[]  @relation("ServicePackageUpdatedBy")
   createdTestimonials      Testimonial[]     @relation("TestimonialCreatedBy")
   updatedTestimonials      Testimonial[]     @relation("TestimonialUpdatedBy")
+  deletedTestimonials      Testimonial[]     @relation("TestimonialDeletedBy")
   createdPartners          Partner[]         @relation("PartnerCreatedBy")
   updatedPartners          Partner[]         @relation("PartnerUpdatedBy")
+  deletedPartners          Partner[]         @relation("PartnerDeletedBy")
   createdFaqs              Faq[]             @relation("FaqCreatedBy")
   updatedFaqs              Faq[]             @relation("FaqUpdatedBy")
   createdPromoBanners      PromoBanner[]     @relation("PromoBannerCreatedBy")
@@ -84,8 +91,10 @@ model User {
   updatedOrders            Order[]           @relation("OrderUpdatedBy")
   createdMenus             Menu[]            @relation("MenuCreatedBy")
   updatedMenus             Menu[]            @relation("MenuUpdatedBy")
+  deletedMenus             Menu[]            @relation("MenuDeletedBy")
   createdMenuItems         MenuItem[]        @relation("MenuItemCreatedBy")
   updatedMenuItems         MenuItem[]        @relation("MenuItemUpdatedBy")
+  deletedMenuItems         MenuItem[]        @relation("MenuItemDeletedBy")
   updatedSettings          Settings[]        @relation("SettingsUpdatedBy")
 
   @@map("users")
@@ -191,6 +200,8 @@ model BlogPost {
   metaTitle       String?
   metaDescription String?
   deletedAt       DateTime?
+  deletedById     String?
+  deletedBy       User?          @relation("BlogPostDeletedBy", fields: [deletedById], references: [id])
   // authorId di atas sudah berfungsi sbg "dibuat oleh" — cuma perlu updatedBy
   updatedById     String?
   updatedBy       User?          @relation("BlogPostUpdatedBy", fields: [updatedById], references: [id])
@@ -346,6 +357,8 @@ model Service {
   isActive        Boolean         @default(true)
   sortOrder       Int             @default(0)
   deletedAt       DateTime?
+  deletedById     String?
+  deletedBy       User?           @relation("ServiceDeletedBy", fields: [deletedById], references: [id])
   createdById     String?
   createdBy       User?           @relation("ServiceCreatedBy", fields: [createdById], references: [id])
   updatedById     String?
@@ -400,6 +413,8 @@ model Testimonial {
   isActive     Boolean          @default(true)
   sortOrder    Int              @default(0)
   deletedAt    DateTime?
+  deletedById  String?
+  deletedBy    User?            @relation("TestimonialDeletedBy", fields: [deletedById], references: [id])
   createdById  String?
   createdBy    User?            @relation("TestimonialCreatedBy", fields: [createdById], references: [id])
   updatedById  String?
@@ -417,6 +432,8 @@ model Partner {
   logoMedia   Media     @relation("PartnerLogo", fields: [logoMediaId], references: [id])
   isActive    Boolean   @default(true)
   deletedAt   DateTime? // soft delete
+  deletedById String?
+  deletedBy   User?     @relation("PartnerDeletedBy", fields: [deletedById], references: [id])
   sortOrder   Int       @default(0)
   createdById String?
   createdBy   User?     @relation("PartnerCreatedBy", fields: [createdById], references: [id])
@@ -571,6 +588,8 @@ model Menu {
   key         String     @unique // "header" | "footer"
   name        String
   deletedAt   DateTime? // soft delete
+  deletedById String?
+  deletedBy   User?      @relation("MenuDeletedBy", fields: [deletedById], references: [id])
   items       MenuItem[]
   createdById String?
   createdBy   User?      @relation("MenuCreatedBy", fields: [createdById], references: [id])
@@ -593,6 +612,8 @@ model MenuItem {
   href        String
   sortOrder   Int        @default(0)
   deletedAt   DateTime? // soft delete
+  deletedById String?
+  deletedBy   User?      @relation("MenuItemDeletedBy", fields: [deletedById], references: [id])
   createdById String?
   createdBy   User?      @relation("MenuItemCreatedBy", fields: [createdById], references: [id])
   updatedById String?

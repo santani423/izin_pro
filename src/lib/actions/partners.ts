@@ -145,7 +145,7 @@ export async function deletePartnerAction(id: string): Promise<ActionResult> {
     const session = await requireContentEditor();
     await prisma.partner.update({
       where: { id },
-      data: { deletedAt: new Date(), updatedById: session.user.id },
+      data: { deletedAt: new Date(), deletedById: session.user.id, updatedById: session.user.id },
     });
 
     revalidateAdminPaths("/klien");

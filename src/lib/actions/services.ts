@@ -106,7 +106,7 @@ export async function deleteServiceAction(id: string): Promise<ActionResult> {
     const session = await requireContentEditor();
     await prisma.service.update({
       where: { id },
-      data: { deletedAt: new Date(), updatedById: session.user.id },
+      data: { deletedAt: new Date(), deletedById: session.user.id, updatedById: session.user.id },
     });
     revalidateAdminPaths("/layanan");
     return { ok: true };

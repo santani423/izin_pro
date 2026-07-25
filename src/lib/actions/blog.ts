@@ -209,7 +209,7 @@ export async function deleteBlogPostAction(id: string): Promise<ActionResult> {
     assertOwnsPost(session, current.authorId);
     await prisma.blogPost.update({
       where: { id },
-      data: { deletedAt: new Date(), updatedById: session.user.id },
+      data: { deletedAt: new Date(), deletedById: session.user.id, updatedById: session.user.id },
     });
     revalidateBlogPaths(current.slug);
     return { ok: true };

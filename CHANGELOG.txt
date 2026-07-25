@@ -5,6 +5,36 @@ CHANGELOG — IzinPro CMS Project
 Format: [YYYY-MM-DD] Versi — Deskripsi
 ====================================================
 
+[2026-07-26] v2.8.8 — Kolom Audit deletedById di Tabel Soft-Delete
+----------------------------------------------------
+STATUS   : DONE (parsial — lihat CATATAN)
+PROJECT  : izinpro-cms/
+SUMBER   : Bagian dari batch 8 item perbaikan user (2026-07-25) — tabel yg
+           punya deletedAt sebaiknya juga punya deletedBy (jejak siapa yg
+           menghapus, konsisten sama createdBy/updatedBy yg udah ada)
+
+DIUBAH:
+  ~ prisma/schema.prisma + migration 20260726110000_add_deleted_by_audit_
+    columns: tambah `deletedById`/`deletedBy` (relasi ke User) di 7 tabel
+    yang deletedAt-nya BENERAN dipakai oleh kode yang jalan: User,
+    BlogPost, Service, Testimonial, Partner, Menu (kolomnya, lihat catatan
+    di bawah), MenuItem
+  ~ src/lib/actions/{blog,services,testimonials,partners,menu,users}.ts:
+    tiap soft-delete (deleteBlogPostAction, deleteServiceAction,
+    deleteTestimonialAction, deletePartnerAction, deleteMenuItemAction,
+    deleteUserAction) sekarang isi deletedById = session.user.id
+CATATAN:
+  - Page, TeamMember, PromoBanner PUNYA kolom deletedAt di schema tapi
+    modul admin-nya (Halaman, Tim, Promo) masih 100% mock/belum tersambung
+    Prisma sama sekali (gak ada src/lib/actions/pages.ts, team.ts, atau
+    promo.ts) — SENGAJA gak ditambahin deletedById di situ, soalnya bakal
+    jadi kolom mati yang gak pernah keisi kode manapun sampai modulnya
+    beneran dimigrasi ke Prisma (di luar scope item ini)
+  - Menu (bukan MenuItem) juga dapat kolom deletedById tapi masih nganggur
+    sama kayak di atas — cuma MenuItem yang punya aksi hapus beneran
+    (deleteMenuItemAction), Menu "header"/"footer" sendiri gak pernah
+    dihapus lewat kode manapun
+
 [2026-07-26] v2.8.7 — Scheduled Post untuk Blog
 ----------------------------------------------------
 STATUS   : DONE
@@ -99,7 +129,7 @@ CATATAN PENTING (drift DB dev lokal — masih berlaku, BELUM diberesin):
   DONE  3. Sambungkan Media Library ke Prisma (lihat v2.8.5)
   DONE  4. Under Maintenance mode (lihat v2.8.6 di atas)
   DONE  5. Scheduled Post untuk Blog (lihat v2.8.7 di atas)
-  TODO  6. Tambah deletedById di tabel soft-delete
+  DONE  6. Tambah deletedById di tabel soft-delete (lihat v2.8.8 di atas)
   TODO  7. Ganti notifikasi CRUD ke SweetAlert2 di semua menu admin
   TODO  8. Fitur lupa password / reset via email (SMTP milik user)
 
