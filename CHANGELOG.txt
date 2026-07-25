@@ -5,6 +5,75 @@ CHANGELOG — IzinPro CMS Project
 Format: [YYYY-MM-DD] Versi — Deskripsi
 ====================================================
 
+[2026-07-26] v2.9.1 — Media Library: Judul Wajib, Preview, Scan public/
+----------------------------------------------------
+STATUS   : DONE
+PROJECT  : izinpro-cms/
+SUMBER   : Permintaan user setelah v2.8.5 (Media Library tersambung
+           Prisma) — mau galeri mencakup SEMUA gambar di folder public/
+           (termasuk asset statis yg di-hardcode di kode, bukan cuma yg
+           diupload lewat CMS), klik gambar buat preview (bukan select),
+           checkbox terpisah buat bulk-delete, judul wajib + deskripsi/alt
+           opsional, search berdasarkan judul
+
+DIUBAH:
+  ~ prisma/schema.prisma + migration 20260726150000_add_media_title_alt +
+    20260726150500_media_url_unique: Media.title (wajib, NOT NULL —
+    backfill data lama pakai nama file), Media.altText (opsional),
+    Media.url jadi @unique (cegah dobel entry pas sinkron folder)
+  ~ src/lib/media.ts: humanizeFileName() (bikin judul dari nama file, mis.
+    "team-photo.jpg" -> "Team Photo"), saveUploadedImage() sekarang isi
+    title + width/height (baca metadata Sharp) otomatis.
+    syncStaticMediaFiles() (BARU) — scan rekursif folder public/, gambar
+    yg URL-nya belum ada di tabel Media didaftarkan otomatis (title dari
+    nama file, uploadedById = null sbg penanda "asset statis/bukan upload
+    CMS")
+  ~ src/app/[panel]/media/page.tsx: panggil syncStaticMediaFiles() sebelum
+    query, jadi asset statis auto muncul tiap buka halaman
+  ~ src/lib/actions/media.ts: updateMediaMetaAction (BARU, simpan judul/
+    alt dari preview)
+  ~ src/app/[panel]/media/MediaPageClient.tsx: rombak total — klik gambar
+    buka modal preview (bukan toggle select lagi), checkbox kecil
+    terpisah di pojok thumbnail buat bulk-select, badge warning kuning
+    utk item "asset statis" (uploadedBy null), search berdasarkan title,
+    peringatan ekstra di konfirmasi hapus kalau ada item asset statis
+    kesangkut
+  ~ src/lib/actions/partners.ts & testimonials.ts & prisma/seed.ts: 3
+    tempat lain yg bikin baris Media langsung (logo partner, thumbnail
+    testimoni, seed data) ikut disesuaikan biar title selalu keisi
+CATATAN PENTING (risiko fitur "scan public/"):
+  - Menghapus gambar ber-badge "asset statis" dari Media Library BENERAN
+    menghapus file fisiknya dari public/ — kalau file itu di-hardcode
+    dipakai di komponen (logo, ilustrasi, dst, BUKAN lewat relasi Media
+    kayak Partner.logoMediaId), gambar di halaman terkait bakal jadi
+    broken image. Ini trade-off yang disadari & diminta user (lihat
+    peringatan yg ditampilkan sebelum hapus), bukan bug
+
+[2026-07-26] v2.9.0b — Fix Runtime Error sharp + Upgrade Node.js
+----------------------------------------------------
+STATUS   : DONE
+PROJECT  : izinpro-cms/
+SUMBER   : Error muncul berulang pas klik hapus di Media Library:
+           "Failed to load external module sharp-...: SyntaxError:
+           Unexpected token 'with'"
+
+DIUBAH:
+  ~ next.config.ts: tambah `serverExternalPackages: ["sharp"]` (best
+    practice Next.js utk native/binary package — ternyata BUKAN akar
+    masalah utamanya di kasus ini, tapi tetap best practice yg benar,
+    dibiarkan terpasang)
+  ~ Node.js lokal di-upgrade dari v20.9.0 -> v24.18.0 LTS (lewat
+    `winget install OpenJS.NodeJS.LTS`) — INI akar masalah sebenarnya:
+    package `sharp` (v0.35.3) ship file ESM (.mjs) yg pakai sintaks
+    import attributes (`import pkg from '../package.json' with { type:
+    'json' }`), butuh Node >=20.10.0. Node lokal (20.9.0) 1 versi minor
+    di bawah syarat itu, jadi gagal parse
+CATATAN:
+  - Kalau nanti setup ulang di komputer/server lain, pastikan Node.js
+    versinya minimal 20.18.1+ (beberapa dependency lain di project ini —
+    nodemailer, @vercel/config — juga udah nge-warning butuh versi itu
+    lewat EBADENGINE saat npm install)
+
 [2026-07-26] v2.9.0 — Lupa Password / Reset via Email (SMTP Sendiri)
 ----------------------------------------------------
 STATUS   : DONE (kode) — BUTUH kredensial SMTP asli sebelum dipakai

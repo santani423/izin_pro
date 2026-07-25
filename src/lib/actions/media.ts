@@ -46,6 +46,29 @@ export async function uploadMediaFilesAction(formData: FormData): Promise<Action
   }
 }
 
+/** Simpan judul (wajib) & alt text (opsional) dari modal preview. */
+export async function updateMediaMetaAction(
+  id: string,
+  data: { title: string; altText: string },
+): Promise<ActionResult> {
+  try {
+    await requireMediaAccess();
+    const title = data.title.trim();
+    if (!title) return { ok: false, message: "Judul gambar wajib diisi." };
+
+    await prisma.media.update({
+      where: { id },
+      data: { title, altText: data.altText.trim() || null },
+    });
+
+    revalidatePath("/admin/media");
+    revalidateAdminPaths("/media");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: errorMessage(e, "Gagal menyimpan judul/deskripsi.") };
+  }
+}
+
 /** Hapus 1+ file Media Library sekaligus. Kalau ada yang masih dipakai
  * relasi wajib (mis. Partner.logoMediaId), baris itu dilewati & dilaporkan
  * di pesan error — file lain yang gak nyangkut tetap kehapus. */

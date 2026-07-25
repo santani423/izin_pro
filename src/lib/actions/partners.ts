@@ -7,6 +7,7 @@ import path from "node:path";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { revalidateAdminPaths } from "@/lib/admin-guard";
+import { humanizeFileName } from "@/lib/media";
 import type { Role } from "@prisma/client";
 
 export type ActionResult = { ok: true } | { ok: false; message: string };
@@ -51,6 +52,7 @@ async function saveLogoFile(file: File, uploaderId: string) {
       url: `/uploads/partners/${fileName}`,
       mimeType: file.type,
       sizeBytes: file.size,
+      title: humanizeFileName(file.name),
       uploadedById: uploaderId,
     },
   });

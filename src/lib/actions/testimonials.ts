@@ -7,6 +7,7 @@ import path from "node:path";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { revalidateAdminPaths } from "@/lib/admin-guard";
+import { humanizeFileName } from "@/lib/media";
 import type { Role } from "@prisma/client";
 
 export type ActionResult = { ok: true } | { ok: false; message: string };
@@ -64,6 +65,7 @@ export async function uploadTestimonialThumbnailAction(formData: FormData): Prom
         url,
         mimeType: file.type,
         sizeBytes: file.size,
+        title: humanizeFileName(file.name),
         uploadedById: session.user.id,
       },
     });

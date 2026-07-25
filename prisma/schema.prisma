@@ -257,14 +257,16 @@ model Page {
 model Media {
   id           String   @id @default(cuid())
   fileName     String
-  url          String // ukuran large/original
+  url          String   @unique // ukuran large/original
   thumbnailUrl String? // 150px, auto-generate via Sharp.js
   mediumUrl    String? // 600px, auto-generate via Sharp.js
   mimeType     String
   sizeBytes    Int
   width        Int?
   height       Int?
-  uploadedById String?
+  title        String // wajib diisi — dasar search di Media Library, auto-diisi dari nama file saat upload/sinkron
+  altText      String? // opsional, dipakai sbg atribut alt <img> kalau diisi
+  uploadedById String? // null = file statis hasil sinkron dari folder public/ (bukan upload lewat CMS), lihat syncStaticMediaFiles()
   uploadedBy   User?    @relation("MediaUploader", fields: [uploadedById], references: [id])
   createdAt    DateTime @default(now())
 

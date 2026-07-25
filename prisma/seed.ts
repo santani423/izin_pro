@@ -481,6 +481,7 @@ async function main() {
         url: c.logo,
         mimeType: MIME_BY_EXT[ext] ?? "application/octet-stream",
         sizeBytes,
+        title: `Logo ${c.name}`,
         uploadedById: admin.id,
       },
     });

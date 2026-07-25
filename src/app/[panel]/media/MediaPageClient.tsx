@@ -2,12 +2,15 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, Grid, List, Search, Trash2, Download, Copy } from "lucide-react";
+import { Upload, Grid, List, Search, Trash2, Download, Copy, AlertTriangle, Save } from "lucide-react";
 import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { uploadMediaFilesAction, deleteMediaFilesAction } from "@/lib/actions/media";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { uploadMediaFilesAction, deleteMediaFilesAction, updateMediaMetaAction } from "@/lib/actions/media";
 
 type MediaItem = {
   id: string;
@@ -15,6 +18,8 @@ type MediaItem = {
   url: string;
   mimeType: string;
   sizeBytes: number;
+  title: string;
+  altText: string | null;
   createdAt: Date;
   uploadedBy: { name: string } | null;
 };
@@ -36,10 +41,11 @@ export default function MediaPageClient({ initialItems }: { initialItems: MediaI
   const [view, setView] = useState<"grid" | "list">("grid");
   const [selected, setSelected] = useState<string[]>([]);
   const [search, setSearch] = useState("");
+  const [preview, setPreview] = useState<MediaItem | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filtered = initialItems.filter((i) =>
-    i.fileName.toLowerCase().includes(search.toLowerCase()),
+    i.title.toLowerCase().includes(search.toLowerCase()),
   );
 
   const toggle = (id: string) =>
@@ -62,11 +68,16 @@ export default function MediaPageClient({ initialItems }: { initialItems: MediaI
   };
 
   const removeFiles = async (ids: string[]) => {
+    const targets = initialItems.filter((i) => ids.includes(i.id));
+    const hasStatic = targets.some((i) => !i.uploadedBy);
     const itemLabel =
       ids.length === 1
-        ? `File "${initialItems.find((i) => i.id === ids[0])?.fileName ?? ""}"`
-        : `${ids.length} file terpilih`;
-    const confirmed = await swalConfirmDelete(itemLabel);
+        ? `Gambar "${targets[0]?.title ?? ""}"`
+        : `${ids.length} gambar terpilih`;
+    const warning = hasStatic
+      ? " PERHATIAN: ada file yang kemungkinan dipakai langsung di kode (bukan lewat Media Library) — menghapusnya bisa bikin gambar hilang di halaman terkait."
+      : "";
+    const confirmed = await swalConfirmDelete(itemLabel + warning);
     if (!confirmed) return;
     startTransition(async () => {
       const res = await deleteMediaFilesAction(ids);
@@ -76,6 +87,7 @@ export default function MediaPageClient({ initialItems }: { initialItems: MediaI
         swalError(res.message);
       }
       setSelected((prev) => prev.filter((id) => !ids.includes(id)));
+      setPreview(null);
       router.refresh();
     });
   };
@@ -95,7 +107,7 @@ export default function MediaPageClient({ initialItems }: { initialItems: MediaI
             <div className="relative flex-1">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <Input
-                placeholder="Cari file..."
+                placeholder="Cari berdasarkan judul gambar..."
                 className="pl-9 rounded-xl h-10"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -170,7 +182,9 @@ export default function MediaPageClient({ initialItems }: { initialItems: MediaI
           <p className="text-sm font-medium text-gray-500">
             {isPending ? "Mengunggah..." : "Drag & drop file di sini"}
           </p>
-          <p className="text-xs text-gray-400 mt-1">atau klik untuk pilih file (JPG, PNG, WebP maks. 15MB)</p>
+          <p className="text-xs text-gray-400 mt-1">
+            atau klik untuk pilih file (JPG, PNG, WebP maks. 15MB) — judul otomatis diisi dari nama file, bisa diedit lewat preview
+          </p>
         </div>
 
         {/* ─── Grid/List Media ─── */}
@@ -179,25 +193,44 @@ export default function MediaPageClient({ initialItems }: { initialItems: MediaI
             {filtered.map((item) => (
               <div
                 key={item.id}
-                onClick={() => toggle(item.id)}
+                onClick={() => setPreview(item)}
                 className={`relative rounded-2xl overflow-hidden border-2 cursor-pointer transition-all group ${selected.includes(item.id) ? "border-primary shadow-md" : "border-admin-line hover:border-primary/30"}`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={item.url} alt={item.fileName} className="aspect-square w-full object-cover bg-gray-100" />
-                {selected.includes(item.id) && (
-                  <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                    <span className="text-white text-xs">✓</span>
+                <img src={item.url} alt={item.altText || item.title} className="aspect-square w-full object-cover bg-gray-100" />
+
+                {/* Checkbox select — independen dari klik gambar (buka preview) */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggle(item.id);
+                  }}
+                  aria-label={selected.includes(item.id) ? "Batal pilih" : "Pilih gambar"}
+                  className={`absolute top-2 left-2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                    selected.includes(item.id)
+                      ? "bg-primary border-primary"
+                      : "bg-white/80 border-white/80 opacity-0 group-hover:opacity-100"
+                  }`}
+                >
+                  {selected.includes(item.id) && <span className="text-white text-xs">✓</span>}
+                </button>
+
+                {!item.uploadedBy && (
+                  <div className="absolute top-2 right-2" title="Asset statis — kemungkinan dipakai langsung di kode">
+                    <AlertTriangle size={14} className="text-amber-400 drop-shadow" />
                   </div>
                 )}
+
                 <div className="absolute bottom-0 left-0 right-0 bg-black/50 backdrop-blur-sm p-2 translate-y-full group-hover:translate-y-0 transition-transform">
-                  <p className="text-white text-[10px] font-medium truncate">{item.fileName}</p>
+                  <p className="text-white text-[10px] font-medium truncate">{item.title}</p>
                   <p className="text-white/60 text-[9px]">{formatSize(item.sizeBytes)}</p>
                 </div>
               </div>
             ))}
             {filtered.length === 0 && (
               <p className="col-span-full text-center text-sm text-gray-400 py-10">
-                Tidak ada file yang cocok.
+                Tidak ada gambar yang cocok.
               </p>
             )}
           </div>
@@ -207,7 +240,7 @@ export default function MediaPageClient({ initialItems }: { initialItems: MediaI
               <thead>
                 <tr className="border-b border-admin-line bg-gray-50/50">
                   <th className="w-10 px-4 py-3" />
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Nama File</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Judul</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase hidden md:table-cell">Tipe</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase hidden lg:table-cell">Ukuran</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase hidden lg:table-cell">Tanggal</th>
@@ -225,11 +258,14 @@ export default function MediaPageClient({ initialItems }: { initialItems: MediaI
                         className="rounded accent-primary"
                       />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 cursor-pointer" onClick={() => setPreview(item)}>
                       <div className="flex items-center gap-3">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={item.url} alt={item.fileName} className="w-8 h-8 rounded-lg object-cover bg-gray-100 flex-shrink-0" />
-                        <span className="font-medium text-gray-900 text-xs">{item.fileName}</span>
+                        <img src={item.url} alt={item.altText || item.title} className="w-8 h-8 rounded-lg object-cover bg-gray-100 flex-shrink-0" />
+                        <span className="font-medium text-gray-900 text-xs">{item.title}</span>
+                        {!item.uploadedBy && (
+                          <AlertTriangle size={12} className="text-amber-400 flex-shrink-0" aria-label="Asset statis" />
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3 hidden md:table-cell">
@@ -268,7 +304,7 @@ export default function MediaPageClient({ initialItems }: { initialItems: MediaI
                 {filtered.length === 0 && (
                   <tr>
                     <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-400">
-                      Tidak ada file yang cocok.
+                      Tidak ada gambar yang cocok.
                     </td>
                   </tr>
                 )}
@@ -277,6 +313,129 @@ export default function MediaPageClient({ initialItems }: { initialItems: MediaI
           </div>
         )}
       </div>
+
+      {/* ─── Modal Preview ─── */}
+      <MediaPreviewDialog
+        item={preview}
+        isPending={isPending}
+        onClose={() => setPreview(null)}
+        onDelete={(id) => removeFiles([id])}
+        onCopyUrl={copyUrl}
+      />
     </>
+  );
+}
+
+function MediaPreviewDialog({
+  item,
+  isPending,
+  onClose,
+  onDelete,
+  onCopyUrl,
+}: {
+  item: MediaItem | null;
+  isPending: boolean;
+  onClose: () => void;
+  onDelete: (id: string) => void;
+  onCopyUrl: (url: string) => void;
+}) {
+  const router = useRouter();
+  const [saving, startSaving] = useTransition();
+  const [title, setTitle] = useState("");
+  const [altText, setAltText] = useState("");
+  const [openedId, setOpenedId] = useState<string | null>(null);
+
+  // Sinkronkan form tiap kali item preview yang dibuka berganti (bukan tiap render).
+  if (item && item.id !== openedId) {
+    setOpenedId(item.id);
+    setTitle(item.title);
+    setAltText(item.altText ?? "");
+  }
+
+  const save = () => {
+    if (!item) return;
+    if (!title.trim()) return swalError("Judul gambar wajib diisi.");
+    startSaving(async () => {
+      const res = await updateMediaMetaAction(item.id, { title, altText });
+      if (res.ok) {
+        swalSuccess("Perubahan disimpan");
+        router.refresh();
+        onClose();
+      } else {
+        swalError(res.message);
+      }
+    });
+  };
+
+  return (
+    <Dialog open={item !== null} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-2xl">
+        <DialogTitle className="sr-only">Preview Gambar</DialogTitle>
+        {item && (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={item.url} alt={item.altText || item.title} className="max-h-[45vh] w-full bg-gray-50 object-contain" />
+            <div className="space-y-4 p-5">
+              {!item.uploadedBy && (
+                <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                  <AlertTriangle size={14} className="flex-shrink-0" />
+                  Asset statis — kemungkinan dipakai langsung di kode, hati-hati kalau mau dihapus.
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <Label>Judul</Label>
+                <Input value={title} onChange={(e) => setTitle(e.target.value)} className="rounded-xl" placeholder="Judul gambar" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Deskripsi (alt text — opsional)</Label>
+                <Textarea
+                  value={altText}
+                  onChange={(e) => setAltText(e.target.value)}
+                  rows={2}
+                  className="rounded-xl resize-none"
+                  placeholder="Deskripsi singkat buat atribut alt <img>"
+                />
+              </div>
+
+              <p className="text-xs text-gray-400">
+                {item.fileName} · {formatSize(item.sizeBytes)} · {formatDate(item.createdAt)}
+                {item.uploadedBy ? ` · diupload ${item.uploadedBy.name}` : ""}
+              </p>
+
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-admin-line pt-4">
+                <div className="flex gap-1.5">
+                  <Button type="button" variant="outline" size="sm" className="gap-1.5 rounded-lg" onClick={() => onCopyUrl(item.url)}>
+                    <Copy size={13} />
+                    Salin URL
+                  </Button>
+                  <Button type="button" variant="outline" size="sm" className="gap-1.5 rounded-lg" asChild>
+                    <a href={item.url} download={item.fileName}>
+                      <Download size={13} />
+                      Unduh
+                    </a>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 rounded-lg text-red-500 border-red-200 hover:bg-red-50"
+                    disabled={isPending}
+                    onClick={() => onDelete(item.id)}
+                  >
+                    <Trash2 size={13} />
+                    Hapus
+                  </Button>
+                </div>
+                <Button type="button" size="sm" className="gap-1.5 rounded-lg" disabled={saving} onClick={save}>
+                  <Save size={13} />
+                  {saving ? "Menyimpan..." : "Simpan"}
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
