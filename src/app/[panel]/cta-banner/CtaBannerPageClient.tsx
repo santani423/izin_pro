@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Headset, Pencil, Plus, Trash2, Search, ChevronLeft, ChevronRight } from "lucide-react";
-import { toast } from "sonner";
+import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import ConfirmDeleteDialog from "@/components/admin/ConfirmDeleteDialog";
 import { cn } from "@/lib/utils";
 import { COMPANY_INFO } from "@/lib/constants";
 
@@ -186,7 +185,6 @@ export default function CtaBannerPageClient() {
   const [defaults, setDefaults] = useState(DEFAULT_CTA);
   const [variants, setVariants] = useState<CtaVariant[]>(SEED_VARIANTS);
   const [form, setForm] = useState<CtaVariant | null>(null);
-  const [toDelete, setToDelete] = useState<CtaVariant | null>(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
@@ -199,23 +197,30 @@ export default function CtaBannerPageClient() {
     : availableLocations;
 
   const saveDefaults = () => {
-    toast.success("CTA default disimpan");
+    swalSuccess("CTA default disimpan");
   };
 
   const saveVariant = () => {
     if (!form) return;
     if (!form.title.trim() || !form.whatsapp.trim()) {
-      toast.error("Judul dan nomor WhatsApp wajib diisi");
+      swalError("Judul dan nomor WhatsApp wajib diisi");
       return;
     }
     if (form.id) {
       setVariants((prev) => prev.map((v) => (v.id === form.id ? form : v)));
-      toast.success(`Varian CTA "${form.location}" diperbarui`);
+      swalSuccess(`Varian CTA "${form.location}" diperbarui`);
     } else {
       setVariants((prev) => [...prev, { ...form, id: String(Date.now()) }]);
-      toast.success(`Varian CTA "${form.location}" ditambahkan`);
+      swalSuccess(`Varian CTA "${form.location}" ditambahkan`);
     }
     setForm(null);
+  };
+
+  const removeVariant = async (variant: CtaVariant) => {
+    const confirmed = await swalConfirmDelete(`Varian CTA "${variant.location}"`);
+    if (!confirmed) return;
+    setVariants((prev) => prev.filter((v) => v.id !== variant.id));
+    swalSuccess("Varian CTA dihapus — halaman itu kembali memakai CTA default");
   };
 
   const toggleActive = (id: string) =>
@@ -393,7 +398,7 @@ export default function CtaBannerPageClient() {
                         <Pencil size={14} />
                       </button>
                       <button
-                        onClick={() => setToDelete(v)}
+                        onClick={() => removeVariant(v)}
                         className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                         aria-label="Hapus varian"
                       >
@@ -512,19 +517,6 @@ export default function CtaBannerPageClient() {
           )}
         </DialogContent>
       </Dialog>
-
-      {/* ─── Konfirmasi hapus ─── */}
-      <ConfirmDeleteDialog
-        open={toDelete !== null}
-        onOpenChange={(o) => !o && setToDelete(null)}
-        itemLabel={toDelete ? `Varian CTA "${toDelete.location}"` : ""}
-        onConfirm={() => {
-          if (toDelete) {
-            setVariants((prev) => prev.filter((v) => v.id !== toDelete.id));
-            toast.success("Varian CTA dihapus — halaman itu kembali memakai CTA default");
-          }
-        }}
-      />
     </div>
   );
 }

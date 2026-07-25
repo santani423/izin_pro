@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Pencil, Trash2, Eye, ChevronLeft, ChevronRight, Search } from "lucide-react";
-import { toast } from "sonner";
+import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import ConfirmDeleteDialog from "@/components/admin/ConfirmDeleteDialog";
 import { cn } from "@/lib/utils";
 
 type PageStatus = "published" | "draft";
@@ -179,7 +178,6 @@ function Pagination({
 export default function PagesPageClient() {
   const [pages, setPages] = useState<PageRow[]>(SEED);
   const [form, setForm] = useState<PageRow | null>(null);
-  const [toDelete, setToDelete] = useState<PageRow | null>(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
@@ -187,7 +185,7 @@ export default function PagesPageClient() {
   const save = () => {
     if (!form) return;
     if (!form.title.trim()) {
-      toast.error("Judul halaman wajib diisi");
+      swalError("Judul halaman wajib diisi");
       return;
     }
     const slug = form.core
@@ -196,12 +194,19 @@ export default function PagesPageClient() {
     const next = { ...form, slug, updatedAt: today() };
     if (form.id) {
       setPages((prev) => prev.map((p) => (p.id === form.id ? next : p)));
-      toast.success(`Halaman "${form.title}" disimpan`);
+      swalSuccess(`Halaman "${form.title}" disimpan`);
     } else {
       setPages((prev) => [...prev, { ...next, id: String(Date.now()) }]);
-      toast.success(`Halaman "${form.title}" ditambahkan sebagai draft`);
+      swalSuccess(`Halaman "${form.title}" ditambahkan sebagai draft`);
     }
     setForm(null);
+  };
+
+  const removePage = async (pageRow: PageRow) => {
+    const confirmed = await swalConfirmDelete(`Halaman "${pageRow.title}"`);
+    if (!confirmed) return;
+    setPages((prev) => prev.filter((p) => p.id !== pageRow.id));
+    swalSuccess("Halaman dihapus");
   };
 
   const filtered = pages.filter((p) => {
@@ -285,7 +290,7 @@ export default function PagesPageClient() {
                       </button>
                       {!row.core && (
                         <button
-                          onClick={() => setToDelete(row)}
+                          onClick={() => removePage(row)}
                           className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                           aria-label="Hapus halaman"
                         >
@@ -403,19 +408,6 @@ export default function PagesPageClient() {
           )}
         </DialogContent>
       </Dialog>
-
-      {/* ─── Konfirmasi hapus (hanya halaman non-inti) ─── */}
-      <ConfirmDeleteDialog
-        open={toDelete !== null}
-        onOpenChange={(o) => !o && setToDelete(null)}
-        itemLabel={toDelete ? `Halaman "${toDelete.title}"` : ""}
-        onConfirm={() => {
-          if (toDelete) {
-            setPages((prev) => prev.filter((p) => p.id !== toDelete.id));
-            toast.success("Halaman dihapus");
-          }
-        }}
-      />
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight, Eye } from "lucide-react";
-import { toast } from "sonner";
+import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import type { BlogPost, Category, Tag, PostTag } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import ConfirmDeleteDialog from "@/components/admin/ConfirmDeleteDialog";
 import { cn } from "@/lib/utils";
 import { deleteBlogPostAction, toggleBlogPostStatusAction } from "@/lib/actions/blog";
 
@@ -159,7 +158,6 @@ export default function BlogPageClient({
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
-  const [toDelete, setToDelete] = useState<BlogPostRow | null>(null);
 
   const filtered = initialPosts.filter((p) => {
     const q = search.trim().toLowerCase();
@@ -180,25 +178,25 @@ export default function BlogPageClient({
     startTransition(async () => {
       const res = await toggleBlogPostStatusAction(post.id, next);
       if (res.ok) {
-        toast.success("Status artikel diperbarui");
+        swalSuccess("Status artikel diperbarui");
         router.refresh();
       } else {
-        toast.error(res.message);
+        swalError(res.message);
       }
     });
   };
 
-  const remove = () => {
-    if (!toDelete) return;
+  const remove = async (post: BlogPostRow) => {
+    const confirmed = await swalConfirmDelete(`Artikel "${post.title}"`);
+    if (!confirmed) return;
     startTransition(async () => {
-      const res = await deleteBlogPostAction(toDelete.id);
+      const res = await deleteBlogPostAction(post.id);
       if (res.ok) {
-        toast.success("Artikel dihapus");
+        swalSuccess("Artikel dihapus");
         router.refresh();
       } else {
-        toast.error(res.message);
+        swalError(res.message);
       }
-      setToDelete(null);
     });
   };
 
@@ -334,7 +332,7 @@ export default function BlogPageClient({
                         <Pencil size={14} />
                       </Link>
                       <button
-                        onClick={() => setToDelete(post)}
+                        onClick={() => remove(post)}
                         className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                         aria-label="Hapus artikel"
                       >
@@ -370,13 +368,6 @@ export default function BlogPageClient({
           setPageSize(size);
           setPage(1);
         }}
-      />
-
-      <ConfirmDeleteDialog
-        open={toDelete !== null}
-        onOpenChange={(o) => !o && setToDelete(null)}
-        itemLabel={toDelete ? `Artikel "${toDelete.title}"` : ""}
-        onConfirm={remove}
       />
     </div>
   );

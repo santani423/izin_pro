@@ -4,7 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Plus, Pencil, Trash2, Building2, Search, ChevronLeft, ChevronRight } from "lucide-react";
-import { toast } from "sonner";
+import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import type { Media, Partner } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import ConfirmDeleteDialog from "@/components/admin/ConfirmDeleteDialog";
 import { cn } from "@/lib/utils";
 import {
   createPartnerAction,
@@ -157,7 +156,6 @@ export default function KlienManager({
   const [form, setForm] = useState<FormState | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [toDelete, setToDelete] = useState<PartnerWithLogo | null>(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
@@ -172,10 +170,10 @@ export default function KlienManager({
     startTransition(async () => {
       const res = await togglePartnerActiveAction(p.id, !p.isActive);
       if (res.ok) {
-        toast.success("Status klien diperbarui");
+        swalSuccess("Status klien diperbarui");
         router.refresh();
       } else {
-        toast.error(res.message);
+        swalError(res.message);
       }
     });
   };
@@ -188,12 +186,12 @@ export default function KlienManager({
   const save = () => {
     if (!form) return;
     if (!form.name.trim()) {
-      toast.error("Nama klien wajib diisi");
+      swalError("Nama klien wajib diisi");
       return;
     }
     const file = fileInputRef.current?.files?.[0] ?? null;
     if (!form.id && !file) {
-      toast.error("Logo wajib diunggah");
+      swalError("Logo wajib diunggah");
       return;
     }
 
@@ -207,27 +205,27 @@ export default function KlienManager({
         : await createPartnerAction(fd);
 
       if (res.ok) {
-        toast.success(form.id ? "Klien diperbarui" : "Klien baru ditambahkan");
+        swalSuccess(form.id ? "Klien diperbarui" : "Klien baru ditambahkan");
         setForm(null);
         setPreview(null);
         router.refresh();
       } else {
-        toast.error(res.message);
+        swalError(res.message);
       }
     });
   };
 
-  const remove = () => {
-    if (!toDelete) return;
+  const remove = async (partner: PartnerWithLogo) => {
+    const confirmed = await swalConfirmDelete(`Klien "${partner.name}"`);
+    if (!confirmed) return;
     startTransition(async () => {
-      const res = await deletePartnerAction(toDelete.id);
+      const res = await deletePartnerAction(partner.id);
       if (res.ok) {
-        toast.success("Klien dihapus");
+        swalSuccess("Klien dihapus");
         router.refresh();
       } else {
-        toast.error(res.message);
+        swalError(res.message);
       }
-      setToDelete(null);
     });
   };
 
@@ -311,7 +309,7 @@ export default function KlienManager({
                   <Pencil size={14} />
                 </button>
                 <button
-                  onClick={() => setToDelete(partner)}
+                  onClick={() => remove(partner)}
                   className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                   aria-label="Hapus klien"
                 >
@@ -402,14 +400,6 @@ export default function KlienManager({
           )}
         </DialogContent>
       </Dialog>
-
-      {/* ─── Konfirmasi hapus ─── */}
-      <ConfirmDeleteDialog
-        open={toDelete !== null}
-        onOpenChange={(o) => !o && setToDelete(null)}
-        itemLabel={toDelete ? `Klien "${toDelete.name}"` : ""}
-        onConfirm={remove}
-      />
     </div>
   );
 }

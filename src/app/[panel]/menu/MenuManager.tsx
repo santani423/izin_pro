@@ -3,14 +3,13 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Pencil, Trash2, ChevronUp, ChevronDown, CornerDownRight, Menu as MenuIcon } from "lucide-react";
-import { toast } from "sonner";
+import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import type { Menu, MenuItem } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ConfirmDeleteDialog from "@/components/admin/ConfirmDeleteDialog";
 import {
   createMenuItemAction,
   deleteMenuItemAction,
@@ -73,7 +72,6 @@ function MenuList({ menu }: { menu: MenuWithItems }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [form, setForm] = useState<FormState | null>(null);
-  const [toDelete, setToDelete] = useState<MenuItem | null>(null);
 
   const openAdd = (parentId: string | null) => setForm({ id: "", label: "", href: "", parentId });
   const openEdit = (item: MenuItem) => setForm({ id: item.id, label: item.label, href: item.href, parentId: item.parentId });
@@ -82,14 +80,14 @@ function MenuList({ menu }: { menu: MenuWithItems }) {
     startTransition(async () => {
       const res = await moveMenuItemAction(id, direction);
       if (res.ok) router.refresh();
-      else toast.error(res.message);
+      else swalError(res.message);
     });
   };
 
   const save = () => {
     if (!form) return;
     if (!form.label.trim() || !form.href.trim()) {
-      toast.error("Label dan URL wajib diisi");
+      swalError("Label dan URL wajib diisi");
       return;
     }
     startTransition(async () => {
@@ -102,26 +100,26 @@ function MenuList({ menu }: { menu: MenuWithItems }) {
           });
 
       if (res.ok) {
-        toast.success(form.id ? "Menu diperbarui" : "Menu baru ditambahkan");
+        swalSuccess(form.id ? "Menu diperbarui" : "Menu baru ditambahkan");
         setForm(null);
         router.refresh();
       } else {
-        toast.error(res.message);
+        swalError(res.message);
       }
     });
   };
 
-  const remove = () => {
-    if (!toDelete) return;
+  const remove = async (item: MenuItem) => {
+    const confirmed = await swalConfirmDelete(`Menu "${item.label}"`);
+    if (!confirmed) return;
     startTransition(async () => {
-      const res = await deleteMenuItemAction(toDelete.id);
+      const res = await deleteMenuItemAction(item.id);
       if (res.ok) {
-        toast.success("Menu dihapus");
+        swalSuccess("Menu dihapus");
         router.refresh();
       } else {
-        toast.error(res.message);
+        swalError(res.message);
       }
-      setToDelete(null);
     });
   };
 
@@ -149,7 +147,7 @@ function MenuList({ menu }: { menu: MenuWithItems }) {
                 canMoveDown={index < menu.items.length - 1}
                 onMove={(dir) => move(item.id, dir)}
                 onEdit={() => openEdit(item)}
-                onDelete={() => setToDelete(item)}
+                onDelete={() => remove(item)}
                 onAddChild={() => openAdd(item.id)}
               />
               {item.children.length > 0 && (
@@ -164,7 +162,7 @@ function MenuList({ menu }: { menu: MenuWithItems }) {
                         canMoveDown={cIndex < item.children.length - 1}
                         onMove={(dir) => move(child.id, dir)}
                         onEdit={() => openEdit(child)}
-                        onDelete={() => setToDelete(child)}
+                        onDelete={() => remove(child)}
                       />
                     </li>
                   ))}
@@ -220,14 +218,6 @@ function MenuList({ menu }: { menu: MenuWithItems }) {
           )}
         </DialogContent>
       </Dialog>
-
-      {/* ─── Konfirmasi hapus ─── */}
-      <ConfirmDeleteDialog
-        open={toDelete !== null}
-        onOpenChange={(o) => !o && setToDelete(null)}
-        itemLabel={toDelete ? `Menu "${toDelete.label}"` : ""}
-        onConfirm={remove}
-      />
     </>
   );
 }

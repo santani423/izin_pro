@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Search, Pencil, Trash2, MoreHorizontal, Eye, EyeOff, Lock, ChevronLeft, ChevronRight } from "lucide-react";
-import { toast } from "sonner";
+import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import type { Role, User } from "@prisma/client";
 import { canManageUser, visibleUserRoles } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import ConfirmDeleteDialog from "@/components/admin/ConfirmDeleteDialog";
 import { cn } from "@/lib/utils";
 import {
   createUserAction,
@@ -212,7 +211,6 @@ export default function UsersManager({
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<Role | "Semua">("Semua");
   const [form, setForm] = useState<FormState | null>(null);
-  const [toDelete, setToDelete] = useState<User | null>(null);
   const [showPass, setShowPass] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
@@ -253,10 +251,10 @@ export default function UsersManager({
     startTransition(async () => {
       const res = await toggleUserActiveAction(u.id, !u.isActive);
       if (res.ok) {
-        toast.success("Status pengguna diperbarui");
+        swalSuccess("Status pengguna diperbarui");
         router.refresh();
       } else {
-        toast.error(res.message);
+        swalError(res.message);
       }
     });
   };
@@ -264,11 +262,11 @@ export default function UsersManager({
   const save = () => {
     if (!form) return;
     if (!form.name.trim() || !form.email.trim()) {
-      toast.error("Nama dan email wajib diisi");
+      swalError("Nama dan email wajib diisi");
       return;
     }
     if (!form.id && form.password.length < 6) {
-      toast.error("Password minimal 6 karakter");
+      swalError("Password minimal 6 karakter");
       return;
     }
 
@@ -291,27 +289,27 @@ export default function UsersManager({
           });
 
       if (res.ok) {
-        toast.success(form.id ? "Pengguna diperbarui" : "Pengguna baru ditambahkan");
+        swalSuccess(form.id ? "Pengguna diperbarui" : "Pengguna baru ditambahkan");
         setForm(null);
         setShowPass(false);
         router.refresh();
       } else {
-        toast.error(res.message);
+        swalError(res.message);
       }
     });
   };
 
-  const remove = () => {
-    if (!toDelete) return;
+  const remove = async (user: User) => {
+    const confirmed = await swalConfirmDelete(`Pengguna "${user.name}"`);
+    if (!confirmed) return;
     startTransition(async () => {
-      const res = await deleteUserAction(toDelete.id);
+      const res = await deleteUserAction(user.id);
       if (res.ok) {
-        toast.success("Pengguna dihapus");
+        swalSuccess("Pengguna dihapus");
         router.refresh();
       } else {
-        toast.error(res.message);
+        swalError(res.message);
       }
-      setToDelete(null);
     });
   };
 
@@ -436,7 +434,7 @@ export default function UsersManager({
                             {u.id !== currentUserId && (
                               <DropdownMenuItem
                                 className="text-sm text-red-500 cursor-pointer gap-2 focus:text-red-500 focus:bg-red-50"
-                                onClick={() => setToDelete(u)}
+                                onClick={() => remove(u)}
                               >
                                 <Trash2 size={13} />
                                 Hapus
@@ -603,14 +601,6 @@ export default function UsersManager({
           )}
         </DialogContent>
       </Dialog>
-
-      {/* ─── Konfirmasi hapus ─── */}
-      <ConfirmDeleteDialog
-        open={toDelete !== null}
-        onOpenChange={(o) => !o && setToDelete(null)}
-        itemLabel={toDelete ? `Pengguna "${toDelete.name}"` : ""}
-        onConfirm={remove}
-      />
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Pencil, Trash2, GripVertical, ChevronDown, Search, ChevronLeft, ChevronRight } from "lucide-react";
-import { toast } from "sonner";
+import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,7 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import ConfirmDeleteDialog from "@/components/admin/ConfirmDeleteDialog";
 import { FAQS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -154,7 +153,6 @@ export default function FaqPageClient() {
   const [faqs, setFaqs] = useState(faqData);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [form, setForm] = useState<FaqRow | null>(null);
-  const [toDelete, setToDelete] = useState<FaqRow | null>(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
@@ -168,17 +166,24 @@ export default function FaqPageClient() {
   const save = () => {
     if (!form) return;
     if (!form.question.trim() || !form.answer.trim()) {
-      toast.error("Pertanyaan dan jawaban wajib diisi");
+      swalError("Pertanyaan dan jawaban wajib diisi");
       return;
     }
     if (form.id) {
       setFaqs((prev) => prev.map((f) => (f.id === form.id ? form : f)));
-      toast.success("FAQ diperbarui");
+      swalSuccess("FAQ diperbarui");
     } else {
       setFaqs((prev) => [...prev, { ...form, id: String(Date.now()) }]);
-      toast.success("FAQ ditambahkan");
+      swalSuccess("FAQ ditambahkan");
     }
     setForm(null);
+  };
+
+  const removeFaq = async (faq: FaqRow) => {
+    const confirmed = await swalConfirmDelete(`FAQ "${faq.question}"`);
+    if (!confirmed) return;
+    setFaqs((prev) => prev.filter((f) => f.id !== faq.id));
+    swalSuccess("FAQ dihapus");
   };
 
   const filtered = faqs.filter((f) => {
@@ -268,7 +273,7 @@ export default function FaqPageClient() {
                       <Pencil size={13} />
                     </button>
                     <button
-                      onClick={() => setToDelete(faq)}
+                      onClick={() => removeFaq(faq)}
                       className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                       aria-label="Hapus FAQ"
                     >
@@ -358,19 +363,6 @@ export default function FaqPageClient() {
             )}
           </DialogContent>
         </Dialog>
-
-        {/* ─── Konfirmasi hapus ─── */}
-        <ConfirmDeleteDialog
-          open={toDelete !== null}
-          onOpenChange={(o) => !o && setToDelete(null)}
-          itemLabel={toDelete ? `FAQ "${toDelete.question}"` : ""}
-          onConfirm={() => {
-            if (toDelete) {
-              setFaqs((prev) => prev.filter((f) => f.id !== toDelete.id));
-              toast.success("FAQ dihapus");
-            }
-          }}
-        />
       </div>
     </>
   );

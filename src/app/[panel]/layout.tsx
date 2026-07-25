@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import { Toaster } from "@/components/ui/sonner";
+import AlertHost from "@/components/admin/AlertHost";
 import { AdminSidebarProvider, useAdminSidebar } from "@/contexts/AdminSidebarContext";
 
 /* Judul & subjudul header per menu — dipakai otomatis oleh layout.
@@ -76,6 +77,7 @@ function AdminPanelLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
       <Toaster position="top-right" richColors />
+      <AlertHost />
     </div>
   );
 }

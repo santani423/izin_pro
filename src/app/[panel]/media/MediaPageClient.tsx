@@ -3,11 +3,10 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, Grid, List, Search, Trash2, Download, Copy } from "lucide-react";
-import { toast } from "sonner";
+import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import ConfirmDeleteDialog from "@/components/admin/ConfirmDeleteDialog";
 import { uploadMediaFilesAction, deleteMediaFilesAction } from "@/lib/actions/media";
 
 type MediaItem = {
@@ -37,8 +36,6 @@ export default function MediaPageClient({ initialItems }: { initialItems: MediaI
   const [view, setView] = useState<"grid" | "list">("grid");
   const [selected, setSelected] = useState<string[]>([]);
   const [search, setSearch] = useState("");
-  /* ID yang menunggu konfirmasi hapus (bulk atau satuan) */
-  const [pendingDelete, setPendingDelete] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filtered = initialItems.filter((i) =>
@@ -56,25 +53,29 @@ export default function MediaPageClient({ initialItems }: { initialItems: MediaI
     startTransition(async () => {
       const res = await uploadMediaFilesAction(formData);
       if (res.ok) {
-        toast.success(`${list.length} file berhasil diupload`);
+        swalSuccess(`${list.length} file berhasil diupload`);
         router.refresh();
       } else {
-        toast.error(res.message);
+        swalError(res.message);
       }
     });
   };
 
-  const confirmDelete = () => {
-    const ids = pendingDelete;
+  const removeFiles = async (ids: string[]) => {
+    const itemLabel =
+      ids.length === 1
+        ? `File "${initialItems.find((i) => i.id === ids[0])?.fileName ?? ""}"`
+        : `${ids.length} file terpilih`;
+    const confirmed = await swalConfirmDelete(itemLabel);
+    if (!confirmed) return;
     startTransition(async () => {
       const res = await deleteMediaFilesAction(ids);
       if (res.ok) {
-        toast.success(`${ids.length} file dihapus`);
+        swalSuccess(`${ids.length} file dihapus`);
       } else {
-        toast.error(res.message);
+        swalError(res.message);
       }
       setSelected((prev) => prev.filter((id) => !ids.includes(id)));
-      setPendingDelete([]);
       router.refresh();
     });
   };
@@ -82,7 +83,7 @@ export default function MediaPageClient({ initialItems }: { initialItems: MediaI
   const copyUrl = (url: string) => {
     const absolute = typeof window !== "undefined" ? `${window.location.origin}${url}` : url;
     navigator.clipboard?.writeText(absolute).catch(() => {});
-    toast.success("URL file disalin");
+    swalSuccess("URL file disalin");
   };
 
   return (
@@ -125,7 +126,7 @@ export default function MediaPageClient({ initialItems }: { initialItems: MediaI
                 size="sm"
                 className="gap-1.5 rounded-xl text-red-500 border-red-200 hover:bg-red-50"
                 disabled={isPending}
-                onClick={() => setPendingDelete(selected)}
+                onClick={() => removeFiles(selected)}
               >
                 <Trash2 size={14} />
                 Hapus ({selected.length})
@@ -254,7 +255,7 @@ export default function MediaPageClient({ initialItems }: { initialItems: MediaI
                           <Download size={13} />
                         </a>
                         <button
-                          onClick={() => setPendingDelete([item.id])}
+                          onClick={() => removeFiles([item.id])}
                           className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                           aria-label="Hapus file"
                         >
@@ -275,18 +276,6 @@ export default function MediaPageClient({ initialItems }: { initialItems: MediaI
             </table>
           </div>
         )}
-
-        {/* ─── Konfirmasi hapus ─── */}
-        <ConfirmDeleteDialog
-          open={pendingDelete.length > 0}
-          onOpenChange={(o) => !o && setPendingDelete([])}
-          itemLabel={
-            pendingDelete.length === 1
-              ? `File "${initialItems.find((i) => i.id === pendingDelete[0])?.fileName ?? ""}"`
-              : `${pendingDelete.length} file terpilih`
-          }
-          onConfirm={confirmDelete}
-        />
       </div>
     </>
   );

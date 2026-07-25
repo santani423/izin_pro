@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Pencil, Trash2, MoreHorizontal, Search, ChevronLeft, ChevronRight } from "lucide-react";
-import { toast } from "sonner";
+import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,7 +26,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import ConfirmDeleteDialog from "@/components/admin/ConfirmDeleteDialog";
 import { cn } from "@/lib/utils";
 import { TEAM_MEMBERS } from "@/lib/constants";
 
@@ -178,7 +177,6 @@ function Pagination({
 export default function TimPageClient() {
   const [members, setMembers] = useState(teamData);
   const [form, setForm] = useState<MemberRow | null>(null);
-  const [toDelete, setToDelete] = useState<MemberRow | null>(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
@@ -192,21 +190,28 @@ export default function TimPageClient() {
   const save = () => {
     if (!form) return;
     if (!form.name.trim() || !form.role.trim()) {
-      toast.error("Nama dan jabatan wajib diisi");
+      swalError("Nama dan jabatan wajib diisi");
       return;
     }
     const next = { ...form, initials: initialsOf(form.name) };
     if (form.id) {
       setMembers((prev) => prev.map((m) => (m.id === form.id ? next : m)));
-      toast.success("Anggota tim diperbarui");
+      swalSuccess("Anggota tim diperbarui");
     } else {
       setMembers((prev) => [
         ...prev,
         { ...next, id: String(Date.now()), gradient: GRADIENTS[prev.length % GRADIENTS.length] },
       ]);
-      toast.success("Anggota tim ditambahkan");
+      swalSuccess("Anggota tim ditambahkan");
     }
     setForm(null);
+  };
+
+  const removeMember = async (member: MemberRow) => {
+    const confirmed = await swalConfirmDelete(`Anggota tim "${member.name}"`);
+    if (!confirmed) return;
+    setMembers((prev) => prev.filter((m) => m.id !== member.id));
+    swalSuccess("Anggota tim dihapus");
   };
 
   const filtered = members.filter((m) => {
@@ -277,7 +282,7 @@ export default function TimPageClient() {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-sm text-red-500 cursor-pointer gap-2 focus:text-red-500 focus:bg-red-50"
-                    onClick={() => setToDelete(member)}
+                    onClick={() => removeMember(member)}
                   >
                     <Trash2 size={13} />
                     Hapus
@@ -444,19 +449,6 @@ export default function TimPageClient() {
             )}
           </DialogContent>
         </Dialog>
-
-        {/* ─── Konfirmasi hapus ─── */}
-        <ConfirmDeleteDialog
-          open={toDelete !== null}
-          onOpenChange={(o) => !o && setToDelete(null)}
-          itemLabel={toDelete ? `Anggota tim "${toDelete.name}"` : ""}
-          onConfirm={() => {
-            if (toDelete) {
-              setMembers((prev) => prev.filter((m) => m.id !== toDelete.id));
-              toast.success("Anggota tim dihapus");
-            }
-          }}
-        />
       </div>
     </>
   );

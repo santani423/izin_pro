@@ -3,7 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Save, User, KeyRound, Camera } from "lucide-react";
-import { toast } from "sonner";
+import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import type { Role } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,6 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import ConfirmDeleteDialog from "@/components/admin/ConfirmDeleteDialog";
 import { authClient } from "@/lib/auth-client";
 import { updateProfilePhotoAction, removeProfilePhotoAction } from "@/lib/actions/profile";
 
@@ -48,7 +47,6 @@ export default function ProfileManager({
   const [isUploadingPhoto, startPhotoUpload] = useTransition();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [showPhotoPreview, setShowPhotoPreview] = useState(false);
-  const [confirmRemovePhoto, setConfirmRemovePhoto] = useState(false);
   const currentPhoto = previewUrl ?? image;
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,11 +55,11 @@ export default function ProfileManager({
     if (!file) return;
 
     if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
-      toast.error("Format foto harus PNG, JPG, atau WebP");
+      swalError("Format foto harus PNG, JPG, atau WebP");
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      toast.error("Ukuran foto maksimal 2MB");
+      swalError("Ukuran foto maksimal 2MB");
       return;
     }
 
@@ -73,25 +71,27 @@ export default function ProfileManager({
     startPhotoUpload(async () => {
       const res = await updateProfilePhotoAction(formData);
       if (res.ok) {
-        toast.success("Foto profil berhasil diperbarui");
+        swalSuccess("Foto profil berhasil diperbarui");
         router.refresh();
       } else {
-        toast.error(res.message);
+        swalError(res.message);
         URL.revokeObjectURL(localPreview);
         setPreviewUrl(null);
       }
     });
   };
 
-  const handleRemovePhoto = () => {
+  const handleRemovePhoto = async () => {
+    const confirmed = await swalConfirmDelete("Foto profil Anda");
+    if (!confirmed) return;
     startPhotoUpload(async () => {
       const res = await removeProfilePhotoAction();
       if (res.ok) {
-        toast.success("Foto profil dihapus");
+        swalSuccess("Foto profil dihapus");
         setPreviewUrl(null);
         router.refresh();
       } else {
-        toast.error(res.message);
+        swalError(res.message);
       }
     });
   };
@@ -104,37 +104,37 @@ export default function ProfileManager({
 
   const saveName = async () => {
     if (!fullName.trim()) {
-      toast.error("Nama tidak boleh kosong");
+      swalError("Nama tidak boleh kosong");
       return;
     }
     setSavingName(true);
     const { error } = await authClient.updateUser({ name: fullName.trim() });
     setSavingName(false);
     if (error) {
-      toast.error(error.message ?? "Gagal memperbarui nama");
+      swalError(error.message ?? "Gagal memperbarui nama");
       return;
     }
-    toast.success("Nama berhasil diperbarui");
+    swalSuccess("Nama berhasil diperbarui");
     router.refresh();
   };
 
   const savePassword = async () => {
     if (newPassword.length < 6) {
-      toast.error("Password baru minimal 6 karakter");
+      swalError("Password baru minimal 6 karakter");
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast.error("Konfirmasi password baru tidak cocok");
+      swalError("Konfirmasi password baru tidak cocok");
       return;
     }
     setSavingPassword(true);
     const { error } = await authClient.changePassword({ currentPassword, newPassword });
     setSavingPassword(false);
     if (error) {
-      toast.error(error.message ?? "Gagal mengubah password");
+      swalError(error.message ?? "Gagal mengubah password");
       return;
     }
-    toast.success("Password berhasil diubah");
+    swalSuccess("Password berhasil diubah");
     setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
@@ -196,7 +196,7 @@ export default function ProfileManager({
               {currentPhoto && (
                 <button
                   type="button"
-                  onClick={() => setConfirmRemovePhoto(true)}
+                  onClick={handleRemovePhoto}
                   disabled={isUploadingPhoto}
                   className="text-sm font-semibold text-red-500 hover:underline disabled:opacity-50"
                 >
@@ -304,14 +304,6 @@ export default function ProfileManager({
           )}
         </DialogContent>
       </Dialog>
-
-      {/* ─── Konfirmasi hapus foto profil ─── */}
-      <ConfirmDeleteDialog
-        open={confirmRemovePhoto}
-        onOpenChange={setConfirmRemovePhoto}
-        itemLabel="Foto profil Anda"
-        onConfirm={handleRemovePhoto}
-      />
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Search, Trash2, Eye, Clock, ChevronLeft, ChevronRight } from "lucide-react";
-import { toast } from "sonner";
+import { swalSuccess, swalConfirmDelete } from "@/lib/swal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,7 +17,6 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
-import ConfirmDeleteDialog from "@/components/admin/ConfirmDeleteDialog";
 import { cn } from "@/lib/utils";
 
 type InquiryStatus = "Baru" | "Diproses" | "Selesai";
@@ -164,7 +163,6 @@ export default function InquiryPageClient() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<InquiryStatus | "Semua">("Semua");
   const [detail, setDetail] = useState<Inquiry | null>(null);
-  const [toDelete, setToDelete] = useState<Inquiry | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
 
@@ -183,12 +181,14 @@ export default function InquiryPageClient() {
   const setStatus = (id: string, status: InquiryStatus) => {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, status } : i)));
     setDetail((d) => (d && d.id === id ? { ...d, status } : d));
-    toast.success(`Status inquiry diubah ke "${status}"`);
+    swalSuccess(`Status inquiry diubah ke "${status}"`);
   };
 
-  const remove = (id: string) => {
-    setItems((prev) => prev.filter((i) => i.id !== id));
-    toast.success("Inquiry dihapus");
+  const remove = async (item: Inquiry) => {
+    const confirmed = await swalConfirmDelete(`Inquiry dari ${item.name}`);
+    if (!confirmed) return;
+    setItems((prev) => prev.filter((i) => i.id !== item.id));
+    swalSuccess("Inquiry dihapus");
   };
 
   return (
@@ -293,7 +293,7 @@ export default function InquiryPageClient() {
                         <Eye size={14} />
                       </button>
                       <button
-                        onClick={() => setToDelete(item)}
+                        onClick={() => remove(item)}
                         className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                         aria-label="Hapus"
                       >
@@ -387,14 +387,6 @@ export default function InquiryPageClient() {
           )}
         </DialogContent>
       </Dialog>
-
-      {/* ─── Konfirmasi hapus ─── */}
-      <ConfirmDeleteDialog
-        open={toDelete !== null}
-        onOpenChange={(o) => !o && setToDelete(null)}
-        itemLabel={toDelete ? `Inquiry dari ${toDelete.name}` : ""}
-        onConfirm={() => toDelete && remove(toDelete.id)}
-      />
     </div>
   );
 }

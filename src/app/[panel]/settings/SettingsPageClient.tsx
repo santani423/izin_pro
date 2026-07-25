@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Save, Globe, Phone, Share2, Eye, Construction, AlertTriangle } from "lucide-react";
-import { toast } from "sonner";
+import { swalSuccess, swalError } from "@/lib/swal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,7 +34,7 @@ export default function SettingsPageClient({
 
   const handleSave = () => {
     setSaved(true);
-    toast.success("Pengaturan disimpan");
+    swalSuccess("Pengaturan disimpan");
     setTimeout(() => setSaved(false), 2000);
   };
 
@@ -49,10 +49,10 @@ export default function SettingsPageClient({
     startTransition(async () => {
       const res = await updateMaintenanceModeAction(maintenanceMode, maintenanceMessage);
       if (res.ok) {
-        toast.success("Pengaturan maintenance disimpan");
+        swalSuccess("Pengaturan maintenance disimpan");
         router.refresh();
       } else {
-        toast.error(res.message);
+        swalError(res.message);
       }
     });
   };

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Pencil, Trash2, Calendar, Search, ChevronLeft, ChevronRight } from "lucide-react";
-import { toast } from "sonner";
+import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,7 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import ConfirmDeleteDialog from "@/components/admin/ConfirmDeleteDialog";
 import { cn } from "@/lib/utils";
 import { PROMOS } from "@/lib/constants";
 
@@ -168,7 +167,6 @@ function Pagination({
 export default function PromoPageClient() {
   const [promos, setPromos] = useState(promoData);
   const [form, setForm] = useState<PromoRow | null>(null);
-  const [toDelete, setToDelete] = useState<PromoRow | null>(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
@@ -182,20 +180,27 @@ export default function PromoPageClient() {
   const save = () => {
     if (!form) return;
     if (!form.title.trim()) {
-      toast.error("Judul promo wajib diisi");
+      swalError("Judul promo wajib diisi");
       return;
     }
     if (form.id) {
       setPromos((prev) => prev.map((p) => (p.id === form.id ? form : p)));
-      toast.success("Promo diperbarui");
+      swalSuccess("Promo diperbarui");
     } else {
       setPromos((prev) => [
         ...prev,
         { ...form, id: String(Date.now()), gradient: GRADIENTS[prev.length % GRADIENTS.length] },
       ]);
-      toast.success("Promo ditambahkan");
+      swalSuccess("Promo ditambahkan");
     }
     setForm(null);
+  };
+
+  const removePromo = async (promo: PromoRow) => {
+    const confirmed = await swalConfirmDelete(`Promo "${promo.tag || promo.title}"`);
+    if (!confirmed) return;
+    setPromos((prev) => prev.filter((p) => p.id !== promo.id));
+    swalSuccess("Promo dihapus");
   };
 
   const filtered = promos.filter((p) => {
@@ -291,7 +296,7 @@ export default function PromoPageClient() {
                       <Pencil size={13} />
                     </button>
                     <button
-                      onClick={() => setToDelete(promo)}
+                      onClick={() => removePromo(promo)}
                       className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                       aria-label="Hapus promo"
                     >
@@ -418,19 +423,6 @@ export default function PromoPageClient() {
             )}
           </DialogContent>
         </Dialog>
-
-        {/* ─── Konfirmasi hapus ─── */}
-        <ConfirmDeleteDialog
-          open={toDelete !== null}
-          onOpenChange={(o) => !o && setToDelete(null)}
-          itemLabel={toDelete ? `Promo "${toDelete.tag || toDelete.title}"` : ""}
-          onConfirm={() => {
-            if (toDelete) {
-              setPromos((prev) => prev.filter((p) => p.id !== toDelete.id));
-              toast.success("Promo dihapus");
-            }
-          }}
-        />
       </div>
     </>
   );

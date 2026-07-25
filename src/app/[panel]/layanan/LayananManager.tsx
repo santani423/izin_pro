@@ -7,7 +7,7 @@ import {
   Building2, ClipboardList, Clock, List, UserCheck, Briefcase, Globe,
   Receipt, Tag, Monitor, MapPin, BadgeCheck, Ship, Factory, Leaf, HardHat, RefreshCw,
 } from "lucide-react";
-import { toast } from "sonner";
+import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import type { Service, ServiceCategory } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import ConfirmDeleteDialog from "@/components/admin/ConfirmDeleteDialog";
 import { cn } from "@/lib/utils";
 import {
   createServiceAction,
@@ -204,7 +203,6 @@ export default function LayananManager({
   const [isPending, startTransition] = useTransition();
   const [form, setForm] = useState<FormState | null>(null);
   const [featuresText, setFeaturesText] = useState("");
-  const [toDelete, setToDelete] = useState<ServiceWithCategory | null>(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
@@ -229,10 +227,10 @@ export default function LayananManager({
     startTransition(async () => {
       const res = await toggleServiceActiveAction(svc.id, !svc.isActive);
       if (res.ok) {
-        toast.success("Status layanan diperbarui");
+        swalSuccess("Status layanan diperbarui");
         router.refresh();
       } else {
-        toast.error(res.message);
+        swalError(res.message);
       }
     });
   };
@@ -240,11 +238,11 @@ export default function LayananManager({
   const save = () => {
     if (!form) return;
     if (!form.title.trim()) {
-      toast.error("Nama layanan wajib diisi");
+      swalError("Nama layanan wajib diisi");
       return;
     }
     if (!form.categoryId) {
-      toast.error("Kategori wajib dipilih");
+      swalError("Kategori wajib dipilih");
       return;
     }
     const features = featuresText.split("\n").map((f) => f.trim()).filter(Boolean);
@@ -264,26 +262,26 @@ export default function LayananManager({
         : await createServiceAction(payload);
 
       if (res.ok) {
-        toast.success(form.id ? "Layanan diperbarui" : "Layanan baru ditambahkan");
+        swalSuccess(form.id ? "Layanan diperbarui" : "Layanan baru ditambahkan");
         setForm(null);
         router.refresh();
       } else {
-        toast.error(res.message);
+        swalError(res.message);
       }
     });
   };
 
-  const remove = () => {
-    if (!toDelete) return;
+  const remove = async (service: ServiceWithCategory) => {
+    const confirmed = await swalConfirmDelete(`Layanan "${service.title}"`);
+    if (!confirmed) return;
     startTransition(async () => {
-      const res = await deleteServiceAction(toDelete.id);
+      const res = await deleteServiceAction(service.id);
       if (res.ok) {
-        toast.success("Layanan dihapus");
+        swalSuccess("Layanan dihapus");
         router.refresh();
       } else {
-        toast.error(res.message);
+        swalError(res.message);
       }
-      setToDelete(null);
     });
   };
 
@@ -388,7 +386,7 @@ export default function LayananManager({
                     <Pencil size={14} />
                   </button>
                   <button
-                    onClick={() => setToDelete(service)}
+                    onClick={() => remove(service)}
                     className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                     aria-label="Hapus layanan"
                   >
@@ -494,14 +492,6 @@ export default function LayananManager({
           )}
         </DialogContent>
       </Dialog>
-
-      {/* ─── Konfirmasi hapus ─── */}
-      <ConfirmDeleteDialog
-        open={toDelete !== null}
-        onOpenChange={(o) => !o && setToDelete(null)}
-        itemLabel={toDelete ? `Layanan "${toDelete.title}"` : ""}
-        onConfirm={remove}
-      />
     </div>
   );
 }

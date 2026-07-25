@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Pencil, Trash2, Star, Video, Upload, Play, ChevronLeft, ChevronRight, Search } from "lucide-react";
-import { toast } from "sonner";
+import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import type { ServiceCategory, Testimonial } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +24,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ConfirmDeleteDialog from "@/components/admin/ConfirmDeleteDialog";
 import { cn } from "@/lib/utils";
 import {
   createTestimonialAction,
@@ -234,7 +233,6 @@ export default function TestimoniPageClient({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [form, setForm] = useState<FormState | null>(null);
-  const [toDelete, setToDelete] = useState<TestimonialWithRelations | null>(null);
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
   const [previewThumbnail, setPreviewThumbnail] = useState<string | null>(null);
   const [previewVideo, setPreviewVideo] = useState<TestimonialWithRelations | null>(null);
@@ -274,7 +272,7 @@ export default function TestimoniPageClient({
     if (res.ok) {
       setForm((f) => (f ? { ...f, thumbnailUrl: res.url } : f));
     } else {
-      toast.error(res.message);
+      swalError(res.message);
     }
   };
 
@@ -282,10 +280,10 @@ export default function TestimoniPageClient({
     startTransition(async () => {
       const res = await toggleTestimonialActiveAction(t.id, !t.isActive);
       if (res.ok) {
-        toast.success("Status testimoni diperbarui");
+        swalSuccess("Status testimoni diperbarui");
         router.refresh();
       } else {
-        toast.error(res.message);
+        swalError(res.message);
       }
     });
   };
@@ -293,15 +291,15 @@ export default function TestimoniPageClient({
   const save = () => {
     if (!form) return;
     if (!form.name.trim()) {
-      toast.error("Nama wajib diisi");
+      swalError("Nama wajib diisi");
       return;
     }
     if (!form.isVideo && !form.content.trim()) {
-      toast.error("Isi testimoni wajib diisi");
+      swalError("Isi testimoni wajib diisi");
       return;
     }
     if (form.isVideo && !form.videoUrl.trim()) {
-      toast.error("URL video wajib diisi untuk video testimoni");
+      swalError("URL video wajib diisi untuk video testimoni");
       return;
     }
 
@@ -324,26 +322,26 @@ export default function TestimoniPageClient({
         : await createTestimonialAction(payload);
 
       if (res.ok) {
-        toast.success(form.id ? "Testimoni diperbarui" : "Testimoni ditambahkan");
+        swalSuccess(form.id ? "Testimoni diperbarui" : "Testimoni ditambahkan");
         setForm(null);
         router.refresh();
       } else {
-        toast.error(res.message);
+        swalError(res.message);
       }
     });
   };
 
-  const remove = () => {
-    if (!toDelete) return;
+  const remove = async (t: TestimonialWithRelations) => {
+    const confirmed = await swalConfirmDelete(`Testimoni dari ${t.name}`);
+    if (!confirmed) return;
     startTransition(async () => {
-      const res = await deleteTestimonialAction(toDelete.id);
+      const res = await deleteTestimonialAction(t.id);
       if (res.ok) {
-        toast.success("Testimoni dihapus");
+        swalSuccess("Testimoni dihapus");
         router.refresh();
       } else {
-        toast.error(res.message);
+        swalError(res.message);
       }
-      setToDelete(null);
     });
   };
 
@@ -423,7 +421,7 @@ export default function TestimoniPageClient({
                 <Pencil size={13} />
               </button>
               <button
-                onClick={() => setToDelete(t)}
+                onClick={() => remove(t)}
                 className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                 aria-label="Hapus testimoni"
               >
@@ -501,7 +499,7 @@ export default function TestimoniPageClient({
                   <Pencil size={13} />
                 </button>
                 <button
-                  onClick={() => setToDelete(t)}
+                  onClick={() => remove(t)}
                   className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                   aria-label="Hapus video testimoni"
                 >
@@ -830,14 +828,6 @@ export default function TestimoniPageClient({
           })()}
         </DialogContent>
       </Dialog>
-
-      {/* ─── Konfirmasi hapus ─── */}
-      <ConfirmDeleteDialog
-        open={toDelete !== null}
-        onOpenChange={(o) => !o && setToDelete(null)}
-        itemLabel={toDelete ? `Testimoni dari ${toDelete.name}` : ""}
-        onConfirm={remove}
-      />
     </div>
   );
 }

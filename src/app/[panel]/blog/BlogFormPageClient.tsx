@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ImagePlus, ChevronDown, Trash2, Eye } from "lucide-react";
-import { toast } from "sonner";
+import { swalSuccess, swalError } from "@/lib/swal";
 import type { BlogPost, Category, Tag, PostTag } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,20 +96,20 @@ export default function BlogFormPageClient({
       setFeaturedMediaId(res.mediaId);
       setFeaturedImageUrl(res.url);
     } else {
-      toast.error(res.message);
+      swalError(res.message);
     }
   };
 
   const save = () => {
-    if (!title.trim()) return toast.error("Judul wajib diisi");
-    if (!slug.trim()) return toast.error("Slug wajib diisi");
-    if (!excerpt.trim()) return toast.error("Ringkasan wajib diisi");
-    if (!content.trim()) return toast.error("Isi artikel wajib diisi");
-    if (!categoryId) return toast.error("Kategori wajib dipilih");
+    if (!title.trim()) return swalError("Judul wajib diisi");
+    if (!slug.trim()) return swalError("Slug wajib diisi");
+    if (!excerpt.trim()) return swalError("Ringkasan wajib diisi");
+    if (!content.trim()) return swalError("Isi artikel wajib diisi");
+    if (!categoryId) return swalError("Kategori wajib dipilih");
     if (status === "SCHEDULED") {
-      if (!scheduledAt) return toast.error("Tanggal & jam jadwal wajib diisi");
+      if (!scheduledAt) return swalError("Tanggal & jam jadwal wajib diisi");
       if (new Date(scheduledAt).getTime() <= Date.now()) {
-        return toast.error("Jadwal harus di waktu yang akan datang");
+        return swalError("Jadwal harus di waktu yang akan datang");
       }
     }
 
@@ -134,7 +134,7 @@ export default function BlogFormPageClient({
           : await createBlogPostAction(payload);
 
       if (res.ok) {
-        toast.success(mode === "edit" ? "Artikel diperbarui" : "Artikel ditambahkan");
+        swalSuccess(mode === "edit" ? "Artikel diperbarui" : "Artikel ditambahkan");
         if (mode === "edit" && post) {
           // Tetap di halaman edit — kalau slug berubah, betulkan URL-nya saja.
           if (payload.slug !== post.slug) {
@@ -144,7 +144,7 @@ export default function BlogFormPageClient({
           router.push(`/${panel}/blog`);
         }
       } else {
-        toast.error(res.message);
+        swalError(res.message);
       }
     });
   };
