@@ -1,19 +1,36 @@
 "use client";
 
-import { useState } from "react";
-import { Save, Globe, Phone, Share2, Eye } from "lucide-react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { Save, Globe, Phone, Share2, Eye, Construction, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { COMPANY_INFO } from "@/lib/constants";
+import { updateMaintenanceModeAction } from "@/lib/actions/settings";
 
 /* ─── Halaman Pengaturan Admin ───
- * readOnly=true utk role ADMIN (bisa lihat semua tab, tapi gak bisa ubah/simpan). */
-export default function SettingsPageClient({ readOnly = false }: { readOnly?: boolean }) {
+ * readOnly=true utk role ADMIN (bisa lihat semua tab, tapi gak bisa ubah/simpan).
+ * Tab Umum/Kontak/Sosmed/SEO masih mock (belum disambung Prisma). Tab
+ * Maintenance beneran baca/simpan ke tabel Settings lewat server action. */
+export default function SettingsPageClient({
+  readOnly = false,
+  maintenanceMode: initialMaintenanceMode,
+  maintenanceMessage: initialMaintenanceMessage,
+}: {
+  readOnly?: boolean;
+  maintenanceMode: boolean;
+  maintenanceMessage: string;
+}) {
+  const router = useRouter();
   const [saved, setSaved] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [maintenanceMode, setMaintenanceMode] = useState(initialMaintenanceMode);
+  const [maintenanceMessage, setMaintenanceMessage] = useState(initialMaintenanceMessage);
 
   const handleSave = () => {
     setSaved(true);
@@ -27,6 +44,18 @@ export default function SettingsPageClient({ readOnly = false }: { readOnly?: bo
       {saved ? "✓ Tersimpan!" : "Simpan Perubahan"}
     </Button>
   );
+
+  const saveMaintenance = () => {
+    startTransition(async () => {
+      const res = await updateMaintenanceModeAction(maintenanceMode, maintenanceMessage);
+      if (res.ok) {
+        toast.success("Pengaturan maintenance disimpan");
+        router.refresh();
+      } else {
+        toast.error(res.message);
+      }
+    });
+  };
 
   return (
     <>
@@ -43,6 +72,7 @@ export default function SettingsPageClient({ readOnly = false }: { readOnly?: bo
             <TabsTrigger value="kontak" className="rounded-lg">Kontak</TabsTrigger>
             <TabsTrigger value="sosmed" className="rounded-lg">Sosial Media</TabsTrigger>
             <TabsTrigger value="seo" className="rounded-lg">SEO</TabsTrigger>
+            <TabsTrigger value="maintenance" className="rounded-lg">Maintenance</TabsTrigger>
           </TabsList>
 
           {/* ─── Tab Umum ─── */}
@@ -167,6 +197,60 @@ export default function SettingsPageClient({ readOnly = false }: { readOnly?: bo
                 />
               </div>
               {saveButton}
+            </div>
+          </TabsContent>
+
+          {/* ─── Tab Maintenance ─── */}
+          <TabsContent value="maintenance">
+            <div className="bg-white rounded-2xl border border-admin-line p-6 space-y-5 max-w-2xl">
+              <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                <Construction size={16} className="text-primary" />
+                Mode Maintenance
+              </h3>
+              <p className="text-sm text-gray-500">
+                Kalau dinyalakan, pengunjung publik cuma akan melihat halaman
+                &quot;Under Maintenance&quot; di semua halaman website. Anda yang login
+                sebagai Admin/Super Admin tetap bisa browsing situs seperti biasa.
+              </p>
+
+              {maintenanceMode && (
+                <div className="flex items-center gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                  <AlertTriangle size={16} className="flex-shrink-0" />
+                  Mode maintenance sedang AKTIF — pengunjung publik gak bisa akses website.
+                </div>
+              )}
+
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={maintenanceMode}
+                  disabled={readOnly || isPending}
+                  onCheckedChange={setMaintenanceMode}
+                  className="data-[state=checked]:bg-primary"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  {maintenanceMode ? "Aktif" : "Nonaktif"}
+                </span>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Pesan Tambahan (opsional)</Label>
+                <Textarea
+                  value={maintenanceMessage}
+                  onChange={(e) => setMaintenanceMessage(e.target.value)}
+                  placeholder="Kami sedang melakukan pemeliharaan sistem. Mohon coba lagi beberapa saat lagi."
+                  rows={3}
+                  className="rounded-xl resize-none"
+                  disabled={readOnly || isPending}
+                />
+                <p className="text-xs text-gray-400">Kosongkan untuk pakai pesan default.</p>
+              </div>
+
+              {!readOnly && (
+                <Button onClick={saveMaintenance} disabled={isPending} className="gap-2 rounded-xl">
+                  <Save size={15} />
+                  {isPending ? "Menyimpan..." : "Simpan Perubahan"}
+                </Button>
+              )}
             </div>
           </TabsContent>
         </Tabs>
