@@ -38,7 +38,14 @@ function slugify(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
-const STATUS_ITEMS: Record<string, string> = { DRAFT: "Draft", PUBLISHED: "Published" };
+const STATUS_ITEMS: Record<string, string> = { DRAFT: "Draft", PUBLISHED: "Published", SCHEDULED: "Jadwalkan" };
+
+/* Date -> value buat <input type="datetime-local"> ("yyyy-MM-ddTHH:mm"),
+ * dalam waktu lokal browser (bukan UTC, beda dari toISOString()). */
+function toDatetimeLocalValue(date: Date) {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
 
 export default function BlogFormPageClient({
   mode,
@@ -67,7 +74,10 @@ export default function BlogFormPageClient({
   const [tags, setTags] = useState<TagOption[]>(post?.tags.map((pt) => pt.tag) ?? []);
   const [featuredMediaId, setFeaturedMediaId] = useState<string | null>(post?.featuredMediaId ?? null);
   const [featuredImageUrl, setFeaturedImageUrl] = useState<string | null>(post?.featuredMedia?.url ?? null);
-  const [status, setStatus] = useState<"DRAFT" | "PUBLISHED">(post?.status ?? "DRAFT");
+  const [status, setStatus] = useState<"DRAFT" | "PUBLISHED" | "SCHEDULED">(post?.status ?? "DRAFT");
+  const [scheduledAt, setScheduledAt] = useState(
+    post?.scheduledAt ? toDatetimeLocalValue(new Date(post.scheduledAt)) : "",
+  );
   const [metaTitle, setMetaTitle] = useState(post?.metaTitle ?? "");
   const [metaDescription, setMetaDescription] = useState(post?.metaDescription ?? "");
 
@@ -96,6 +106,12 @@ export default function BlogFormPageClient({
     if (!excerpt.trim()) return toast.error("Ringkasan wajib diisi");
     if (!content.trim()) return toast.error("Isi artikel wajib diisi");
     if (!categoryId) return toast.error("Kategori wajib dipilih");
+    if (status === "SCHEDULED") {
+      if (!scheduledAt) return toast.error("Tanggal & jam jadwal wajib diisi");
+      if (new Date(scheduledAt).getTime() <= Date.now()) {
+        return toast.error("Jadwal harus di waktu yang akan datang");
+      }
+    }
 
     const payload: BlogPostFormData = {
       title,
@@ -105,6 +121,7 @@ export default function BlogFormPageClient({
       categoryId,
       featuredMediaId,
       status,
+      scheduledAt: status === "SCHEDULED" ? new Date(scheduledAt).toISOString() : null,
       metaTitle: metaTitle.trim() || null,
       metaDescription: metaDescription.trim() || null,
       tagIds: tags.map((t) => t.id),
@@ -246,7 +263,7 @@ export default function BlogFormPageClient({
               <Select
                 items={STATUS_ITEMS}
                 value={status}
-                onValueChange={(v) => v && setStatus(v as "DRAFT" | "PUBLISHED")}
+                onValueChange={(v) => v && setStatus(v as "DRAFT" | "PUBLISHED" | "SCHEDULED")}
               >
                 <SelectTrigger className="mt-1.5 h-10 w-full rounded-lg border-border/60 bg-background pl-3 font-medium hover:border-primary/40 focus-visible:border-primary focus-visible:ring-primary/20">
                   <SelectValue />
@@ -254,8 +271,22 @@ export default function BlogFormPageClient({
                 <SelectContent alignItemWithTrigger={false} align="start">
                   <SelectItem value="DRAFT">Draft</SelectItem>
                   <SelectItem value="PUBLISHED">Published</SelectItem>
+                  <SelectItem value="SCHEDULED">Jadwalkan</SelectItem>
                 </SelectContent>
               </Select>
+              {status === "SCHEDULED" && (
+                <div className="mt-2">
+                  <Input
+                    type="datetime-local"
+                    className="rounded-lg"
+                    value={scheduledAt}
+                    onChange={(e) => setScheduledAt(e.target.value)}
+                  />
+                  <p className="mt-1 text-[11px] text-gray-400">
+                    Artikel otomatis terbit di waktu ini (dicek tiap ±5 menit).
+                  </p>
+                </div>
+              )}
             </div>
 
             <div>

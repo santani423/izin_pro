@@ -43,50 +43,50 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  createdUsers    User[]          @relation("UserCreatedBy")
-  updatedUsers    User[]          @relation("UserUpdatedBy")
+  createdUsers    User[]     @relation("UserCreatedBy")
+  updatedUsers    User[]     @relation("UserUpdatedBy")
   sessions        Session[]
   accounts        Account[]
-  blogPosts       BlogPost[]      @relation("BlogPostAuthor")
-  uploadedMedia   Media[]         @relation("MediaUploader")
-  assignedInquiry Inquiry[]       @relation("InquiryAssignee")
+  blogPosts       BlogPost[] @relation("BlogPostAuthor")
+  uploadedMedia   Media[]    @relation("MediaUploader")
+  assignedInquiry Inquiry[]  @relation("InquiryAssignee")
   auditLogs       AuditLog[]
 
   // Jejak "dibuat oleh" / "diubah oleh" — satu pasang relasi per tabel konten
   // (nama relasi eksplisit krn 2 relasi berbeda ke User yg sama per tabel)
   createdCategories        Category[]        @relation("CategoryCreatedBy")
   updatedCategories        Category[]        @relation("CategoryUpdatedBy")
-  updatedBlogPosts         BlogPost[]         @relation("BlogPostUpdatedBy")
-  createdPages             Page[]             @relation("PageCreatedBy")
-  updatedPages             Page[]             @relation("PageUpdatedBy")
-  createdTeamMembers       TeamMember[]       @relation("TeamMemberCreatedBy")
-  updatedTeamMembers       TeamMember[]       @relation("TeamMemberUpdatedBy")
-  createdServiceCategories ServiceCategory[]  @relation("ServiceCategoryCreatedBy")
-  updatedServiceCategories ServiceCategory[]  @relation("ServiceCategoryUpdatedBy")
-  createdServices          Service[]          @relation("ServiceCreatedBy")
-  updatedServices          Service[]          @relation("ServiceUpdatedBy")
-  createdServicePackages   ServicePackage[]   @relation("ServicePackageCreatedBy")
-  updatedServicePackages   ServicePackage[]   @relation("ServicePackageUpdatedBy")
-  createdTestimonials      Testimonial[]      @relation("TestimonialCreatedBy")
-  updatedTestimonials      Testimonial[]      @relation("TestimonialUpdatedBy")
-  createdPartners          Partner[]          @relation("PartnerCreatedBy")
-  updatedPartners          Partner[]          @relation("PartnerUpdatedBy")
-  createdFaqs              Faq[]              @relation("FaqCreatedBy")
-  updatedFaqs              Faq[]              @relation("FaqUpdatedBy")
-  createdPromoBanners      PromoBanner[]      @relation("PromoBannerCreatedBy")
-  updatedPromoBanners      PromoBanner[]      @relation("PromoBannerUpdatedBy")
-  createdPromoPackages     PromoPackage[]     @relation("PromoPackageCreatedBy")
-  updatedPromoPackages     PromoPackage[]     @relation("PromoPackageUpdatedBy")
-  createdCtas              Cta[]              @relation("CtaCreatedBy")
-  updatedCtas              Cta[]              @relation("CtaUpdatedBy")
-  updatedInquiries         Inquiry[]          @relation("InquiryUpdatedBy")
-  createdOrders            Order[]            @relation("OrderCreatedBy")
-  updatedOrders            Order[]            @relation("OrderUpdatedBy")
-  createdMenus             Menu[]             @relation("MenuCreatedBy")
-  updatedMenus             Menu[]             @relation("MenuUpdatedBy")
-  createdMenuItems         MenuItem[]         @relation("MenuItemCreatedBy")
-  updatedMenuItems         MenuItem[]         @relation("MenuItemUpdatedBy")
-  updatedSettings          Settings[]         @relation("SettingsUpdatedBy")
+  updatedBlogPosts         BlogPost[]        @relation("BlogPostUpdatedBy")
+  createdPages             Page[]            @relation("PageCreatedBy")
+  updatedPages             Page[]            @relation("PageUpdatedBy")
+  createdTeamMembers       TeamMember[]      @relation("TeamMemberCreatedBy")
+  updatedTeamMembers       TeamMember[]      @relation("TeamMemberUpdatedBy")
+  createdServiceCategories ServiceCategory[] @relation("ServiceCategoryCreatedBy")
+  updatedServiceCategories ServiceCategory[] @relation("ServiceCategoryUpdatedBy")
+  createdServices          Service[]         @relation("ServiceCreatedBy")
+  updatedServices          Service[]         @relation("ServiceUpdatedBy")
+  createdServicePackages   ServicePackage[]  @relation("ServicePackageCreatedBy")
+  updatedServicePackages   ServicePackage[]  @relation("ServicePackageUpdatedBy")
+  createdTestimonials      Testimonial[]     @relation("TestimonialCreatedBy")
+  updatedTestimonials      Testimonial[]     @relation("TestimonialUpdatedBy")
+  createdPartners          Partner[]         @relation("PartnerCreatedBy")
+  updatedPartners          Partner[]         @relation("PartnerUpdatedBy")
+  createdFaqs              Faq[]             @relation("FaqCreatedBy")
+  updatedFaqs              Faq[]             @relation("FaqUpdatedBy")
+  createdPromoBanners      PromoBanner[]     @relation("PromoBannerCreatedBy")
+  updatedPromoBanners      PromoBanner[]     @relation("PromoBannerUpdatedBy")
+  createdPromoPackages     PromoPackage[]    @relation("PromoPackageCreatedBy")
+  updatedPromoPackages     PromoPackage[]    @relation("PromoPackageUpdatedBy")
+  createdCtas              Cta[]             @relation("CtaCreatedBy")
+  updatedCtas              Cta[]             @relation("CtaUpdatedBy")
+  updatedInquiries         Inquiry[]         @relation("InquiryUpdatedBy")
+  createdOrders            Order[]           @relation("OrderCreatedBy")
+  updatedOrders            Order[]           @relation("OrderUpdatedBy")
+  createdMenus             Menu[]            @relation("MenuCreatedBy")
+  updatedMenus             Menu[]            @relation("MenuUpdatedBy")
+  createdMenuItems         MenuItem[]        @relation("MenuItemCreatedBy")
+  updatedMenuItems         MenuItem[]        @relation("MenuItemUpdatedBy")
+  updatedSettings          Settings[]        @relation("SettingsUpdatedBy")
 
   @@map("users")
 }
@@ -144,6 +144,18 @@ enum ContentStatus {
   PUBLISHED
 }
 
+/**
+ * Status khusus BlogPost — beda enum dari ContentStatus (Page pakai
+ * ContentStatus) karena cuma Blog yang butuh SCHEDULED. Di MySQL, enum
+ * Prisma cuma nentuin ENUM(...) per kolom, jadi ini gak nyentuh kolom
+ * status di tabel `pages`.
+ */
+enum BlogPostStatus {
+  DRAFT
+  PUBLISHED
+  SCHEDULED
+}
+
 model Category {
   id          String     @id @default(cuid())
   name        String
@@ -160,38 +172,39 @@ model Category {
 }
 
 model BlogPost {
-  id              String        @id @default(cuid())
-  slug            String        @unique
+  id              String         @id @default(cuid())
+  slug            String         @unique
   title           String
   excerpt         String
-  content         String        @db.Text
+  content         String         @db.Text
   detailContent   Json?
   categoryId      String
-  category        Category      @relation(fields: [categoryId], references: [id])
+  category        Category       @relation(fields: [categoryId], references: [id])
   authorId        String
-  author          User          @relation("BlogPostAuthor", fields: [authorId], references: [id])
+  author          User           @relation("BlogPostAuthor", fields: [authorId], references: [id])
   featuredMediaId String?
-  featuredMedia   Media?        @relation("BlogPostFeaturedMedia", fields: [featuredMediaId], references: [id])
-  views           Int           @default(0) // mock nyimpen string ringkas ("1.2K") sbg tampilan, DB simpan angka mentah spy bisa di-increment & sort (pola sama dgn Media.sizeBytes)
-  status          ContentStatus @default(DRAFT)
+  featuredMedia   Media?         @relation("BlogPostFeaturedMedia", fields: [featuredMediaId], references: [id])
+  views           Int            @default(0) // mock nyimpen string ringkas ("1.2K") sbg tampilan, DB simpan angka mentah spy bisa di-increment & sort (pola sama dgn Media.sizeBytes)
+  status          BlogPostStatus @default(DRAFT)
   publishedAt     DateTime?
+  scheduledAt     DateTime? // cuma keisi kalau status SCHEDULED — target waktu auto-publish (lihat api/cron/publish-scheduled-posts)
   metaTitle       String?
   metaDescription String?
   deletedAt       DateTime?
   // authorId di atas sudah berfungsi sbg "dibuat oleh" — cuma perlu updatedBy
   updatedById     String?
-  updatedBy       User?         @relation("BlogPostUpdatedBy", fields: [updatedById], references: [id])
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  updatedBy       User?          @relation("BlogPostUpdatedBy", fields: [updatedById], references: [id])
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
   tags            PostTag[]
 
   @@map("blog_posts")
 }
 
 model Tag {
-  id   String    @id @default(cuid())
-  name String
-  slug String    @unique
+  id    String    @id @default(cuid())
+  name  String
+  slug  String    @unique
   posts PostTag[]
 
   @@map("tags")
@@ -231,47 +244,47 @@ model Page {
 // ====================================================
 
 model Media {
-  id             String   @id @default(cuid())
-  fileName       String
-  url            String // ukuran large/original
-  thumbnailUrl   String? // 150px, auto-generate via Sharp.js
-  mediumUrl      String? // 600px, auto-generate via Sharp.js
-  mimeType       String
-  sizeBytes      Int
-  width          Int?
-  height         Int?
-  uploadedById   String?
-  uploadedBy     User?    @relation("MediaUploader", fields: [uploadedById], references: [id])
-  createdAt      DateTime @default(now())
+  id           String   @id @default(cuid())
+  fileName     String
+  url          String // ukuran large/original
+  thumbnailUrl String? // 150px, auto-generate via Sharp.js
+  mediumUrl    String? // 600px, auto-generate via Sharp.js
+  mimeType     String
+  sizeBytes    Int
+  width        Int?
+  height       Int?
+  uploadedById String?
+  uploadedBy   User?    @relation("MediaUploader", fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
 
-  blogPostsFeatured BlogPost[]     @relation("BlogPostFeaturedMedia")
-  teamMembers       TeamMember[]   @relation("TeamMemberPhoto")
-  services          Service[]      @relation("ServiceFeaturedMedia")
-  testimonials      Testimonial[]  @relation("TestimonialPhoto")
-  partners          Partner[]      @relation("PartnerLogo")
+  blogPostsFeatured BlogPost[]    @relation("BlogPostFeaturedMedia")
+  teamMembers       TeamMember[]  @relation("TeamMemberPhoto")
+  services          Service[]     @relation("ServiceFeaturedMedia")
+  testimonials      Testimonial[] @relation("TestimonialPhoto")
+  partners          Partner[]     @relation("PartnerLogo")
 
   @@map("media")
 }
 
 model TeamMember {
-  id            String    @id @default(cuid())
-  name          String
-  role          String
-  department    String?
-  email         String?
-  phone         String?
-  location      String?
-  photoMediaId  String?
-  photoMedia    Media?    @relation("TeamMemberPhoto", fields: [photoMediaId], references: [id])
-  isActive      Boolean   @default(true)
-  sortOrder     Int       @default(0)
-  deletedAt     DateTime?
-  createdById   String?
-  createdBy     User?     @relation("TeamMemberCreatedBy", fields: [createdById], references: [id])
-  updatedById   String?
-  updatedBy     User?     @relation("TeamMemberUpdatedBy", fields: [updatedById], references: [id])
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           String    @id @default(cuid())
+  name         String
+  role         String
+  department   String?
+  email        String?
+  phone        String?
+  location     String?
+  photoMediaId String?
+  photoMedia   Media?    @relation("TeamMemberPhoto", fields: [photoMediaId], references: [id])
+  isActive     Boolean   @default(true)
+  sortOrder    Int       @default(0)
+  deletedAt    DateTime?
+  createdById  String?
+  createdBy    User?     @relation("TeamMemberCreatedBy", fields: [createdById], references: [id])
+  updatedById  String?
+  updatedBy    User?     @relation("TeamMemberUpdatedBy", fields: [updatedById], references: [id])
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@map("team_members")
 }
@@ -300,15 +313,15 @@ enum CtaLocation {
 }
 
 model ServiceCategory {
-  id          String    @id @default(cuid())
-  slug        String    @unique
+  id          String   @id @default(cuid())
+  slug        String   @unique
   name        String
   createdById String?
-  createdBy   User?     @relation("ServiceCategoryCreatedBy", fields: [createdById], references: [id])
+  createdBy   User?    @relation("ServiceCategoryCreatedBy", fields: [createdById], references: [id])
   updatedById String?
-  updatedBy   User?     @relation("ServiceCategoryUpdatedBy", fields: [updatedById], references: [id])
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  updatedBy   User?    @relation("ServiceCategoryUpdatedBy", fields: [updatedById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   services     Service[]
   testimonials Testimonial[]
@@ -398,19 +411,19 @@ model Testimonial {
 }
 
 model Partner {
-  id           String   @id @default(cuid())
-  name         String
-  logoMediaId  String
-  logoMedia    Media    @relation("PartnerLogo", fields: [logoMediaId], references: [id])
-  isActive     Boolean  @default(true)
-  deletedAt    DateTime? // soft delete
-  sortOrder    Int      @default(0)
-  createdById  String?
-  createdBy    User?    @relation("PartnerCreatedBy", fields: [createdById], references: [id])
-  updatedById  String?
-  updatedBy    User?    @relation("PartnerUpdatedBy", fields: [updatedById], references: [id])
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String    @id @default(cuid())
+  name        String
+  logoMediaId String
+  logoMedia   Media     @relation("PartnerLogo", fields: [logoMediaId], references: [id])
+  isActive    Boolean   @default(true)
+  deletedAt   DateTime? // soft delete
+  sortOrder   Int       @default(0)
+  createdById String?
+  createdBy   User?     @relation("PartnerCreatedBy", fields: [createdById], references: [id])
+  updatedById String?
+  updatedBy   User?     @relation("PartnerUpdatedBy", fields: [updatedById], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@map("partners")
 }
@@ -662,13 +675,13 @@ model PageView {
 }
 
 model DailyStat {
-  id              String   @id @default(cuid())
-  date            DateTime @unique
-  totalViews      Int      @default(0)
-  uniqueVisitors  Int      @default(0)
-  bounceRate      Float?
-  avgDuration     Float?
-  createdAt       DateTime @default(now())
+  id             String   @id @default(cuid())
+  date           DateTime @unique
+  totalViews     Int      @default(0)
+  uniqueVisitors Int      @default(0)
+  bounceRate     Float?
+  avgDuration    Float?
+  createdAt      DateTime @default(now())
 
   @@map("daily_stats")
 }

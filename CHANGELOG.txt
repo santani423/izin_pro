@@ -5,6 +5,56 @@ CHANGELOG — IzinPro CMS Project
 Format: [YYYY-MM-DD] Versi — Deskripsi
 ====================================================
 
+[2026-07-26] v2.8.7 — Scheduled Post untuk Blog
+----------------------------------------------------
+STATUS   : DONE
+PROJECT  : izinpro-cms/
+SUMBER   : Bagian dari batch 8 item perbaikan user (2026-07-25) — bikin
+           fitur jadwalkan artikel blog biar otomatis terbit di waktu
+           tertentu tanpa perlu buka admin manual pas jamnya
+
+DIUBAH:
+  ~ prisma/schema.prisma + migration 20260726090000_add_blog_scheduled_
+    post: enum baru `BlogPostStatus` (DRAFT/PUBLISHED/SCHEDULED) khusus
+    BlogPost.status (Page.status tetap pakai ContentStatus lama, gak
+    kena efek — di MySQL enum Prisma cuma nentuin per-kolom, bukan tipe
+    bersama). Tambah kolom `scheduledAt` (nullable)
+  ~ src/lib/actions/blog.ts: BlogPostFormData terima status SCHEDULED +
+    scheduledAt; validasi wajib diisi & harus di masa depan;
+    create/updateBlogPostAction nyimpen scheduledAt & nge-null-in
+    publishedAt selama masih SCHEDULED
+  ~ src/app/api/cron/publish-scheduled-posts/route.ts (BARU): dicek
+    Vercel Cron tiap 5 menit, cari semua BlogPost SCHEDULED yg
+    scheduledAt-nya udah lewat, flip ke PUBLISHED (publishedAt = jadwal
+    aslinya, bukan jam cron jalan, biar presisi). Dilindungi header
+    Authorization: Bearer $CRON_SECRET (default-deny kalau env var-nya
+    kosong)
+  ~ vercel.ts (BARU) + devDependency @vercel/config: definisi cron
+    "*/5 * * * *" ke endpoint di atas — pengganti vercel.json lama
+    (sesuai rekomendasi platform terbaru)
+  ~ .env / .env.example: tambah CRON_SECRET
+  ~ src/app/[panel]/blog/BlogFormPageClient.tsx: opsi status "Jadwalkan"
+    + input tanggal/jam (datetime-local) yang muncul kalau dipilih
+  ~ src/app/[panel]/blog/BlogPageClient.tsx: badge "Terjadwal" (biru,
+    beda dari Draft/Published) buat artikel SCHEDULED, gak bisa di-toggle
+    klik langsung kayak Draft/Published (harus lewat halaman Edit biar
+    gak ambigu ubah apanya)
+CATATAN:
+  - Artikel publik (blog-data.ts) semuanya udah filter status:"PUBLISHED"
+    dari awal, jadi SCHEDULED otomatis gak nongol duluan sebelum waktunya
+    — gak perlu ubah query publik sama sekali
+  - PENTING kalau di-deploy: CRON_SECRET wajib diset di Vercel project
+    settings (Environment Variables), kalau enggak endpoint cron-nya
+    nolak semua request (default-deny)
+  - Kalau project masih di plan Vercel Hobby, cron cuma diizinin jalan
+    max 1x/hari (bukan tiap 5 menit yg diminta vercel.ts) — artikel
+    terjadwal baru beneran terbit pas cron harian itu jalan, bisa telat
+    dari jadwal aslinya. Perlu plan Pro biar interval 5 menit ini beneran
+    dipakai
+  - @vercel/config sempat kasih warning EBADENGINE pas install (butuh
+    Node >=20.18.1, lokal masih v20.9.0) — gak fatal, cuma warning,
+    tapi worth diinget kalau nanti ada masalah pas build/deploy
+
 [2026-07-26] v2.8.6 — Under Maintenance Mode
 ----------------------------------------------------
 STATUS   : DONE
@@ -48,7 +98,7 @@ CATATAN PENTING (drift DB dev lokal — masih berlaku, BELUM diberesin):
            gak ada perubahan kode — lihat requirePanelAccess/permissions.ts)
   DONE  3. Sambungkan Media Library ke Prisma (lihat v2.8.5)
   DONE  4. Under Maintenance mode (lihat v2.8.6 di atas)
-  TODO  5. Scheduled Post untuk Blog
+  DONE  5. Scheduled Post untuk Blog (lihat v2.8.7 di atas)
   TODO  6. Tambah deletedById di tabel soft-delete
   TODO  7. Ganti notifikasi CRUD ke SweetAlert2 di semua menu admin
   TODO  8. Fitur lupa password / reset via email (SMTP milik user)

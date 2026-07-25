@@ -278,19 +278,33 @@ export default function BlogPageClient({
                     {post.author?.name ?? "-"}
                   </td>
                   <td className="px-5 py-3.5">
-                    <button
-                      onClick={() => toggleStatus(post)}
-                      disabled={isPending}
-                      className={cn(
-                        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-opacity hover:opacity-80 disabled:pointer-events-none disabled:opacity-50",
-                        post.status === "PUBLISHED"
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "bg-gray-100 text-gray-500",
-                      )}
-                    >
-                      <span className={cn("w-1.5 h-1.5 rounded-full", post.status === "PUBLISHED" ? "bg-emerald-500" : "bg-gray-400")} />
-                      {post.status === "PUBLISHED" ? "Published" : "Draft"}
-                    </button>
+                    {post.status === "SCHEDULED" ? (
+                      <span
+                        title={
+                          post.scheduledAt
+                            ? `Terbit otomatis ${new Date(post.scheduledAt).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })} — ubah lewat Edit`
+                            : undefined
+                        }
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-sky-50 text-sky-700"
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
+                        Terjadwal
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => toggleStatus(post)}
+                        disabled={isPending}
+                        className={cn(
+                          "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-opacity hover:opacity-80 disabled:pointer-events-none disabled:opacity-50",
+                          post.status === "PUBLISHED"
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-gray-100 text-gray-500",
+                        )}
+                      >
+                        <span className={cn("w-1.5 h-1.5 rounded-full", post.status === "PUBLISHED" ? "bg-emerald-500" : "bg-gray-400")} />
+                        {post.status === "PUBLISHED" ? "Published" : "Draft"}
+                      </button>
+                    )}
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-end gap-1">

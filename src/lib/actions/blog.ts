@@ -54,7 +54,8 @@ export interface BlogPostFormData {
   content: string;
   categoryId: string;
   featuredMediaId: string | null;
-  status: "DRAFT" | "PUBLISHED";
+  status: "DRAFT" | "PUBLISHED" | "SCHEDULED";
+  scheduledAt: string | null; // ISO string, wajib diisi kalau status SCHEDULED
   metaTitle: string | null;
   metaDescription: string | null;
   tagIds: string[];
@@ -77,6 +78,11 @@ function validateBlogPostData(data: BlogPostFormData): string | null {
   if (!data.excerpt.trim()) return "Ringkasan wajib diisi.";
   if (!data.content.trim()) return "Isi artikel wajib diisi.";
   if (!data.categoryId) return "Kategori wajib dipilih.";
+  if (data.status === "SCHEDULED") {
+    if (!data.scheduledAt) return "Tanggal & jam jadwal wajib diisi.";
+    if (Number.isNaN(new Date(data.scheduledAt).getTime())) return "Tanggal & jam jadwal tidak valid.";
+    if (new Date(data.scheduledAt).getTime() <= Date.now()) return "Jadwal harus di waktu yang akan datang.";
+  }
   return null;
 }
 
@@ -101,6 +107,7 @@ export async function createBlogPostAction(data: BlogPostFormData): Promise<Acti
           featuredMediaId: data.featuredMediaId,
           status: data.status,
           publishedAt: data.status === "PUBLISHED" ? new Date() : null,
+          scheduledAt: data.status === "SCHEDULED" ? new Date(data.scheduledAt!) : null,
           metaTitle: data.metaTitle,
           metaDescription: data.metaDescription,
           authorId: session.user.id,
@@ -135,9 +142,12 @@ export async function updateBlogPostAction(id: string, data: BlogPostFormData): 
     }
 
     /* publishedAt cuma di-set sekali (pertama kali berstatus PUBLISHED) —
-     * republish gak boleh reset tanggal terbit aslinya. */
+     * republish gak boleh reset tanggal terbit aslinya. scheduledAt cuma
+     * relevan pas status SCHEDULED, selain itu selalu dikosongkan lagi
+     * (mis. batal jadwal balik ke Draft, atau publish manual duluan). */
     const publishedAt =
       data.status === "PUBLISHED" ? current.publishedAt ?? new Date() : current.publishedAt;
+    const scheduledAt = data.status === "SCHEDULED" ? new Date(data.scheduledAt!) : null;
 
     const post = await prisma.$transaction(async (tx) => {
       const updated = await tx.blogPost.update({
@@ -151,6 +161,7 @@ export async function updateBlogPostAction(id: string, data: BlogPostFormData): 
           featuredMediaId: data.featuredMediaId,
           status: data.status,
           publishedAt,
+          scheduledAt,
           metaTitle: data.metaTitle,
           metaDescription: data.metaDescription,
           updatedById: session.user.id,
