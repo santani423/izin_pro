@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import dynamic from "next/dynamic";
-import HeroSection from "@/components/sections/HeroSection";
+import HeroSection, { DEFAULT_HERO_CONTENT, type HeroContentData } from "@/components/sections/HeroSection";
 import ServicesSection from "@/components/sections/ServicesSection";
 import PromoSection from "@/components/sections/PromoSection";
 import AboutSection from "@/components/sections/AboutSection";
 import { getPublicTestimonials } from "@/lib/testimonials-data";
 import { getPublicBlogPosts } from "@/lib/blog-data";
+import { prisma } from "@/lib/db";
 
 /* ─── Lazy load sections below the fold ─── */
 const ArticlesSection = dynamic(() => import("@/components/sections/ArticlesSection"));
@@ -25,15 +26,37 @@ export const metadata: Metadata = {
   },
 };
 
+/* Baris HeroContent selalu ada dari seed/migration — findUnique (bukan
+ * findUniqueOrThrow) + fallback ke DEFAULT_HERO_CONTENT tetap dipasang biar
+ * beranda gak pernah crash/kosong kalau baris itu somehow hilang. */
+async function getHeroContent(): Promise<HeroContentData> {
+  const hero = await prisma.heroContent.findUnique({ where: { id: "1" } });
+  if (!hero) return DEFAULT_HERO_CONTENT;
+  return {
+    titleLine1: hero.titleLine1,
+    titleHighlight: hero.titleHighlight,
+    titleLine3: hero.titleLine3,
+    subtitle: hero.subtitle,
+    highlights: hero.highlights as { title: string; subtitle: string }[],
+    ctaPrimaryLabel: hero.ctaPrimaryLabel,
+    ctaSecondaryLabel: hero.ctaSecondaryLabel,
+    ctaSecondaryHref: hero.ctaSecondaryHref,
+    imageUrl: hero.heroImageUrl,
+  };
+}
+
 /* ─── Halaman Beranda (desain baru) ─── */
 export default async function HomePage() {
-  const { textTestimonials, videoTestimonials } = await getPublicTestimonials();
+  const [heroContent, { textTestimonials, videoTestimonials }] = await Promise.all([
+    getHeroContent(),
+    getPublicTestimonials(),
+  ]);
   const blogPosts = (await getPublicBlogPosts()).slice(0, 4);
 
   return (
     <>
       {/* 1. Hero */}
-      <HeroSection />
+      <HeroSection content={heroContent} />
 
       {/* 2. Daftar Layanan */}
       <ServicesSection />

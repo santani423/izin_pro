@@ -23,6 +23,8 @@ export default async function AdminSettingsPage({
       readOnly={role === "ADMIN"}
       maintenanceMode={settings?.maintenanceMode ?? false}
       maintenanceMessage={settings?.maintenanceMessage ?? ""}
+      appLogoUrl={settings?.appLogoUrl ?? null}
+      faviconUrl={settings?.faviconUrl ?? null}
     />
   );
 }

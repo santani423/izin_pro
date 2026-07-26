@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Save, Globe, Phone, Share2, Eye, Construction, AlertTriangle } from "lucide-react";
+import { Save, Globe, Phone, Share2, Eye, Construction, AlertTriangle, ImagePlus, RefreshCcw } from "lucide-react";
 import { swalSuccess, swalError } from "@/lib/swal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { COMPANY_INFO } from "@/lib/constants";
-import { updateMaintenanceModeAction } from "@/lib/actions/settings";
+import { saveBrandingSettingsAction, updateMaintenanceModeAction } from "@/lib/actions/settings";
+import { DEFAULT_LOGO_URL, DEFAULT_FAVICON_URL } from "@/lib/branding-constants";
 
 /* ─── Halaman Pengaturan Admin ───
  * readOnly=true utk role ADMIN (bisa lihat semua tab, tapi gak bisa ubah/simpan).
@@ -21,16 +23,39 @@ export default function SettingsPageClient({
   readOnly = false,
   maintenanceMode: initialMaintenanceMode,
   maintenanceMessage: initialMaintenanceMessage,
+  appLogoUrl: initialAppLogoUrl,
+  faviconUrl: initialFaviconUrl,
 }: {
   readOnly?: boolean;
   maintenanceMode: boolean;
   maintenanceMessage: string;
+  appLogoUrl: string | null;
+  faviconUrl: string | null;
 }) {
   const router = useRouter();
   const [saved, setSaved] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [maintenanceMode, setMaintenanceMode] = useState(initialMaintenanceMode);
   const [maintenanceMessage, setMaintenanceMessage] = useState(initialMaintenanceMessage);
+  const [appLogoUrl, setAppLogoUrl] = useState(initialAppLogoUrl);
+  const [faviconUrl, setFaviconUrl] = useState(initialFaviconUrl);
+  const [appLogoFile, setAppLogoFile] = useState<File | null>(null);
+  const [faviconFile, setFaviconFile] = useState<File | null>(null);
+  const [resetLogo, setResetLogo] = useState(false);
+  const [resetFavicon, setResetFavicon] = useState(false);
+  const isBrandingDirty = Boolean(appLogoFile || faviconFile || resetLogo || resetFavicon);
+
+  const logoPreview = useMemo(() => {
+    if (appLogoFile) return URL.createObjectURL(appLogoFile);
+    if (appLogoUrl && !resetLogo) return appLogoUrl;
+    return DEFAULT_LOGO_URL;
+  }, [appLogoFile, appLogoUrl, resetLogo]);
+
+  const faviconPreview = useMemo(() => {
+    if (faviconFile) return URL.createObjectURL(faviconFile);
+    if (faviconUrl && !resetFavicon) return faviconUrl;
+    return DEFAULT_FAVICON_URL;
+  }, [faviconFile, faviconUrl, resetFavicon]);
 
   const handleSave = () => {
     setSaved(true);
@@ -47,12 +72,50 @@ export default function SettingsPageClient({
 
   const saveMaintenance = () => {
     startTransition(async () => {
-      const res = await updateMaintenanceModeAction(maintenanceMode, maintenanceMessage);
-      if (res.ok) {
-        swalSuccess("Pengaturan maintenance disimpan");
-        router.refresh();
-      } else {
-        swalError(res.message);
+      try {
+        const res = await updateMaintenanceModeAction(maintenanceMode, maintenanceMessage);
+        if (res.ok) {
+          swalSuccess("Pengaturan maintenance disimpan");
+          router.refresh();
+        } else {
+          swalError(res.message);
+        }
+      } catch {
+        // Request ke server gak sampai selesai (mis. koneksi kepotong) — tanpa
+        // catch ini React nelen error-nya diem-diem & user gak liat apa-apa.
+        swalError("Gagal menyimpan pengaturan. Cek koneksi lalu coba lagi.");
+      }
+    });
+  };
+
+  const saveBranding = () => {
+    startTransition(async () => {
+      try {
+        const formData = new FormData();
+        if (appLogoFile) formData.set("appLogo", appLogoFile);
+        if (faviconFile) formData.set("favicon", faviconFile);
+        if (resetLogo) formData.set("resetLogo", "true");
+        if (resetFavicon) formData.set("resetFavicon", "true");
+
+        const res = await saveBrandingSettingsAction(formData);
+        if (res.ok) {
+          swalSuccess("Logo aplikasi berhasil disimpan");
+          setAppLogoUrl(res.appLogoUrl);
+          setFaviconUrl(res.faviconUrl);
+          setAppLogoFile(null);
+          setFaviconFile(null);
+          setResetLogo(false);
+          setResetFavicon(false);
+          router.refresh();
+        } else {
+          swalError(res.message);
+        }
+      } catch {
+        // Sama kayak saveMaintenance: request bisa gagal sebelum server
+        // action-nya sempat balikin { ok, message } (mis. koneksi kepotong
+        // di tengah upload) — tanpa catch ini, user gak liat feedback apa pun
+        // walau file logo/favicon udah kadung ke-upload ke disk.
+        swalError("Gagal menyimpan logo/favicon. Cek koneksi lalu coba lagi.");
       }
     });
   };
@@ -82,6 +145,91 @@ export default function SettingsPageClient({
                 <Globe size={16} className="text-primary" />
                 Informasi Website
               </h3>
+              <div className="space-y-1.5">
+                <Label>Logo Aplikasi</Label>
+                <div className="flex flex-col gap-3 rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-white">
+                      <Image src={logoPreview} alt="Preview logo aplikasi" width={64} height={64} unoptimized className="h-full w-full object-contain" />
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      <p className="font-medium">Unggah logo yang akan dipakai di header, sidebar, login, dan landing page.</p>
+                      <p className="text-xs text-gray-400">Format PNG, JPG, JPEG, SVG, WebP. Maksimal 2MB.</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                      <ImagePlus size={15} />
+                      Pilih File
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] ?? null;
+                          if (file) {
+                            setAppLogoFile(file);
+                            setResetLogo(false);
+                          }
+                        }}
+                        disabled={readOnly || isPending}
+                      />
+                    </label>
+                    <Button type="button" variant="outline" className="gap-2 rounded-xl" onClick={() => { setResetLogo(true); setAppLogoFile(null); }} disabled={readOnly || isPending}>
+                      <RefreshCcw size={15} />
+                      Reset ke default
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Favicon</Label>
+                <div className="flex flex-col gap-3 rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-white">
+                      <Image src={faviconPreview} alt="Preview favicon" width={48} height={48} unoptimized className="h-full w-full object-contain" />
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      <p className="font-medium">Ikon browser yang muncul di tab halaman.</p>
+                      <p className="text-xs text-gray-400">Format PNG, JPG, JPEG, SVG, WebP. Maksimal 2MB.</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                      <ImagePlus size={15} />
+                      Pilih File
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] ?? null;
+                          if (file) {
+                            setFaviconFile(file);
+                            setResetFavicon(false);
+                          }
+                        }}
+                        disabled={readOnly || isPending}
+                      />
+                    </label>
+                    <Button type="button" variant="outline" className="gap-2 rounded-xl" onClick={() => { setResetFavicon(true); setFaviconFile(null); }} disabled={readOnly || isPending}>
+                      <RefreshCcw size={15} />
+                      Reset ke default
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              {!readOnly && (
+                <Button
+                  type="button"
+                  onClick={saveBranding}
+                  disabled={isPending || !isBrandingDirty}
+                  className="gap-2 rounded-xl"
+                >
+                  <Save size={15} />
+                  {isPending ? "Menyimpan..." : "Simpan Logo & Favicon"}
+                </Button>
+              )}
               <div className="space-y-1.5">
                 <Label>Nama Perusahaan</Label>
                 <Input defaultValue={COMPANY_INFO.name} className="rounded-xl" disabled={readOnly} />

@@ -96,6 +96,7 @@ model User {
   updatedMenuItems         MenuItem[]        @relation("MenuItemUpdatedBy")
   deletedMenuItems         MenuItem[]        @relation("MenuItemDeletedBy")
   updatedSettings          Settings[]        @relation("SettingsUpdatedBy")
+  updatedHeroContents      HeroContent[]     @relation("HeroContentUpdatedBy")
 
   @@map("users")
 }
@@ -654,6 +655,10 @@ model Settings {
   seoDescription String @db.Text
   seoKeywords    String
 
+  // Branding / identitas visual
+  appLogoUrl   String?
+  faviconUrl   String?
+
   // Tab Maintenance — nyala = pengunjung publik cuma liat halaman
   // "Under Maintenance", ADMIN/SUPER_ADMIN tetap bisa browsing situs asli
   maintenanceMode    Boolean @default(false)
@@ -665,6 +670,36 @@ model Settings {
   updatedAt   DateTime @updatedAt
 
   @@map("settings")
+}
+
+// Singleton teks Hero (bagian paling atas beranda) — gambar & kartu statistik
+// masih hardcode di komponen (HeroSection.tsx), belum di scope ini.
+model HeroContent {
+  id String @id @default("1")
+
+  titleLine1     String
+  titleHighlight String // baris tengah judul, dirender warna primary
+  titleLine3     String
+  subtitle       String @db.Text
+
+  // 3 badge highlight di bawah subtitle — [{ title, subtitle }, ...] x3.
+  // Ikon tiap badge tetap hardcode di komponen sesuai urutan index.
+  highlights Json
+
+  ctaPrimaryLabel   String // href tombol ini tetap ikut WHATSAPP_URL, cuma labelnya yg bisa diubah
+  ctaSecondaryLabel String
+  ctaSecondaryHref  String
+
+  // Gambar kolom kanan Hero — null = pakai kartu gradient placeholder bawaan
+  // (lihat DEFAULT_HERO_CONTENT / fallback di HeroSection.tsx)
+  heroImageUrl String?
+
+  // Singleton, gak pernah "dibuat" lewat admin (selalu ada dari seed) -> gak ada createdBy
+  updatedById String?
+  updatedBy   User?    @relation("HeroContentUpdatedBy", fields: [updatedById], references: [id])
+  updatedAt   DateTime @updatedAt
+
+  @@map("hero_content")
 }
 
 // ====================================================

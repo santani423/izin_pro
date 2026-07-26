@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Eye, EyeOff, Lock, Mail, ArrowRight } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { getRolePanel } from "@/lib/permissions";
+import { DEFAULT_LOGO_URL } from "@/lib/branding-constants";
 import type { Role } from "@prisma/client";
 
 /* ─── Akun Super Admin hasil `npx prisma db seed` (dev lokal) ─── */
@@ -19,6 +21,14 @@ export default function LoginFormClient() {
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [logoUrl, setLogoUrl] = useState(DEFAULT_LOGO_URL);
+
+  useEffect(() => {
+    fetch("/api/branding")
+      .then((res) => res.json())
+      .then((data) => setLogoUrl(data.logoUrl || DEFAULT_LOGO_URL))
+      .catch(() => setLogoUrl(DEFAULT_LOGO_URL));
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,11 +66,9 @@ export default function LoginFormClient() {
 
           {/* Logo */}
           <div className="flex items-center gap-3 mb-8">
-            <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary text-white shadow-sm flex-shrink-0">
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M15 4.5L7 13.5L3 9" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </span>
+            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+              <Image src={logoUrl} alt="Logo aplikasi" width={48} height={48} unoptimized className="h-full w-full object-contain" />
+            </div>
             <div>
               <div className="font-bold text-gray-900 leading-none">IzinPro</div>
               <div className="text-xs text-gray-400 mt-0.5">Admin Panel</div>

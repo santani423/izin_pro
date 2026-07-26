@@ -19,6 +19,7 @@ const PAGE_META: Record<string, { title: string; subtitle?: string }> = {
   "/menu": { title: "Menu", subtitle: "Kelola menu navigasi header dan footer website" },
   "/blog": { title: "Blog & Artikel", subtitle: "Kelola semua artikel dan konten blog" },
   "/media": { title: "Media Library", subtitle: "Kelola semua gambar dan file" },
+  "/beranda": { title: "Hero Beranda", subtitle: "Kelola judul, subjudul, dan teks bagian paling atas beranda" },
   "/layanan": { title: "Layanan", subtitle: "Kelola layanan yang ditampilkan di website" },
   "/tim": { title: "Tim", subtitle: "Kelola profil anggota tim IzinPro" },
   "/testimoni": { title: "Testimoni", subtitle: "Kelola testimoni klien yang ditampilkan di website" },

@@ -10,6 +10,8 @@ import { ADMIN_NAV_GROUPS } from "@/lib/admin-nav";
 import { useAdminSidebar } from "@/contexts/AdminSidebarContext";
 import { useSession } from "@/lib/auth-client";
 import { canAccessAdminRoute } from "@/lib/permissions";
+import { useEffect, useState } from "react";
+import { DEFAULT_LOGO_URL } from "@/lib/branding-constants";
 import type { Role } from "@prisma/client";
 
 /* ─── Sidebar Admin Panel ─── */
@@ -20,11 +22,19 @@ export default function AdminSidebar() {
   // useSession() client-side gak nge-infer custom additionalFields (role) di
   // tipenya walau datanya beneran ada di response — cast manual di sini.
   const role = (session?.user as { role?: Role } | undefined)?.role;
+  const [logoUrl, setLogoUrl] = useState(DEFAULT_LOGO_URL);
   // Panel (admin/editor/author) diambil dari segmen pertama URL yg aktif —
   // bukan dari role — supaya link sidebar selalu ikut prefix yg lagi dipakai.
   const panel = pathname.split("/")[1] || "admin";
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
+
+  useEffect(() => {
+    fetch("/api/branding")
+      .then((res) => res.json())
+      .then((data) => setLogoUrl(data.logoUrl || DEFAULT_LOGO_URL))
+      .catch(() => setLogoUrl(DEFAULT_LOGO_URL));
+  }, []);
 
   /* Sembunyikan menu yg gak boleh diakses role ini — belum tau role (session
    * lom kebaca) -> tampilin semua dulu spy gak "flash" kosong, page.tsx tetap
@@ -63,11 +73,12 @@ export default function AdminSidebar() {
       <div className={cn("items-center justify-between py-8 px-5", collapsed ? "flex lg:hidden" : "flex")}>
         <Link href="/" onClick={close} className="flex justify-start">
           <Image
-            src="/images/izinpro-logo.png"
+            src={logoUrl}
             alt={COMPANY_INFO.name}
             width={150}
             height={40}
             priority
+            unoptimized
             className="h-8 w-auto"
           />
         </Link>

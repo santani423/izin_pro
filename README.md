@@ -1,46 +1,111 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CMS Corporate IzinPro
 
-## Getting Started
+Aplikasi CMS corporate berbasis Next.js, Prisma, Better Auth, dan MySQL/MariaDB untuk panel admin serta landing page publik.
 
-First, run the development server:
+## Prasyarat
+
+Sebelum memulai, pastikan perangkat sudah memiliki:
+
+- Node.js 20+ (disarankan LTS)
+- npm 10+
+- MySQL/MariaDB lokal yang sudah berjalan
+- SMTP server untuk fitur reset password (opsional untuk tahap awal, tetapi disarankan)
+
+## 1. Clone dan install dependensi
+
+```bash
+git clone <repo-url>
+cd cms-corporate
+npm install
+```
+
+## 2. Siapkan file environment
+
+Buat file `.env` berdasarkan template berikut:
+
+```bash
+cp .env.example .env
+```
+
+Isi nilai di dalam `.env` dengan konfigurasi lokal Anda:
+
+```env
+DATABASE_URL="mysql://root:password@127.0.0.1:3306/izinpro"
+BETTER_AUTH_SECRET="ganti-dengan-string-random"
+BETTER_AUTH_URL="http://localhost:3000"
+NEXT_PUBLIC_BETTER_AUTH_URL="http://localhost:3000"
+
+SMTP_HOST="smtp.example.com"
+SMTP_PORT="587"
+SMTP_SECURE="false"
+SMTP_USER="your-email@example.com"
+SMTP_PASS="your-password"
+SMTP_FROM="your-email@example.com"
+
+CRON_SECRET="ganti-dengan-string-random"
+```
+
+Catatan:
+- Pastikan database `izinpro` sudah ada di MySQL/MariaDB sebelum menjalankan migrasi.
+- Jika Anda memakai XAMPP, biasanya MySQL berjalan di `127.0.0.1:3306`.
+- Untuk pengembangan lokal, nilai SMTP bisa disamakan dengan akun mail provider atau layanan seperti Mailtrap.
+
+## 3. Siapkan database
+
+Jalankan perintah berikut untuk generate client Prisma, membuat tabel, dan menyiapkan data awal:
+
+```bash
+npx prisma generate
+npx prisma migrate dev
+npx prisma db seed
+```
+
+Perintah `db seed` akan membuat akun admin awal untuk login ke panel admin.
+
+Akun default yang dibuat oleh seed:
+
+- Email: `admin@izinpro.co.id`
+- Password: `admin123`
+
+## 4. Jalankan aplikasi di mode development
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Buka browser ke:
 
-## Database & Auth (dev lokal)
+- Frontend publik: http://localhost:3000
+- Login admin: http://localhost:3000/admin/login
 
-Backend pakai Prisma + MariaDB + Better Auth (lihat `CHANGELOG.txt` v2.0.0 utk detail).
+## 5. Build untuk produksi
 
-1. Jalankan MariaDB lokal (mis. via XAMPP Control Panel → Start MySQL), lalu buat database `izinpro`.
-2. Copy `.env.example` → `.env`, isi `DATABASE_URL` & `BETTER_AUTH_SECRET`.
-3. `npx prisma migrate dev` — bikin/sinkronkan seluruh tabel dari `prisma/schema.prisma`.
-4. `npx prisma db seed` — bikin akun Super Admin pertama (`admin@izinpro.co.id` / `admin123`).
-5. `npm run dev` → login di `/admin/login`.
+Sebelum deploy, lakukan build terlebih dahulu:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Jika build berhasil, jalankan aplikasi produksi dengan:
 
-## Learn More
+```bash
+npm run start
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 6. Lint (opsional)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run lint
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Troubleshooting umum
 
-## Deploy on Vercel
+- Jika Prisma error terkait koneksi database, cek lagi nilai `DATABASE_URL` dan pastikan MySQL/MariaDB sedang berjalan.
+- Jika login admin tidak bisa berjalan, cek apakah `npx prisma db seed` sudah berhasil dijalankan.
+- Jika reset password tidak mengirim email, cek konfigurasi SMTP di `.env`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Struktur singkat proyek
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `src/app` → route aplikasi Next.js (publik dan panel admin)
+- `src/lib` → konfigurasi auth, database, mailer, dan helper bisnis
+- `prisma` → schema database dan seed data

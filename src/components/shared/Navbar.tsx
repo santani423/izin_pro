@@ -34,10 +34,12 @@ interface NavItem extends NavChild {
 }
 
 /* ─── Navbar Utama ───
- * items datang dari Menu "header" (Prisma), di-fetch di PublicLayout
- * (Server Component) lalu diteruskan ke sini krn Navbar butuh "use client"
- * utk interaktivitas (dropdown, sheet mobile, highlight halaman aktif). */
-export default function Navbar({ items }: { items: NavItem[] }) {
+ * items datang dari Menu "header" (Prisma), logoUrl dari Settings.appLogoUrl
+ * — dua-duanya di-fetch di PublicLayout (Server Component) lalu diteruskan
+ * ke sini krn Navbar butuh "use client" utk interaktivitas (dropdown, sheet
+ * mobile, highlight halaman aktif) dan gak boleh async/panggil Prisma
+ * langsung (Client Component gak boleh async). */
+export default function Navbar({ items, logoUrl }: { items: NavItem[]; logoUrl: string }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileDropdown, setMobileDropdown] = useState<string | null>(null);
@@ -59,11 +61,12 @@ export default function Navbar({ items }: { items: NavItem[] }) {
         {/* Logo */}
         <Link href="/" className="flex shrink-0 items-center gap-2">
           <Image
-            src="/images/izinpro-logo.png"
+            src={logoUrl}
             alt="IzinPro"
             width={132}
             height={28}
             priority
+            unoptimized
             className="h-7 w-auto dark:brightness-0 dark:invert"
           />
         </Link>

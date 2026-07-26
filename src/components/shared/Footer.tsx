@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { CONTACT_INFO } from "@/lib/landing";
 import { COMPANY_INFO } from "@/lib/constants";
 import { prisma } from "@/lib/db";
+import { getBrandingAssetUrls } from "@/lib/branding";
 
 /* ─── Ikon sosial media (lucide-react tidak menyediakan brand icon) ─── */
 function BrandIcon({ d, ...props }: SVGProps<SVGSVGElement> & { d: string }) {
@@ -60,6 +61,7 @@ export default async function Footer() {
     },
   });
   const columns = footerMenu?.items ?? [];
+  const { logoUrl } = await getBrandingAssetUrls();
 
   return (
     <footer className="bg-footer text-footer-foreground">
@@ -69,10 +71,11 @@ export default async function Footer() {
           <div>
             {/* Logo asli berteks gelap — dibalik jadi putih untuk footer gelap */}
             <Image
-              src="/images/izinpro-logo.png"
+              src={logoUrl}
               alt="IzinPro"
               width={132}
               height={28}
+              unoptimized
               className="h-7 w-auto brightness-0 invert"
             />
             <p className="mt-4 max-w-xs text-sm leading-relaxed">

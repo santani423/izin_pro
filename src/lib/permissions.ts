@@ -35,6 +35,7 @@ export const ADMIN_ROUTE_ROLES: Record<string, Role[]> = {
   "/analitik": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
   "/inquiry": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
   "/pages": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
+  "/beranda": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
   "/layanan": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
   "/tim": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
   "/testimoni": ["SUPER_ADMIN", "ADMIN", "EDITOR"],

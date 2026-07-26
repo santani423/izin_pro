@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, FileText, Newspaper, Image as ImageIcon, Users, Settings,
   Star, Megaphone, Package, HelpCircle, BarChart3, Inbox, Headset, UserCog,
-  Building2, Menu as MenuIcon, UserCircle, type LucideIcon,
+  Building2, Menu as MenuIcon, UserCircle, Sparkles, type LucideIcon,
 } from "lucide-react";
 
 export interface AdminNavItem {
@@ -40,6 +40,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   {
     label: "Company Profile",
     items: [
+      { label: "Hero Beranda", href: "/beranda", icon: Sparkles },
       { label: "Layanan", href: "/layanan", icon: Package },
       { label: "Tim", href: "/tim", icon: Users },
       { label: "Testimoni", href: "/testimoni", icon: Star },

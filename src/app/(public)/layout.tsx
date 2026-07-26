@@ -6,6 +6,7 @@ import BackToTop from "@/components/shared/BackToTop";
 import MaintenancePage from "@/components/shared/MaintenancePage";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { getBrandingAssetUrls } from "@/lib/branding";
 import type { Role } from "@prisma/client";
 
 /* ─── Layout halaman publik (company profile) ───
@@ -40,20 +41,24 @@ export default async function PublicLayout({
     return <MaintenancePage message={settings.maintenanceMessage} />;
   }
 
-  const headerMenu = await prisma.menu.findUnique({
-    where: { key: "header", deletedAt: null },
-    include: {
-      items: {
-        where: { parentId: null, deletedAt: null },
-        include: { children: { where: { deletedAt: null }, orderBy: { sortOrder: "asc" } } },
-        orderBy: { sortOrder: "asc" },
+  const [headerMenu, branding] = await Promise.all([
+    prisma.menu.findUnique({
+      where: { key: "header", deletedAt: null },
+      include: {
+        items: {
+          where: { parentId: null, deletedAt: null },
+          include: { children: { where: { deletedAt: null }, orderBy: { sortOrder: "asc" } } },
+          orderBy: { sortOrder: "asc" },
+        },
       },
-    },
-  });
+    }),
+    getBrandingAssetUrls(),
+  ]);
+  const logoUrl = branding.logoUrl;
 
   return (
     <>
-      <Navbar items={headerMenu?.items ?? []} />
+      <Navbar items={headerMenu?.items ?? []} logoUrl={logoUrl} />
       <main className="flex-1">{children}</main>
       <Footer />
       <WhatsAppFab />

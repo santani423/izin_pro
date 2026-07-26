@@ -12,6 +12,7 @@ import {
   FAQS,
   TEAM_MEMBERS,
 } from "../src/lib/constants";
+import { HERO_HIGHLIGHTS } from "../src/lib/landing";
 /* Sumber logo klien — sebelumnya LANDING_CLIENTS di landing.ts, dipindah ke
  * sini krn ClientsSection.tsx sekarang baca Partner dari Prisma langsung
  * (landing.ts gak butuh data ini lagi). */
@@ -303,6 +304,8 @@ async function main() {
       socialInstagram: null,
       socialX: null,
       socialYoutube: null,
+      appLogoUrl: null,
+      faviconUrl: null,
       // Belum ada input SEO dari klien — placeholder pending revisi
       seoTitle: `${COMPANY_INFO.name} — ${COMPANY_INFO.tagline}`,
       seoDescription: COMPANY_INFO.description,
@@ -312,6 +315,24 @@ async function main() {
     },
   });
   console.log("Settings di-seed.");
+
+  /* ═══ 3b. HeroContent (singleton) — teks hero beranda, copy asli dari HeroSection.tsx ═══ */
+  await prisma.heroContent.create({
+    data: {
+      id: "1",
+      titleLine1: "Solusi Perizinan",
+      titleHighlight: "Bisnis Anda,",
+      titleLine3: "Aman & Terpercaya",
+      subtitle:
+        "IzinPro hadir untuk membantu bisnis Anda mengurus perizinan dengan mudah, cepat, dan sesuai regulasi.",
+      highlights: HERO_HIGHLIGHTS.map(({ title, subtitle }) => ({ title, subtitle })),
+      ctaPrimaryLabel: "Konsultasikan Gratis",
+      ctaSecondaryLabel: "Lihat Semua Layanan",
+      ctaSecondaryHref: "/layanan",
+      updatedById: admin.id,
+    },
+  });
+  console.log("HeroContent di-seed.");
 
   /* ═══ 4. Menu + MenuItem (header dari landing.ts, footer dari FOOTER_COLUMNS) ═══ */
   const headerMenu = await prisma.menu.create({
