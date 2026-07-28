@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
  * section. Item ketuker urutannya langsung lewat onReorder (array baru,
  * caller yg nyimpen state/manggil server action). */
 export function SortableList<T>({
+  id,
   items,
   getId,
   onReorder,
@@ -34,6 +35,11 @@ export function SortableList<T>({
   disabled,
   className,
 }: {
+  /** Id stabil unik per instance — dnd-kit generate id aria-describedby
+   * pakai counter modul internal (bukan React useId), gak SSR-safe kalau
+   * dibiarkan auto. Wajib diisi biar server/client gak mismatch pas hydrate
+   * ketika ada >1 SortableList dalam satu halaman. */
+  id: string;
   items: T[];
   getId: (item: T) => string;
   onReorder: (nextItems: T[]) => void;
@@ -59,7 +65,7 @@ export function SortableList<T>({
   };
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <DndContext id={id} sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={items.map(getId)} strategy={verticalListSortingStrategy}>
         <div className={cn("space-y-2", className)}>
           {items.map((item, index) => (

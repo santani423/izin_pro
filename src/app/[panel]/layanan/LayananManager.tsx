@@ -375,6 +375,7 @@ export default function LayananManager({
       </div>
 
       <SortableList
+        id="layanan-list"
         items={pageItems}
         getId={(s) => s.id}
         onReorder={handleReorderServices}

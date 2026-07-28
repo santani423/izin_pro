@@ -25,5 +25,16 @@ export default async function AdminLayananDetailEditPage({
   });
   if (!service || service.deletedAt) notFound();
 
-  return <LayananDetailEditor service={service} panel={panel} />;
+  // Prisma Decimal bukan plain object — gak bisa lolos batas Server -> Client
+  // Component, harus dikonversi ke number dulu di sini.
+  const plainService = {
+    ...service,
+    packages: service.packages.map((pkg) => ({
+      ...pkg,
+      price: pkg.price.toNumber(),
+      originalPrice: pkg.originalPrice ? pkg.originalPrice.toNumber() : null,
+    })),
+  };
+
+  return <LayananDetailEditor service={plainService} panel={panel} />;
 }

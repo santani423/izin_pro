@@ -45,9 +45,17 @@ import {
   reorderFaqAction,
 } from "@/lib/actions/faq";
 
+/** ServicePackage dengan price/originalPrice udah dikonversi ke number di
+ * server (lihat [id]/edit/page.tsx) — Decimal Prisma gak bisa lolos batas
+ * Server -> Client Component. */
+type SerializedPackage = Omit<ServicePackage, "price" | "originalPrice"> & {
+  price: number;
+  originalPrice: number | null;
+};
+
 type ServiceWithRelations = Service & {
   featuredMedia: { id: string; url: string } | null;
-  packages: ServicePackage[];
+  packages: SerializedPackage[];
   faqs: Faq[];
 };
 
@@ -267,7 +275,7 @@ export default function LayananDetailEditor({
     });
   };
 
-  const savePackage = (pkg: ServicePackage) => {
+  const savePackage = (pkg: SerializedPackage) => {
     startPackageTransition(async () => {
       try {
         const res = await updateServicePackageAction(pkg.id, {
@@ -289,7 +297,7 @@ export default function LayananDetailEditor({
     });
   };
 
-  const removePackage = async (pkg: ServicePackage) => {
+  const removePackage = async (pkg: SerializedPackage) => {
     const confirmed = await swalConfirmDelete(`Paket "${pkg.name}"`);
     if (!confirmed) return;
     startPackageTransition(async () => {
@@ -307,7 +315,7 @@ export default function LayananDetailEditor({
     });
   };
 
-  const reorderPackages = (next: ServicePackage[]) => {
+  const reorderPackages = (next: SerializedPackage[]) => {
     setPackages(next);
     startPackageTransition(async () => {
       try {
@@ -518,6 +526,7 @@ export default function LayananDetailEditor({
             <div className="space-y-2">
               <Label>Highlight (badge kecil di Hero)</Label>
               <SortableList
+                id="highlights-list"
                 items={highlightsList}
                 getId={(h) => h._key}
                 onReorder={(next) => setContent({ ...content, highlights: next.map(stripKey) })}
@@ -570,6 +579,7 @@ export default function LayananDetailEditor({
             <div className="space-y-2">
               <Label>Kartu Statistik (melayang di gambar Hero)</Label>
               <SortableList
+                id="stats-list"
                 items={statsList}
                 getId={(s) => s._key}
                 onReorder={(next) => setContent({ ...content, stats: next.map(stripKey) })}
@@ -693,6 +703,7 @@ export default function LayananDetailEditor({
                   />
                 </div>
                 <SortableList
+                  id="benefits-list"
                   items={benefitItems}
                   getId={(b) => b._key}
                   onReorder={(next) => setContent({ ...content, benefits: { title: content.benefits?.title ?? "", items: next.map(stripKey) } })}
@@ -795,6 +806,7 @@ export default function LayananDetailEditor({
                   />
                 </div>
                 <SortableList
+                  id="types-list"
                   items={typeItems}
                   getId={(t) => t._key}
                   onReorder={(next) => setContent({ ...content, types: { title: content.types?.title ?? "", items: next.map(stripKey), linkLabel: content.types?.linkLabel ?? "", linkHref: content.types?.linkHref ?? "" } })}
@@ -859,6 +871,7 @@ export default function LayananDetailEditor({
               <Input value={content.process.title} onChange={(e) => setContent({ ...content, process: { ...content.process, title: e.target.value } })} className="rounded-xl" />
             </div>
             <SortableList
+              id="process-steps-list"
               items={processSteps}
               getId={(s) => s._key}
               onReorder={(next) => setContent({ ...content, process: { ...content.process, steps: next.map(stripKey) } })}
@@ -934,6 +947,7 @@ export default function LayananDetailEditor({
 
           <SectionCard icon={Wallet} title="Paket Harga" description="Disimpan langsung per paket (bukan bagian dari tombol Simpan Konten Detail).">
             <SortableList
+              id="packages-list"
               items={packages}
               getId={(p) => p.id}
               disabled={isPackageBusy}
@@ -1072,6 +1086,7 @@ export default function LayananDetailEditor({
             description="Tampil bareng FAQ Global (dari menu FAQ). Disimpan langsung per item."
           >
             <SortableList
+              id="service-faqs-list"
               items={faqs}
               getId={(f) => f.id}
               disabled={isFaqBusy}

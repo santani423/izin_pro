@@ -309,6 +309,7 @@ export default function FaqPageClient({
       </div>
 
       <SortableList
+        id="faq-list"
         items={pageItems}
         getId={(f) => f.id}
         disabled={!canReorder || isReordering}
