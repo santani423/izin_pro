@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/Reveal";
 import { cn } from "@/lib/utils";
 import { COMPANY_INFO } from "@/lib/constants";
-import type { LayananDetail } from "@/lib/layanan-detail";
+import type { LayananDetail } from "@/lib/hydrate-layanan-detail";
 
 /* ─── Paket harga + dokumen yang diperlukan + waktu pengerjaan ─── */
 export default function LayananDetailPricingSection({

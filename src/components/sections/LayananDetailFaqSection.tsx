@@ -5,7 +5,7 @@ import { ChevronDown } from "lucide-react";
 
 import { Reveal } from "@/components/shared/Reveal";
 import { cn } from "@/lib/utils";
-import type { LayananDetail } from "@/lib/layanan-detail";
+import type { LayananDetail } from "@/lib/hydrate-layanan-detail";
 
 /* ─── FAQ seputar layanan — accordion grid (pola sama dengan FaqSection) ─── */
 export default function LayananDetailFaqSection({

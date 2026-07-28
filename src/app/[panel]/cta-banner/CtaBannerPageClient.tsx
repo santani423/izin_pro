@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Headset, Pencil, Plus, Trash2, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import type { Cta, CtaLocation } from "@prisma/client";
 import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -22,55 +23,43 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { COMPANY_INFO } from "@/lib/constants";
+import { upsertCtaAction, deleteCtaAction } from "@/lib/actions/cta";
 
-interface CtaVariant {
-  id: string;
-  /** Lokasi pemakaian — halaman publik tempat CTA tampil */
-  location: string;
+/* Label Indonesia per CtaLocation — sesuai pemakaian CtaSection saat ini. */
+const LOCATION_LABELS: Record<CtaLocation, string> = {
+  BERANDA: "Beranda",
+  LAYANAN: "Layanan",
+  DETAIL_LAYANAN: "Detail Layanan",
+  BLOG: "Blog",
+  DETAIL_BLOG: "Detail Blog",
+  PROMO: "Promo",
+  TENTANG_KAMI: "Tentang Kami",
+  TESTIMONI: "Testimoni",
+  KONTAK: "Kontak",
+  TRACKING: "Tracking",
+};
+const ALL_LOCATIONS = Object.keys(LOCATION_LABELS) as CtaLocation[];
+
+interface FormState {
+  id: string | null;
+  location: CtaLocation;
   title: string;
   subtitle: string;
   buttonLabel: string;
   whatsapp: string;
-  active: boolean;
 }
 
-/* Lokasi CTA di website — sesuai pemakaian CtaSection saat ini */
-const LOCATIONS = [
-  "Beranda",
-  "Layanan",
-  "Detail Layanan",
-  "Blog",
-  "Detail Blog",
-  "Promo",
-  "Tentang Kami",
-  "Testimoni",
-  "Kontak",
-  "Tracking",
-];
-
-const DEFAULT_CTA: { title: string; subtitle: string; buttonLabel: string; whatsapp: string } = {
+const DEFAULT_FORM_VALUES = {
   title: "Siap Memulai Perizinan Bisnis Anda?",
   subtitle: "Konsultasikan kebutuhan perizinan Anda sekarang gratis bersama tim ahli kami.",
   buttonLabel: "Konsultasikan Gratis Sekarang",
-  whatsapp: COMPANY_INFO.whatsapp,
 };
 
-/* Varian awal — diambil dari override yang sekarang hardcoded di tiap halaman */
-const SEED_VARIANTS: CtaVariant[] = [
-  { id: "1", location: "Tentang Kami", title: "Siap Bekerja Sama dengan Kami?", subtitle: "Konsultasikan kebutuhan perizinan Anda sekarang juga secara gratis bersama tim ahli kami.", buttonLabel: "Konsultasikan Gratis Sekarang", whatsapp: COMPANY_INFO.whatsapp, active: true },
-  { id: "2", location: "Blog", title: "Butuh Bantuan Mengurus Perizinan?", subtitle: "Konsultasikan kebutuhan perizinan Anda sekarang juga secara gratis bersama tim ahli kami.", buttonLabel: "Konsultasikan Gratis Sekarang", whatsapp: COMPANY_INFO.whatsapp, active: true },
-  { id: "3", location: "Detail Layanan", title: "Siap Memulai Perizinan Bisnis Anda?", subtitle: "Konsultasikan kebutuhan layanan Anda sekarang juga, GRATIS!", buttonLabel: "Konsultasikan Sekarang", whatsapp: COMPANY_INFO.whatsapp, active: true },
-];
-
-const emptyForm = (location: string): CtaVariant => ({
-  id: "",
+const emptyForm = (location: CtaLocation): FormState => ({
+  id: null,
   location,
-  title: DEFAULT_CTA.title,
-  subtitle: DEFAULT_CTA.subtitle,
-  buttonLabel: DEFAULT_CTA.buttonLabel,
-  whatsapp: DEFAULT_CTA.whatsapp,
-  active: true,
+  ...DEFAULT_FORM_VALUES,
+  whatsapp: "",
 });
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
@@ -135,7 +124,6 @@ function Pagination({
         <ChevronRight size={14} aria-hidden="true" />
       </button>
 
-      {/* Loncat langsung ke halaman tertentu */}
       <div className="flex items-center gap-1.5 ml-1">
         <span className="text-xs text-black">Ke halaman</span>
         <input
@@ -158,7 +146,6 @@ function Pagination({
         </button>
       </div>
 
-      {/* Ukuran halaman */}
       <div className="flex items-center gap-1.5 ml-1">
         <span className="text-xs text-black">per halaman</span>
         <Select
@@ -180,58 +167,106 @@ function Pagination({
   );
 }
 
-/* ─── Halaman Manajemen CTA Banner Admin ─── */
-export default function CtaBannerPageClient() {
-  const [defaults, setDefaults] = useState(DEFAULT_CTA);
-  const [variants, setVariants] = useState<CtaVariant[]>(SEED_VARIANTS);
-  const [form, setForm] = useState<CtaVariant | null>(null);
+/* ─── Halaman Manajemen CTA Banner Admin (tersambung Prisma) ─── */
+export default function CtaBannerPageClient({ initialCtas }: { initialCtas: Cta[] }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
+  const defaultRow = initialCtas.find((c) => c.location === null) ?? null;
+  const variantRows = initialCtas.filter((c): c is Cta & { location: CtaLocation } => c.location !== null);
+
+  const [defaults, setDefaults] = useState({
+    title: defaultRow?.title ?? DEFAULT_FORM_VALUES.title,
+    subtitle: defaultRow?.subtitle ?? DEFAULT_FORM_VALUES.subtitle,
+    buttonLabel: defaultRow?.buttonLabel ?? DEFAULT_FORM_VALUES.buttonLabel,
+    whatsapp: defaultRow?.whatsapp ?? "",
+  });
+
+  const [form, setForm] = useState<FormState | null>(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
 
-  const usedLocations = variants.map((v) => v.location);
-  const availableLocations = LOCATIONS.filter((l) => !usedLocations.includes(l));
-  /* Saat edit, lokasi varian itu sendiri tetap bisa dipilih */
-  const formLocations = form?.id
-    ? [form.location, ...availableLocations]
-    : availableLocations;
+  const usedLocations = variantRows.map((v) => v.location);
+  const availableLocations = ALL_LOCATIONS.filter((l) => !usedLocations.includes(l));
+  const formLocations = form && form.id ? [form.location, ...availableLocations] : availableLocations;
 
   const saveDefaults = () => {
-    swalSuccess("CTA default disimpan");
+    if (!defaults.title.trim() || !defaults.buttonLabel.trim()) {
+      swalError("Judul dan label tombol wajib diisi");
+      return;
+    }
+    startTransition(async () => {
+      try {
+        const res = await upsertCtaAction({
+          location: null,
+          title: defaults.title,
+          subtitle: defaults.subtitle,
+          buttonLabel: defaults.buttonLabel,
+          whatsapp: defaults.whatsapp || null,
+        });
+        if (res.ok) {
+          swalSuccess("CTA default disimpan");
+          router.refresh();
+        } else {
+          swalError(res.message);
+        }
+      } catch {
+        swalError("Gagal menyimpan CTA default. Cek koneksi lalu coba lagi.");
+      }
+    });
   };
 
   const saveVariant = () => {
     if (!form) return;
-    if (!form.title.trim() || !form.whatsapp.trim()) {
-      swalError("Judul dan nomor WhatsApp wajib diisi");
+    if (!form.title.trim() || !form.buttonLabel.trim()) {
+      swalError("Judul dan label tombol wajib diisi");
       return;
     }
-    if (form.id) {
-      setVariants((prev) => prev.map((v) => (v.id === form.id ? form : v)));
-      swalSuccess(`Varian CTA "${form.location}" diperbarui`);
-    } else {
-      setVariants((prev) => [...prev, { ...form, id: String(Date.now()) }]);
-      swalSuccess(`Varian CTA "${form.location}" ditambahkan`);
-    }
-    setForm(null);
+    startTransition(async () => {
+      try {
+        const res = await upsertCtaAction({
+          location: form.location,
+          title: form.title,
+          subtitle: form.subtitle,
+          buttonLabel: form.buttonLabel,
+          whatsapp: form.whatsapp || null,
+        });
+        if (res.ok) {
+          swalSuccess(`Varian CTA "${LOCATION_LABELS[form.location]}" disimpan`);
+          setForm(null);
+          router.refresh();
+        } else {
+          swalError(res.message);
+        }
+      } catch {
+        swalError("Gagal menyimpan varian CTA. Cek koneksi lalu coba lagi.");
+      }
+    });
   };
 
-  const removeVariant = async (variant: CtaVariant) => {
-    const confirmed = await swalConfirmDelete(`Varian CTA "${variant.location}"`);
+  const removeVariant = async (variant: Cta) => {
+    const confirmed = await swalConfirmDelete(`Varian CTA "${LOCATION_LABELS[variant.location as CtaLocation]}"`);
     if (!confirmed) return;
-    setVariants((prev) => prev.filter((v) => v.id !== variant.id));
-    swalSuccess("Varian CTA dihapus — halaman itu kembali memakai CTA default");
+    startTransition(async () => {
+      try {
+        const res = await deleteCtaAction(variant.id);
+        if (res.ok) {
+          swalSuccess("Varian CTA dihapus — halaman itu kembali memakai CTA default");
+          router.refresh();
+        } else {
+          swalError(res.message);
+        }
+      } catch {
+        swalError("Gagal menghapus varian CTA. Cek koneksi lalu coba lagi.");
+      }
+    });
   };
 
-  const toggleActive = (id: string) =>
-    setVariants((prev) =>
-      prev.map((v) => (v.id === id ? { ...v, active: !v.active } : v)),
-    );
-
-  const filteredVariants = variants.filter((v) => {
+  const filteredVariants = variantRows.filter((v) => {
     const q = search.trim().toLowerCase();
     if (!q) return true;
-    return v.location.toLowerCase().includes(q) || v.title.toLowerCase().includes(q);
+    return LOCATION_LABELS[v.location].toLowerCase().includes(q) || v.title.toLowerCase().includes(q);
   });
 
   const totalPages = Math.max(1, Math.ceil(filteredVariants.length / pageSize));
@@ -240,7 +275,6 @@ export default function CtaBannerPageClient() {
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
-
       {/* ─── CTA Default ─── */}
       <div className="bg-white rounded-2xl border border-admin-line p-5 sm:p-6">
         <div className="flex items-center gap-3">
@@ -285,7 +319,9 @@ export default function CtaBannerPageClient() {
             />
           </div>
           <div>
-            <Label htmlFor="d-wa" className="text-sm font-semibold text-gray-700">Nomor WhatsApp</Label>
+            <Label htmlFor="d-wa" className="text-sm font-semibold text-gray-700">
+              Nomor WhatsApp <span className="font-normal text-gray-400">(kosong = pakai Pengaturan)</span>
+            </Label>
             <Input
               id="d-wa"
               className="mt-1.5 rounded-lg"
@@ -315,8 +351,8 @@ export default function CtaBannerPageClient() {
         </div>
 
         <div className="mt-4 flex justify-end">
-          <Button className="rounded-lg" onClick={saveDefaults}>
-            Simpan CTA Default
+          <Button className="rounded-lg" onClick={saveDefaults} disabled={isPending}>
+            {isPending ? "Menyimpan..." : "Simpan CTA Default"}
           </Button>
         </div>
       </div>
@@ -354,9 +390,6 @@ export default function CtaBannerPageClient() {
               }}
             />
           </div>
-          <Button type="button" className="rounded-xl h-10 flex-shrink-0">
-            Search
-          </Button>
         </div>
 
         <div className="overflow-x-auto">
@@ -366,32 +399,33 @@ export default function CtaBannerPageClient() {
                 <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Halaman</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Judul</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">WhatsApp</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Aktif</th>
                 <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {pageItems.map((v) => (
-                <tr key={v.id} className={`hover:bg-gray-50/50 transition-colors ${!v.active ? "opacity-50" : ""}`}>
+                <tr key={v.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-5 py-3.5">
-                    <Badge variant="secondary" className="text-xs rounded-lg">{v.location}</Badge>
+                    <Badge variant="secondary" className="text-xs rounded-lg">{LOCATION_LABELS[v.location as CtaLocation]}</Badge>
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="font-medium text-gray-900 line-clamp-1 max-w-[280px]">{v.title}</div>
                     <div className="text-xs text-gray-400 line-clamp-1 max-w-[280px]">{v.subtitle}</div>
                   </td>
-                  <td className="px-5 py-3.5 text-gray-500 hidden lg:table-cell whitespace-nowrap">{v.whatsapp}</td>
-                  <td className="px-5 py-3.5">
-                    <Switch
-                      checked={v.active}
-                      onCheckedChange={() => toggleActive(v.id)}
-                      className="data-[state=checked]:bg-primary"
-                    />
-                  </td>
+                  <td className="px-5 py-3.5 text-gray-500 hidden lg:table-cell whitespace-nowrap">{v.whatsapp ?? "—"}</td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-end gap-1">
                       <button
-                        onClick={() => setForm(v)}
+                        onClick={() =>
+                          setForm({
+                            id: v.id,
+                            location: v.location as CtaLocation,
+                            title: v.title,
+                            subtitle: v.subtitle ?? "",
+                            buttonLabel: v.buttonLabel,
+                            whatsapp: v.whatsapp ?? "",
+                          })
+                        }
                         className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/5 transition-colors"
                         aria-label="Edit varian"
                       >
@@ -410,8 +444,8 @@ export default function CtaBannerPageClient() {
               ))}
               {pageItems.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-5 py-10 text-center text-sm text-gray-400">
-                    {variants.length === 0
+                  <td colSpan={4} className="px-5 py-10 text-center text-sm text-gray-400">
+                    {variantRows.length === 0
                       ? "Belum ada varian — semua halaman memakai CTA default."
                       : "Tidak ada varian yang cocok."}
                   </td>
@@ -450,16 +484,16 @@ export default function CtaBannerPageClient() {
                 <div>
                   <Label className="text-sm font-semibold text-gray-700">Halaman</Label>
                   <Select
-                    items={Object.fromEntries(formLocations.map((l) => [l, l]))}
+                    items={Object.fromEntries(formLocations.map((l) => [l, LOCATION_LABELS[l]]))}
                     value={form.location}
-                    onValueChange={(v) => v && setForm({ ...form, location: v })}
+                    onValueChange={(v) => v && setForm({ ...form, location: v as CtaLocation })}
                   >
                     <SelectTrigger className="mt-1.5 h-10 w-full rounded-lg border-border/60 bg-background pl-3 font-medium hover:border-primary/40 focus-visible:border-primary focus-visible:ring-primary/20">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent alignItemWithTrigger={false} align="start">
                       {formLocations.map((l) => (
-                        <SelectItem key={l} value={l}>{l}</SelectItem>
+                        <SelectItem key={l} value={l}>{LOCATION_LABELS[l]}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -509,8 +543,8 @@ export default function CtaBannerPageClient() {
                 <Button variant="outline" className="flex-1 rounded-lg" onClick={() => setForm(null)}>
                   Batal
                 </Button>
-                <Button className="flex-1 rounded-lg" onClick={saveVariant}>
-                  Simpan
+                <Button className="flex-1 rounded-lg" onClick={saveVariant} disabled={isPending}>
+                  {isPending ? "Menyimpan..." : "Simpan"}
                 </Button>
               </div>
             </>

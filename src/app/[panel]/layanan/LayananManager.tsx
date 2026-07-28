@@ -1,11 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
-  Plus, Pencil, Trash2, GripVertical, FileText, Search, ChevronLeft, ChevronRight,
-  Building2, ClipboardList, Clock, List, UserCheck, Briefcase, Globe,
-  Receipt, Tag, Monitor, MapPin, BadgeCheck, Ship, Factory, Leaf, HardHat, RefreshCw,
+  Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight, ImagePlus, Layers,
 } from "lucide-react";
 import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import type { Service, ServiceCategory } from "@prisma/client";
@@ -28,38 +26,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { SERVICE_ICONS, DEFAULT_SERVICE_ICON } from "@/lib/service-icons";
+import { SortableList } from "@/components/admin/SortableList";
 import {
   createServiceAction,
   deleteServiceAction,
+  reorderServicesAction,
   toggleServiceActiveAction,
   updateServiceAction,
+  uploadServiceFeaturedImageAction,
 } from "@/lib/actions/services";
-
-/* 18 ikon dipakai lintas 18 layanan (sebelumnya cuma 5 termapping, sisanya
- * diam-diam fallback ke FileText — sekarang dilengkapi semua). */
-const ICONS: Record<string, React.ElementType> = {
-  building: Building2,
-  clipboard: ClipboardList,
-  "file-text": FileText,
-  clock: Clock,
-  list: List,
-  "user-check": UserCheck,
-  briefcase: Briefcase,
-  globe: Globe,
-  receipt: Receipt,
-  tag: Tag,
-  monitor: Monitor,
-  "map-pin": MapPin,
-  "badge-check": BadgeCheck,
-  ship: Ship,
-  factory: Factory,
-  leaf: Leaf,
-  "hard-hat": HardHat,
-  refresh: RefreshCw,
-};
 
 type ServiceWithCategory = Service & {
   category: ServiceCategory;
+  featuredMedia: { id: string; url: string } | null;
   createdBy: { name: string } | null;
   updatedBy: { name: string } | null;
 };
@@ -72,6 +52,7 @@ interface FormState {
   color: string;
   bgColor: string;
   categoryId: string;
+  featuredMediaId: string | null;
 }
 
 const emptyForm = (defaultCategoryId: string): FormState => ({
@@ -82,6 +63,7 @@ const emptyForm = (defaultCategoryId: string): FormState => ({
   color: "#5ba12b",
   bgColor: "#f3fae8",
   categoryId: defaultCategoryId,
+  featuredMediaId: null,
 });
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
@@ -200,12 +182,27 @@ export default function LayananManager({
   categories: ServiceCategory[];
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const panel = pathname.split("/")[1] || "admin";
   const [isPending, startTransition] = useTransition();
+  const [isReordering, startReorderTransition] = useTransition();
   const [form, setForm] = useState<FormState | null>(null);
   const [featuresText, setFeaturesText] = useState("");
+  const [featuredImageUrl, setFeaturedImageUrl] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
+  // Salinan lokal biar drag-reorder kerasa instan — disinkron ulang tiap kali
+  // router.refresh() ngasih initialServices baru (props reference berubah).
+  // Reset state pas render (bukan di useEffect) — pola resmi React utk
+  // "adjusting state when a prop changes", lihat react.dev/learn/you-might-not-need-an-effect.
+  const [prevInitialServices, setPrevInitialServices] = useState(initialServices);
+  const [services, setServices] = useState(initialServices);
+  if (initialServices !== prevInitialServices) {
+    setPrevInitialServices(initialServices);
+    setServices(initialServices);
+  }
 
   const openForm = (svc: ServiceWithCategory | null) => {
     const target: FormState = svc
@@ -217,10 +214,31 @@ export default function LayananManager({
           color: svc.color ?? "#5ba12b",
           bgColor: svc.bgColor ?? "#f3fae8",
           categoryId: svc.categoryId,
+          featuredMediaId: svc.featuredMediaId,
         }
       : emptyForm(categories[0]?.id ?? "");
     setForm(target);
     setFeaturesText(svc ? (svc.features as string[]).join("\n") : "");
+    setFeaturedImageUrl(svc?.featuredMedia?.url ?? null);
+  };
+
+  const uploadFeaturedImage = async (file: File) => {
+    setUploadingImage(true);
+    try {
+      const fd = new FormData();
+      fd.append("image", file);
+      const res = await uploadServiceFeaturedImageAction(fd);
+      if (res.ok) {
+        setForm((f) => (f ? { ...f, featuredMediaId: res.mediaId } : f));
+        setFeaturedImageUrl(res.url);
+      } else {
+        swalError(res.message);
+      }
+    } catch {
+      swalError("Gagal mengunggah gambar. Cek koneksi lalu coba lagi.");
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const toggleActive = (svc: ServiceWithCategory) => {
@@ -254,6 +272,7 @@ export default function LayananManager({
       bgColor: form.bgColor,
       categoryId: form.categoryId,
       features,
+      featuredMediaId: form.featuredMediaId,
     };
 
     startTransition(async () => {
@@ -285,7 +304,7 @@ export default function LayananManager({
     });
   };
 
-  const filtered = initialServices.filter((s) => {
+  const filtered = services.filter((s) => {
     const q = search.trim().toLowerCase();
     if (!q) return true;
     return (
@@ -298,6 +317,27 @@ export default function LayananManager({
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const pageItems = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  // Reorder cuma masuk akal kalau pageItems == urutan lengkap yg gak
+  // terpotong search/pagination — di luar itu, drag dimatikan (lihat
+  // SortableList disabled di bawah).
+  const canReorder = search.trim() === "" && totalPages === 1;
+
+  const handleReorderServices = (nextOrder: ServiceWithCategory[]) => {
+    setServices(nextOrder);
+    startReorderTransition(async () => {
+      try {
+        const res = await reorderServicesAction(nextOrder.map((s) => s.id));
+        if (!res.ok) {
+          swalError(res.message);
+          setServices(initialServices);
+        }
+      } catch {
+        swalError("Gagal mengubah urutan layanan. Cek koneksi lalu coba lagi.");
+        setServices(initialServices);
+      }
+    });
+  };
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
@@ -325,25 +365,42 @@ export default function LayananManager({
         </Button>
       </div>
 
-      <p className="text-sm text-gray-500">{filtered.length} layanan tersedia</p>
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-500">{filtered.length} layanan tersedia</p>
+        {!canReorder && filtered.length > 0 && (
+          <p className="text-xs text-gray-400">
+            Kosongkan pencarian &amp; tampilkan &ldquo;Semua&rdquo; per halaman untuk mengurutkan drag-and-drop.
+          </p>
+        )}
+      </div>
 
-      <div className="space-y-3">
-        {pageItems.map((service) => {
-          const Icon = ICONS[service.icon ?? ""] ?? FileText;
+      <SortableList
+        items={pageItems}
+        getId={(s) => s.id}
+        onReorder={handleReorderServices}
+        disabled={!canReorder || isReordering}
+        renderItem={(service) => {
+          const Icon = SERVICE_ICONS[service.icon ?? ""] ?? DEFAULT_SERVICE_ICON;
           return (
             <div
-              key={service.id}
               className={`bg-white rounded-2xl border transition-all ${service.isActive ? "border-admin-line" : "border-admin-line opacity-60"}`}
             >
               <div className="flex items-center gap-4 p-4">
-                <GripVertical size={16} className="text-gray-300 cursor-grab flex-shrink-0" />
-
-                <div
-                  className="flex items-center justify-center w-10 h-10 rounded-xl flex-shrink-0"
-                  style={{ backgroundColor: service.bgColor ?? undefined }}
-                >
-                  <Icon size={18} style={{ color: service.color ?? undefined }} />
-                </div>
+                {service.featuredMedia ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={service.featuredMedia.url}
+                    alt=""
+                    className="w-10 h-10 rounded-xl object-cover flex-shrink-0 border border-admin-line"
+                  />
+                ) : (
+                  <div
+                    className="flex items-center justify-center w-10 h-10 rounded-xl flex-shrink-0"
+                    style={{ backgroundColor: service.bgColor ?? undefined }}
+                  >
+                    <Icon size={18} style={{ color: service.color ?? undefined }} />
+                  </div>
+                )}
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -351,6 +408,9 @@ export default function LayananManager({
                     <Badge variant="secondary" className="text-xs">{service.category.name}</Badge>
                     {!service.isActive && (
                       <Badge variant="secondary" className="text-xs">Non-aktif</Badge>
+                    )}
+                    {service.status === "DRAFT" && (
+                      <Badge variant="secondary" className="text-xs text-amber-600">Draft</Badge>
                     )}
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5 truncate">{service.description}</p>
@@ -379,9 +439,18 @@ export default function LayananManager({
                     className="data-[state=checked]:bg-primary"
                   />
                   <button
+                    onClick={() => router.push(`/${panel}/layanan/${service.id}/edit`)}
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/5 transition-colors"
+                    aria-label="Kelola konten detail layanan"
+                    title="Kelola Konten Detail"
+                  >
+                    <Layers size={14} />
+                  </button>
+                  <button
                     onClick={() => openForm(service)}
                     className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/5 transition-colors"
                     aria-label="Edit layanan"
+                    title="Edit Metadata"
                   >
                     <Pencil size={14} />
                   </button>
@@ -389,6 +458,7 @@ export default function LayananManager({
                     onClick={() => remove(service)}
                     className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                     aria-label="Hapus layanan"
+                    title="Hapus"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -396,13 +466,13 @@ export default function LayananManager({
               </div>
             </div>
           );
-        })}
-        {pageItems.length === 0 && (
-          <div className="bg-white rounded-2xl border border-admin-line px-5 py-10 text-center text-sm text-gray-400">
-            {initialServices.length === 0 ? "Belum ada layanan." : "Tidak ada layanan yang cocok."}
-          </div>
-        )}
-      </div>
+        }}
+      />
+      {pageItems.length === 0 && (
+        <div className="bg-white rounded-2xl border border-admin-line px-5 py-10 text-center text-sm text-gray-400">
+          {initialServices.length === 0 ? "Belum ada layanan." : "Tidak ada layanan yang cocok."}
+        </div>
+      )}
 
       <p className="text-xs text-gray-400 text-center">
         Menampilkan {pageItems.length} dari {filtered.length} layanan
@@ -428,6 +498,53 @@ export default function LayananManager({
                 {form.id ? "Edit Layanan" : "Tambah Layanan"}
               </DialogTitle>
               <div className="space-y-4">
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700">Gambar Titel</Label>
+                  <div className="mt-1.5 flex items-center gap-3 rounded-xl border border-dashed border-admin-line bg-gray-50/50 p-3">
+                    <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-admin-line bg-white">
+                      {featuredImageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={featuredImageUrl} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <ImagePlus size={18} className="text-gray-300" />
+                      )}
+                    </div>
+                    <div className="flex flex-1 items-center gap-2">
+                      <label
+                        htmlFor="s-featured-image"
+                        className="cursor-pointer text-xs font-semibold text-primary hover:underline aria-disabled:pointer-events-none aria-disabled:opacity-50"
+                        aria-disabled={uploadingImage}
+                      >
+                        {uploadingImage ? "Mengunggah..." : featuredImageUrl ? "Ganti gambar" : "Upload gambar"}
+                      </label>
+                      {featuredImageUrl && !uploadingImage && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setForm({ ...form, featuredMediaId: null });
+                            setFeaturedImageUrl(null);
+                          }}
+                          className="text-xs font-semibold text-red-500 hover:underline"
+                        >
+                          Hapus
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      id="s-featured-image"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="hidden"
+                      disabled={uploadingImage}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) uploadFeaturedImage(file);
+                        e.target.value = "";
+                      }}
+                    />
+                  </div>
+                  <p className="mt-1 text-[11px] text-gray-400">PNG/JPG/WebP, otomatis dikompres. Opsional.</p>
+                </div>
                 <div>
                   <Label htmlFor="s-title" className="text-sm font-semibold text-gray-700">Nama Layanan</Label>
                   <Input

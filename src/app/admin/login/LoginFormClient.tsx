@@ -4,15 +4,28 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Eye, EyeOff, Lock, Mail, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, ArrowRight, ChevronDown, Wand2 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { getRolePanel } from "@/lib/permissions";
 import { DEFAULT_LOGO_URL } from "@/lib/branding-constants";
 import type { Role } from "@prisma/client";
 
-/* ─── Akun Super Admin hasil `npx prisma db seed` (dev lokal) ─── */
-const SEEDED_EMAIL = "admin@izinpro.co.id";
-const SEEDED_PASSWORD = "admin123";
+/* ─── Akun demo hasil `npx prisma db seed` (dev lokal) — buat mempermudah
+ * demo tiap level akses tanpa perlu bikin akun manual. JANGAN dipakai di
+ * production sungguhan (ganti/hapus akun-akun ini sebelum go-live beneran). */
+interface DemoAccount {
+  role: Role;
+  label: string;
+  email: string;
+  password: string;
+}
+
+const DEMO_ACCOUNTS: DemoAccount[] = [
+  { role: "SUPER_ADMIN", label: "Super Admin", email: "admin@izinpro.co.id", password: "admin123" },
+  { role: "ADMIN", label: "Admin", email: "demo-admin@izinpro.co.id", password: "demo1234" },
+  { role: "EDITOR", label: "Editor", email: "demo-editor@izinpro.co.id", password: "demo1234" },
+  { role: "AUTHOR", label: "Author", email: "demo-author@izinpro.co.id", password: "demo1234" },
+];
 
 export default function LoginFormClient() {
   const router = useRouter();
@@ -22,6 +35,7 @@ export default function LoginFormClient() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [logoUrl, setLogoUrl] = useState(DEFAULT_LOGO_URL);
+  const [showDemoAccounts, setShowDemoAccounts] = useState(false);
 
   useEffect(() => {
     fetch("/api/branding")
@@ -30,12 +44,14 @@ export default function LoginFormClient() {
       .catch(() => setLogoUrl(DEFAULT_LOGO_URL));
   }, []);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const performLogin = async (loginEmail: string, loginPassword: string) => {
     setError("");
     setLoading(true);
 
-    const { data, error: signInError } = await authClient.signIn.email({ email, password });
+    const { data, error: signInError } = await authClient.signIn.email({
+      email: loginEmail,
+      password: loginPassword,
+    });
 
     if (signInError) {
       setError(signInError.message ?? "Email atau password salah. Coba periksa kembali.");
@@ -49,6 +65,18 @@ export default function LoginFormClient() {
     const panel = role ? getRolePanel(role) : "admin";
     router.replace(`/${panel}/dashboard`);
     router.refresh();
+  };
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    performLogin(email, password);
+  };
+
+  const handleDemoLogin = (account: DemoAccount) => {
+    setEmail(account.email);
+    setPassword(account.password);
+    setShowDemoAccounts(false);
+    performLogin(account.email, account.password);
   };
 
   return (
@@ -162,12 +190,43 @@ export default function LoginFormClient() {
             </button>
           </form>
 
-          {/* Hint akun seed (dev lokal) */}
-          <div className="mt-6 p-3.5 rounded-2xl bg-primary/5 border border-primary/10">
-            <p className="text-xs text-gray-600 text-center font-medium mb-1">Akun Super Admin (seed)</p>
-            <p className="text-xs text-gray-500 text-center">
-              {SEEDED_EMAIL} &nbsp;/&nbsp; {SEEDED_PASSWORD}
-            </p>
+          {/* Akun demo (dev/staging) — satu klik login & auto-isi form, biar
+              gampang tunjukin tiap level akses pas demo tanpa hafal kredensial. */}
+          <div className="mt-6">
+            <button
+              type="button"
+              onClick={() => setShowDemoAccounts((v) => !v)}
+              className="w-full flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl border border-dashed border-primary/30 bg-primary/5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
+            >
+              <Wand2 size={13} />
+              Lihat Akun Demo
+              <ChevronDown
+                size={13}
+                className={`transition-transform ${showDemoAccounts ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            {showDemoAccounts && (
+              <div className="mt-2 rounded-2xl border border-primary/10 bg-primary/5 p-2 space-y-1">
+                {DEMO_ACCOUNTS.map((account) => (
+                  <button
+                    key={account.email}
+                    type="button"
+                    onClick={() => handleDemoLogin(account)}
+                    disabled={loading}
+                    className="w-full flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-white disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <span>
+                      <span className="block text-xs font-semibold text-gray-800">{account.label}</span>
+                      <span className="block text-[11px] text-gray-500">
+                        {account.email} &nbsp;/&nbsp; {account.password}
+                      </span>
+                    </span>
+                    <span className="flex-shrink-0 text-[11px] font-semibold text-primary">Masuk</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

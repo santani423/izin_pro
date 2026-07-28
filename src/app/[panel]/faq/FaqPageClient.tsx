@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Pencil, Trash2, GripVertical, ChevronDown, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { Plus, Pencil, Trash2, ChevronDown, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import type { Faq, FaqScope } from "@prisma/client";
 import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,26 +22,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FAQS } from "@/lib/constants";
+import { SortableList } from "@/components/admin/SortableList";
 import { cn } from "@/lib/utils";
+import {
+  createFaqAction,
+  updateFaqAction,
+  deleteFaqAction,
+  toggleFaqActiveAction,
+  reorderFaqAction,
+} from "@/lib/actions/faq";
 
-/* ─── Data FAQ diperluas dengan status ─── */
-const faqData = FAQS.map((f, i) => ({
-  ...f,
-  id: String(i + 1),
-  active: true,
-  order: i + 1,
-}));
+type FaqWithService = Faq & { service: { title: string } | null };
 
-type FaqRow = (typeof faqData)[number];
+interface FormState {
+  id: string;
+  question: string;
+  answer: string;
+  scope: FaqScope;
+  serviceId: string | null;
+}
 
-const emptyForm = (order: number): FaqRow => ({
-  id: "",
-  question: "",
-  answer: "",
-  active: true,
-  order,
-});
+const emptyForm = (): FormState => ({ id: "", question: "", answer: "", scope: "GLOBAL", serviceId: null });
+
+const SCOPE_LABELS: Record<FaqScope, string> = {
+  GLOBAL: "Global",
+  KONTAK: "Kontak",
+  SERVICE: "Layanan Tertentu",
+};
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
 
@@ -103,7 +112,6 @@ function Pagination({
         <ChevronRight size={14} aria-hidden="true" />
       </button>
 
-      {/* Loncat langsung ke halaman tertentu */}
       <div className="flex items-center gap-1.5 ml-1">
         <span className="text-xs text-black">Ke halaman</span>
         <input
@@ -126,7 +134,6 @@ function Pagination({
         </button>
       </div>
 
-      {/* Ukuran halaman */}
       <div className="flex items-center gap-1.5 ml-1">
         <span className="text-xs text-black">per halaman</span>
         <Select
@@ -148,19 +155,43 @@ function Pagination({
   );
 }
 
-/* ─── Halaman Manajemen FAQ Admin ─── */
-export default function FaqPageClient() {
-  const [faqs, setFaqs] = useState(faqData);
+/* ─── Halaman Manajemen FAQ Admin (tersambung Prisma) ─── */
+export default function FaqPageClient({
+  initialFaqs,
+  services,
+}: {
+  initialFaqs: FaqWithService[];
+  services: { id: string; title: string }[];
+}) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [isReordering, startReorderTransition] = useTransition();
+  const [prevInitialFaqs, setPrevInitialFaqs] = useState(initialFaqs);
+  const [faqs, setFaqs] = useState(initialFaqs);
+  if (initialFaqs !== prevInitialFaqs) {
+    setPrevInitialFaqs(initialFaqs);
+    setFaqs(initialFaqs);
+  }
+
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [form, setForm] = useState<FaqRow | null>(null);
+  const [form, setForm] = useState<FormState | null>(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
 
-  const toggleActive = (id: string) => {
-    setFaqs((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, active: !f.active } : f)),
-    );
+  const toggleActive = (faq: FaqWithService) => {
+    startTransition(async () => {
+      try {
+        const res = await toggleFaqActiveAction(faq.id, !faq.isActive);
+        if (res.ok) {
+          router.refresh();
+        } else {
+          swalError(res.message);
+        }
+      } catch {
+        swalError("Gagal mengubah status FAQ. Cek koneksi lalu coba lagi.");
+      }
+    });
   };
 
   const save = () => {
@@ -169,21 +200,51 @@ export default function FaqPageClient() {
       swalError("Pertanyaan dan jawaban wajib diisi");
       return;
     }
-    if (form.id) {
-      setFaqs((prev) => prev.map((f) => (f.id === form.id ? form : f)));
-      swalSuccess("FAQ diperbarui");
-    } else {
-      setFaqs((prev) => [...prev, { ...form, id: String(Date.now()) }]);
-      swalSuccess("FAQ ditambahkan");
+    if (form.scope === "SERVICE" && !form.serviceId) {
+      swalError("Layanan wajib dipilih untuk scope Layanan Tertentu");
+      return;
     }
-    setForm(null);
+
+    startTransition(async () => {
+      try {
+        const payload = {
+          question: form.question,
+          answer: form.answer,
+          scope: form.scope,
+          serviceId: form.scope === "SERVICE" ? form.serviceId : null,
+        };
+        const res = form.id
+          ? await updateFaqAction(form.id, payload)
+          : await createFaqAction(payload);
+        if (res.ok) {
+          swalSuccess(form.id ? "FAQ diperbarui" : "FAQ ditambahkan");
+          setForm(null);
+          router.refresh();
+        } else {
+          swalError(res.message);
+        }
+      } catch {
+        swalError("Gagal menyimpan FAQ. Cek koneksi lalu coba lagi.");
+      }
+    });
   };
 
-  const removeFaq = async (faq: FaqRow) => {
+  const removeFaq = async (faq: FaqWithService) => {
     const confirmed = await swalConfirmDelete(`FAQ "${faq.question}"`);
     if (!confirmed) return;
-    setFaqs((prev) => prev.filter((f) => f.id !== faq.id));
-    swalSuccess("FAQ dihapus");
+    startTransition(async () => {
+      try {
+        const res = await deleteFaqAction(faq.id);
+        if (res.ok) {
+          setFaqs((prev) => prev.filter((f) => f.id !== faq.id));
+          swalSuccess("FAQ dihapus");
+        } else {
+          swalError(res.message);
+        }
+      } catch {
+        swalError("Gagal menghapus FAQ. Cek koneksi lalu coba lagi.");
+      }
+    });
   };
 
   const filtered = faqs.filter((f) => {
@@ -195,175 +256,231 @@ export default function FaqPageClient() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const pageItems = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const canReorder = search.trim() === "" && totalPages === 1;
+
+  const handleReorder = (next: FaqWithService[]) => {
+    setFaqs(next);
+    startReorderTransition(async () => {
+      try {
+        const res = await reorderFaqAction(next.map((f) => f.id));
+        if (!res.ok) {
+          swalError(res.message);
+          setFaqs(initialFaqs);
+        }
+      } catch {
+        swalError("Gagal mengubah urutan FAQ. Cek koneksi lalu coba lagi.");
+        setFaqs(initialFaqs);
+      }
+    });
+  };
 
   return (
-    <>
-
-      <div className="p-6 lg:p-8 space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between gap-3">
-          <div className="flex gap-2 flex-1 sm:max-w-sm">
-            <div className="relative flex-1">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <Input
-                placeholder="Cari pertanyaan atau jawaban..."
-                className="pl-9 rounded-xl h-10"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
-              />
-            </div>
-            <Button type="button" className="rounded-xl h-10 flex-shrink-0">
-              Search
-            </Button>
+    <div className="p-6 lg:p-8 space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between gap-3">
+        <div className="flex gap-2 flex-1 sm:max-w-sm">
+          <div className="relative flex-1">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Input
+              placeholder="Cari pertanyaan atau jawaban..."
+              className="pl-9 rounded-xl h-10"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+            />
           </div>
-          <Button size="sm" className="gap-1.5 rounded-xl flex-shrink-0" onClick={() => setForm(emptyForm(faqs.length + 1))}>
-            <Plus size={14} />
-            Tambah FAQ
-          </Button>
         </div>
+        <Button size="sm" className="gap-1.5 rounded-xl flex-shrink-0" onClick={() => setForm(emptyForm())}>
+          <Plus size={14} />
+          Tambah FAQ
+        </Button>
+      </div>
 
+      <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500">
           Menampilkan {pageItems.length} dari {filtered.length} pertanyaan
         </p>
+        {!canReorder && filtered.length > 0 && (
+          <p className="text-xs text-gray-400">
+            Kosongkan pencarian &amp; tampilkan &ldquo;Semua&rdquo; per halaman untuk mengurutkan drag-and-drop.
+          </p>
+        )}
+      </div>
 
-        {/* ─── Daftar FAQ ─── */}
-        <div className="space-y-3">
-          {pageItems.map((faq) => (
-            <div
-              key={faq.id}
-              className={`bg-white rounded-2xl border border-admin-line overflow-hidden transition-all ${
-                !faq.active ? "opacity-60" : ""
-              }`}
-            >
-              {/* Header baris FAQ */}
-              <div className="flex items-center gap-3 px-5 py-4">
-                {/* Drag handle */}
-                <button className="text-gray-300 hover:text-gray-400 cursor-grab flex-shrink-0">
-                  <GripVertical size={16} />
-                </button>
+      <SortableList
+        items={pageItems}
+        getId={(f) => f.id}
+        disabled={!canReorder || isReordering}
+        onReorder={handleReorder}
+        renderItem={(faq) => (
+          <div
+            className={`bg-white rounded-2xl border border-admin-line overflow-hidden transition-all ${
+              !faq.isActive ? "opacity-60" : ""
+            }`}
+          >
+            <div className="flex items-center gap-3 px-5 py-4">
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-500 flex-shrink-0">
+                {SCOPE_LABELS[faq.scope]}
+                {faq.scope === "SERVICE" && faq.service ? ` · ${faq.service.title}` : ""}
+              </span>
 
-                {/* Nomor urut */}
-                <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-500 text-xs font-bold flex items-center justify-center flex-shrink-0">
-                  {faq.order}
-                </span>
+              <button
+                className="flex-1 text-left text-sm font-semibold text-gray-800 hover:text-primary transition-colors"
+                onClick={() => setExpandedId(expandedId === faq.id ? null : faq.id)}
+              >
+                {faq.question}
+              </button>
 
-                {/* Pertanyaan */}
-                <button
-                  className="flex-1 text-left text-sm font-semibold text-gray-800 hover:text-primary transition-colors"
-                  onClick={() => setExpandedId(expandedId === faq.id ? null : faq.id)}
-                >
-                  {faq.question}
-                </button>
-
-                {/* Status toggle */}
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <Switch
-                    checked={faq.active}
-                    onCheckedChange={() => toggleActive(faq.id)}
-                    className="scale-[0.85]"
-                  />
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => setForm(faq)}
-                      className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/5 transition-colors"
-                      aria-label="Edit FAQ"
-                    >
-                      <Pencil size={13} />
-                    </button>
-                    <button
-                      onClick={() => removeFaq(faq)}
-                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                      aria-label="Hapus FAQ"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <Switch
+                  checked={faq.isActive}
+                  disabled={isPending}
+                  onCheckedChange={() => toggleActive(faq)}
+                  className="scale-[0.85]"
+                />
+                <div className="flex items-center gap-1">
                   <button
-                    onClick={() => setExpandedId(expandedId === faq.id ? null : faq.id)}
-                    className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                    onClick={() =>
+                      setForm({
+                        id: faq.id,
+                        question: faq.question,
+                        answer: faq.answer,
+                        scope: faq.scope,
+                        serviceId: faq.serviceId,
+                      })
+                    }
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/5 transition-colors"
+                    aria-label="Edit FAQ"
                   >
-                    <ChevronDown
-                      size={16}
-                      className={cn("transition-transform duration-200", expandedId === faq.id && "rotate-180")}
-                    />
+                    <Pencil size={13} />
+                  </button>
+                  <button
+                    onClick={() => removeFaq(faq)}
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                    aria-label="Hapus FAQ"
+                  >
+                    <Trash2 size={13} />
                   </button>
                 </div>
+                <button
+                  onClick={() => setExpandedId(expandedId === faq.id ? null : faq.id)}
+                  className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <ChevronDown
+                    size={16}
+                    className={cn("transition-transform duration-200", expandedId === faq.id && "rotate-180")}
+                  />
+                </button>
               </div>
-
-              {/* Jawaban (expandable) */}
-              {expandedId === faq.id && (
-                <div className="px-5 pb-4 pt-0">
-                  <div className="ml-[52px] text-sm text-gray-600 leading-relaxed bg-gray-50 rounded-xl p-4 border border-admin-line">
-                    {faq.answer}
-                  </div>
-                </div>
-              )}
             </div>
-          ))}
-          {pageItems.length === 0 && (
-            <div className="bg-white rounded-2xl border border-admin-line px-5 py-10 text-center text-sm text-gray-400">
-              {faqs.length === 0 ? "Belum ada FAQ." : "Tidak ada FAQ yang cocok."}
-            </div>
-          )}
-        </div>
 
-        <Pagination
-          page={currentPage}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          pageSize={pageSize}
-          onPageSizeChange={(size) => {
-            setPageSize(size);
-            setPage(1);
-          }}
-        />
-
-        {/* ─── Dialog tambah/edit FAQ ─── */}
-        <Dialog open={form !== null} onOpenChange={(o) => !o && setForm(null)}>
-          <DialogContent className="sm:max-w-md">
-            {form && (
-              <>
-                <DialogTitle className="text-base font-bold text-gray-900">
-                  {form.id ? "Edit FAQ" : "Tambah FAQ"}
-                </DialogTitle>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="f-question" className="text-sm font-semibold text-gray-700">Pertanyaan</Label>
-                    <Input
-                      id="f-question"
-                      className="mt-1.5 rounded-lg"
-                      placeholder="mis. Berapa lama proses pendirian PT?"
-                      value={form.question}
-                      onChange={(e) => setForm({ ...form, question: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="f-answer" className="text-sm font-semibold text-gray-700">Jawaban</Label>
-                    <Textarea
-                      id="f-answer"
-                      rows={4}
-                      className="mt-1.5 rounded-lg resize-none"
-                      placeholder="Tulis jawaban lengkap..."
-                      value={form.answer}
-                      onChange={(e) => setForm({ ...form, answer: e.target.value })}
-                    />
-                  </div>
+            {expandedId === faq.id && (
+              <div className="px-5 pb-4 pt-0">
+                <div className="ml-1 text-sm text-gray-600 leading-relaxed bg-gray-50 rounded-xl p-4 border border-admin-line">
+                  {faq.answer}
                 </div>
-                <div className="flex gap-2 pt-1">
-                  <Button variant="outline" className="flex-1 rounded-lg" onClick={() => setForm(null)}>
-                    Batal
-                  </Button>
-                  <Button className="flex-1 rounded-lg" onClick={save}>
-                    Simpan
-                  </Button>
-                </div>
-              </>
+              </div>
             )}
-          </DialogContent>
-        </Dialog>
-      </div>
-    </>
+          </div>
+        )}
+      />
+      {pageItems.length === 0 && (
+        <div className="bg-white rounded-2xl border border-admin-line px-5 py-10 text-center text-sm text-gray-400">
+          {faqs.length === 0 ? "Belum ada FAQ." : "Tidak ada FAQ yang cocok."}
+        </div>
+      )}
+
+      <Pagination
+        page={currentPage}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        pageSize={pageSize}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPage(1);
+        }}
+      />
+
+      {/* ─── Dialog tambah/edit FAQ ─── */}
+      <Dialog open={form !== null} onOpenChange={(o) => !o && setForm(null)}>
+        <DialogContent className="sm:max-w-md">
+          {form && (
+            <>
+              <DialogTitle className="text-base font-bold text-gray-900">
+                {form.id ? "Edit FAQ" : "Tambah FAQ"}
+              </DialogTitle>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700">Scope</Label>
+                  <Select
+                    items={SCOPE_LABELS}
+                    value={form.scope}
+                    onValueChange={(v) => v && setForm({ ...form, scope: v as FaqScope, serviceId: v === "SERVICE" ? form.serviceId : null })}
+                  >
+                    <SelectTrigger className="mt-1.5 h-10 w-full rounded-lg">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent alignItemWithTrigger={false} align="start">
+                      {(Object.keys(SCOPE_LABELS) as FaqScope[]).map((s) => (
+                        <SelectItem key={s} value={s}>{SCOPE_LABELS[s]}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {form.scope === "SERVICE" && (
+                  <div>
+                    <Label className="text-sm font-semibold text-gray-700">Layanan</Label>
+                    <Select
+                      items={Object.fromEntries(services.map((s) => [s.id, s.title]))}
+                      value={form.serviceId ?? undefined}
+                      onValueChange={(v) => v && setForm({ ...form, serviceId: v })}
+                    >
+                      <SelectTrigger className="mt-1.5 h-10 w-full rounded-lg">
+                        <SelectValue placeholder="Pilih layanan..." />
+                      </SelectTrigger>
+                      <SelectContent alignItemWithTrigger={false} align="start">
+                        {services.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div>
+                  <Label htmlFor="f-question" className="text-sm font-semibold text-gray-700">Pertanyaan</Label>
+                  <Input
+                    id="f-question"
+                    className="mt-1.5 rounded-lg"
+                    placeholder="mis. Berapa lama proses pendirian PT?"
+                    value={form.question}
+                    onChange={(e) => setForm({ ...form, question: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="f-answer" className="text-sm font-semibold text-gray-700">Jawaban</Label>
+                  <Textarea
+                    id="f-answer"
+                    rows={4}
+                    className="mt-1.5 rounded-lg resize-none"
+                    placeholder="Tulis jawaban lengkap..."
+                    value={form.answer}
+                    onChange={(e) => setForm({ ...form, answer: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <Button variant="outline" className="flex-1 rounded-lg" onClick={() => setForm(null)}>
+                  Batal
+                </Button>
+                <Button className="flex-1 rounded-lg" onClick={save} disabled={isPending}>
+                  {isPending ? "Menyimpan..." : "Simpan"}
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

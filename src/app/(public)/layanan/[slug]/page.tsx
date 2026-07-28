@@ -1,45 +1,85 @@
 import type { Metadata } from "next";
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 
 import LayananDetailHeroSection from "@/components/sections/LayananDetailHeroSection";
 import LayananDetailAboutSection from "@/components/sections/LayananDetailAboutSection";
 import LayananDetailBenefitsSection from "@/components/sections/LayananDetailBenefitsSection";
 import LayananDetailTypesSection from "@/components/sections/LayananDetailTypesSection";
-import { SERVICES } from "@/lib/constants";
-import { getLayananDetail } from "@/lib/layanan-detail";
+import { prisma } from "@/lib/db";
+import { auth } from "@/lib/auth";
+import { hydrateLayananDetail } from "@/lib/hydrate-layanan-detail";
+import type { Role } from "@prisma/client";
 
 /* ─── Lazy load sections below the fold ─── */
-const LayananDetailProcessSection = dynamic(
+const LayananDetailProcessSection = nextDynamic(
   () => import("@/components/sections/LayananDetailProcessSection"),
 );
-const LayananDetailPricingSection = dynamic(
+const LayananDetailPricingSection = nextDynamic(
   () => import("@/components/sections/LayananDetailPricingSection"),
 );
-const LayananDetailTestimonialsSection = dynamic(
+const LayananDetailTestimonialsSection = nextDynamic(
   () => import("@/components/sections/LayananDetailTestimonialsSection"),
 );
-const LayananDetailFaqSection = dynamic(
+const LayananDetailFaqSection = nextDynamic(
   () => import("@/components/sections/LayananDetailFaqSection"),
 );
-const CtaSection = dynamic(() => import("@/components/sections/CtaSection"));
+const CtaSection = nextDynamic(() => import("@/components/sections/CtaSection"));
+
+const PREVIEW_ROLES: Role[] = ["SUPER_ADMIN", "ADMIN", "EDITOR"];
+
+/* Cek DRAFT-vs-PUBLISHED cuma manggil headers()/session KALAU statusnya
+ * DRAFT — krn dynamic API itu manggilnya kondisional, Next.js bisa salah
+ * nge-cache halaman ini sbg statis dari request pertama yg PUBLISHED (gak
+ * pernah kepanggil headers()), bikin toggle ke DRAFT belakangan gak
+ * ke-enforce ke pengunjung anonim. force-dynamic matiin caching itu sama
+ * sekali biar gating publish/unpublish selalu di-re-evaluasi tiap request. */
+export const dynamic = "force-dynamic";
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
 export async function generateStaticParams() {
-  return SERVICES.map((s) => ({ slug: s.slug }));
+  const services = await prisma.service.findMany({
+    where: { deletedAt: null, status: "PUBLISHED" },
+    select: { slug: true },
+  });
+  return services.map((s) => ({ slug: s.slug }));
+}
+
+/* Dipakai generateMetadata & halaman itu sendiri — satu query, gak dobel
+ * hit DB (Next.js dedup fetch requests dalam satu render, tapi Prisma call
+ * biasa gak otomatis dedup, jadi baca sekali lalu pakai bareng). */
+async function getServiceForDetail(slug: string) {
+  const service = await prisma.service.findUnique({
+    where: { slug },
+    include: {
+      featuredMedia: { select: { url: true } },
+      packages: { orderBy: { sortOrder: "asc" } },
+      category: true,
+    },
+  });
+  if (!service || service.deletedAt) return null;
+
+  if (service.status === "DRAFT") {
+    const session = await auth.api.getSession({ headers: await headers() });
+    const role = session?.user.role as Role | undefined;
+    if (!role || !PREVIEW_ROLES.includes(role)) return null;
+  }
+
+  return service;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const detail = getLayananDetail(slug);
-  if (!detail) return { title: "Layanan Tidak Ditemukan" };
+  const service = await getServiceForDetail(slug);
+  if (!service) return { title: "Layanan Tidak Ditemukan" };
 
   return {
-    title: `${detail.title} — ${detail.tagline}`,
-    description: detail.description,
+    title: service.metaTitle ?? service.title,
+    description: service.metaDescription ?? service.description,
     alternates: {
       canonical: `https://izinpro.co.id/layanan/${slug}`,
     },
@@ -49,8 +89,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 /* ─── Halaman Detail Layanan (desain baru) ─── */
 export default async function LayananDetailPage({ params }: Props) {
   const { slug } = await params;
-  const detail = getLayananDetail(slug);
-  if (!detail) notFound();
+  const service = await getServiceForDetail(slug);
+  if (!service) notFound();
+
+  const [faqs, testimonials, ctaDefault] = await Promise.all([
+    prisma.faq.findMany({
+      where: {
+        isActive: true,
+        OR: [{ scope: "SERVICE", serviceId: service.id }, { scope: "GLOBAL" }],
+      },
+      orderBy: { sortOrder: "asc" },
+    }),
+    prisma.testimonial.findMany({
+      where: { categoryId: service.categoryId, isActive: true, deletedAt: null },
+      orderBy: { sortOrder: "asc" },
+    }),
+    prisma.cta.findUnique({ where: { location: "DETAIL_LAYANAN" } }),
+  ]);
+
+  const detail = hydrateLayananDetail(service, service.packages, faqs, testimonials, ctaDefault);
 
   return (
     <>
@@ -58,7 +115,7 @@ export default async function LayananDetailPage({ params }: Props) {
       <LayananDetailHeroSection detail={detail} />
 
       {/* 2. Apa itu layanan ini */}
-      <LayananDetailAboutSection about={detail.about} />
+      <LayananDetailAboutSection about={detail.about} imageUrl={detail.imageUrl} />
 
       {/* 3. Keuntungan / manfaat (opsional) */}
       {detail.benefits && (

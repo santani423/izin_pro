@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { auth } from "../src/lib/auth";
 import { prisma } from "../src/lib/db";
+import type { Role } from "@prisma/client";
 
 import {
   COMPANY_INFO,
@@ -85,6 +86,7 @@ import { LAYANAN_CATEGORIES } from "../src/lib/layanan";
 import { KONTAK_FAQS } from "../src/lib/kontak";
 import { PROMO_PACKAGES } from "../src/lib/promo";
 import { getLayananDetail } from "../src/lib/layanan-detail";
+import { toServiceDetailContent, parsePriceToNumber } from "./service-detail-seed-helpers";
 import { getArticleDetail } from "../src/lib/blog-detail";
 import {
   PANDUAN_LEGALITAS_HERO,
@@ -278,6 +280,27 @@ async function main() {
     console.log(`Super Admin sudah ada: ${adminEmail}`);
   }
 
+  /* ═══ 1b. Akun demo per role (buat mempermudah demo di halaman login —
+   * ditampilkan lewat tombol "Lihat Akun Demo", lihat LoginFormClient.tsx).
+   * Idempotent sama kayak Super Admin di atas. */
+  const DEMO_ACCOUNTS: { email: string; password: string; name: string; role: Role }[] = [
+    { email: "demo-admin@izinpro.co.id", password: "demo1234", name: "Demo Admin", role: "ADMIN" },
+    { email: "demo-editor@izinpro.co.id", password: "demo1234", name: "Demo Editor", role: "EDITOR" },
+    { email: "demo-author@izinpro.co.id", password: "demo1234", name: "Demo Author", role: "AUTHOR" },
+  ];
+  for (const acc of DEMO_ACCOUNTS) {
+    const existing = await prisma.user.findUnique({ where: { email: acc.email } });
+    if (!existing) {
+      const result = await auth.api.signUpEmail({
+        body: { email: acc.email, password: acc.password, name: acc.name },
+      });
+      await prisma.user.update({ where: { id: result.user.id }, data: { role: acc.role } });
+      console.log(`Akun demo dibuat: ${acc.email} / ${acc.password} (${acc.role})`);
+    } else {
+      console.log(`Akun demo sudah ada: ${acc.email}`);
+    }
+  }
+
   /* ═══ 2. Guard: kalau data konten sudah pernah di-seed, skip semua di bawah ═══ */
   const settingsExists = await prisma.settings.findUnique({ where: { id: "1" } });
   if (settingsExists) {
@@ -409,15 +432,19 @@ async function main() {
   }
   console.log(`${Object.keys(categoryIdBySlug).length} ServiceCategory di-seed.`);
 
-  /* ═══ 6. Service (18) ═══ */
+  /* ═══ 6. Service (18) ═══
+   * detailContent (halaman /layanan/[slug]) langsung diisi lengkap sejak
+   * install baru — bukan cuma 3 slug hand-authored, SEMUA service dapet
+   * konten (yang 15 sisanya dari buildFallbackDetail() di layanan-detail.ts)
+   * + ServicePackage + Faq scope SERVICE (khusus 3 slug asli, sisanya pakai
+   * fallback Faq GLOBAL) — sama persis hasil akhir prisma/seed-service-detail-content.ts,
+   * cuma dijalanin sekali di sini biar install baru gak perlu backfill manual lagi. */
   const serviceIdBySlug: Record<string, string> = {};
   for (let i = 0; i < SERVICES.length; i++) {
     const s = SERVICES[i];
     const categorySlug = SERVICE_CATEGORY_BY_SLUG[s.slug];
     const categoryId = categoryIdBySlug[categorySlug];
-    const detailContent = SERVICE_SLUGS_WITH_DETAIL.includes(s.slug)
-      ? (stripIcons(getLayananDetail(s.slug)) as object)
-      : undefined;
+    const detail = getLayananDetail(s.slug)!; // selalu ada — fallback generator jamin ini
     const created = await prisma.service.create({
       data: {
         slug: s.slug,
@@ -428,13 +455,48 @@ async function main() {
         bgColor: s.bgColor,
         categoryId,
         features: s.features,
-        detailContent,
+        detailContent: toServiceDetailContent(detail) as object,
+        metaTitle: `${detail.title} — ${detail.tagline}`,
+        metaDescription: detail.description,
+        status: "PUBLISHED",
         sortOrder: i,
         createdById: admin.id,
         updatedById: admin.id,
       },
     });
     serviceIdBySlug[s.slug] = created.id;
+
+    if (detail.packages) {
+      for (const [pkgIndex, pkg] of detail.packages.items.entries()) {
+        await prisma.servicePackage.create({
+          data: {
+            serviceId: created.id,
+            name: pkg.name,
+            price: parsePriceToNumber(pkg.price),
+            isPopular: pkg.popular ?? false,
+            features: pkg.features,
+            sortOrder: pkgIndex,
+          },
+        });
+      }
+    }
+
+    // FAQ scope SERVICE cuma utk 3 layanan hand-authored — sisanya pakai
+    // fallback Faq GLOBAL (dari FAQS, di-seed di step 9) biar gak nyampah
+    // 15x FAQ generik yang isinya sama.
+    if (SERVICE_SLUGS_WITH_DETAIL.includes(s.slug)) {
+      for (const [faqIndex, faq] of detail.faqs.items.entries()) {
+        await prisma.faq.create({
+          data: {
+            question: faq.question,
+            answer: faq.answer,
+            scope: "SERVICE",
+            serviceId: created.id,
+            sortOrder: faqIndex,
+          },
+        });
+      }
+    }
   }
   console.log(`${SERVICES.length} Service di-seed.`);
 

@@ -3,7 +3,8 @@ import { ArrowRight } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/Reveal";
-import { TYPE_ICONS, type LayananDetail } from "@/lib/layanan-detail";
+import type { LayananDetail } from "@/lib/hydrate-layanan-detail";
+import { TYPE_ICONS } from "@/lib/detail-icons";
 
 /* ─── Jenis-jenis layanan yang ditangani (opsional, mis. Izin Usaha) ─── */
 export default function LayananDetailTypesSection({

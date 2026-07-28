@@ -2,7 +2,7 @@ import { ChevronRight } from "lucide-react";
 
 import { Reveal } from "@/components/shared/Reveal";
 import { cn } from "@/lib/utils";
-import type { LayananDetail } from "@/lib/layanan-detail";
+import type { LayananDetail } from "@/lib/hydrate-layanan-detail";
 
 /* ─── Alur proses layanan — 5 langkah bernomor ─── */
 export default function LayananDetailProcessSection({

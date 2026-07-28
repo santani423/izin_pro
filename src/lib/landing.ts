@@ -4,16 +4,7 @@
  */
 
 import type { LucideIcon } from "lucide-react";
-import {
-  Briefcase,
-  FileBadge,
-  FileCheck2,
-  UserCheck,
-  FileStack,
-  Zap,
-  ShieldCheck,
-  Users,
-} from "lucide-react";
+import { Zap, ShieldCheck, Users } from "lucide-react";
 import { COMPANY_INFO } from "@/lib/constants";
 
 
@@ -39,57 +30,6 @@ export interface HeroStat {
 export const HERO_STATS: HeroStat[] = [
   { value: "5.000+", label: "Perizinan Selesai" },
   { value: "99%", label: "Kepuasan Klien", withStars: true },
-];
-
-/* ─── Layanan ─── */
-export interface LandingService {
-  id: string;
-  icon: LucideIcon;
-  title: string;
-  description: string;
-  href: string;
-}
-
-export const LANDING_SERVICES: LandingService[] = [
-  {
-    id: "pendirian-pt",
-    icon: Briefcase,
-    title: "Pendirian PT",
-    description:
-      "Dirikan PT dengan mudah sesuai regulasi dan legalitas yang berlaku.",
-    href: "/layanan/pendirian-pt",
-  },
-  {
-    id: "nib",
-    icon: FileBadge,
-    title: "NIB (Nomor Induk Berusaha)",
-    description:
-      "Urus NIB secara mudah, cepat dan resmi untuk memulai usaha Anda.",
-    href: "/layanan/nib",
-  },
-  {
-    id: "izin-usaha",
-    icon: FileCheck2,
-    title: "Izin Usaha",
-    description: "Berbagai jenis izin usaha sesuai bidang bisnis Anda.",
-    href: "/layanan/izin-usaha",
-  },
-  {
-    id: "izin-komersial",
-    icon: UserCheck,
-    title: "Izin Komersial & Operasional",
-    description:
-      "Perizinan operasional untuk menunjang kegiatan bisnis secara legal.",
-    href: "/layanan/izin-komersial",
-  },
-  {
-    id: "perizinan-lainnya",
-    icon: FileStack,
-    title: "Perizinan Lainnya",
-    description:
-      "Layanan perizinan lainnya yang disesuaikan dengan kebutuhan usaha Anda.",
-    href: "/layanan/perizinan-lainnya",
-  },
 ];
 
 /* ─── Promo ─── */

@@ -19,6 +19,7 @@ export default async function AdminLayananPage({
       where: { deletedAt: null },
       include: {
         category: true,
+        featuredMedia: { select: { id: true, url: true } },
         createdBy: { select: { name: true } },
         updatedBy: { select: { name: true } },
       },

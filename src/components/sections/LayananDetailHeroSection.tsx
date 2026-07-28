@@ -1,10 +1,11 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ChevronRight, Star } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { COMPANY_INFO } from "@/lib/constants";
-import type { LayananDetail } from "@/lib/layanan-detail";
+import type { LayananDetail } from "@/lib/hydrate-layanan-detail";
 
 /* ─── Hero detail layanan — breadcrumb, judul, highlight & kartu statistik ─── */
 export default function LayananDetailHeroSection({
@@ -83,11 +84,24 @@ export default function LayananDetailHeroSection({
 
         {/* Foto + kartu statistik mengambang */}
         <div className="relative">
-          <div
-            role="img"
-            aria-label={`Ilustrasi layanan ${detail.title}`}
-            className="aspect-[16/10] w-full rounded-2xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark"
-          />
+          {detail.imageUrl ? (
+            <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl">
+              <Image
+                src={detail.imageUrl}
+                alt={`Ilustrasi layanan ${detail.title}`}
+                fill
+                sizes="(min-width: 1024px) 50vw, 100vw"
+                className="object-cover"
+                priority
+              />
+            </div>
+          ) : (
+            <div
+              role="img"
+              aria-label={`Ilustrasi layanan ${detail.title}`}
+              className="aspect-[16/10] w-full rounded-2xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark"
+            />
+          )}
           <div className="mt-4 flex flex-wrap gap-4 lg:absolute lg:-right-2 lg:bottom-6 lg:mt-0 lg:flex-col">
             {detail.stats.map(({ icon: Icon, value, label, withStars }) => (
               <div

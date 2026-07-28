@@ -356,7 +356,10 @@ model Service {
   featuredMediaId String?
   featuredMedia   Media?          @relation("ServiceFeaturedMedia", fields: [featuredMediaId], references: [id])
   features        Json
-  detailContent   Json? // highlights, stats, proses, benefits, jenis izin, dll
+  detailContent   Json? // ServiceDetailContent (lihat src/lib/types/service-detail-content.ts) — highlights, stats, about, benefits, jenis izin, proses, dokumen, durasi, dll utk /layanan/[slug]
+  metaTitle       String?
+  metaDescription String?
+  status          ContentStatus   @default(PUBLISHED)
   isActive        Boolean         @default(true)
   sortOrder       Int             @default(0)
   deletedAt       DateTime?

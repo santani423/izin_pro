@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import HeroSection, { DEFAULT_HERO_CONTENT, type HeroContentData } from "@/components/sections/HeroSection";
-import ServicesSection from "@/components/sections/ServicesSection";
+import ServicesSection, { type ServiceCardData } from "@/components/sections/ServicesSection";
 import PromoSection from "@/components/sections/PromoSection";
 import AboutSection from "@/components/sections/AboutSection";
 import { getPublicTestimonials } from "@/lib/testimonials-data";
@@ -45,10 +45,31 @@ async function getHeroContent(): Promise<HeroContentData> {
   };
 }
 
+/* 5 layanan pertama (urut sortOrder dari admin) buat kartu "Daftar Layanan"
+ * di beranda — sama kayak kurasi LANDING_SERVICES sebelumnya, cuma sekarang
+ * beneran dari Prisma (termasuk gambar titel kalau admin pasang). */
+async function getHomeServices(): Promise<ServiceCardData[]> {
+  const services = await prisma.service.findMany({
+    where: { deletedAt: null, isActive: true },
+    include: { featuredMedia: { select: { url: true } } },
+    orderBy: { sortOrder: "asc" },
+    take: 5,
+  });
+  return services.map((s) => ({
+    id: s.id,
+    icon: s.icon,
+    title: s.title,
+    description: s.description,
+    href: `/layanan/${s.slug}`,
+    imageUrl: s.featuredMedia?.url ?? null,
+  }));
+}
+
 /* ─── Halaman Beranda (desain baru) ─── */
 export default async function HomePage() {
-  const [heroContent, { textTestimonials, videoTestimonials }] = await Promise.all([
+  const [heroContent, homeServices, { textTestimonials, videoTestimonials }] = await Promise.all([
     getHeroContent(),
+    getHomeServices(),
     getPublicTestimonials(),
   ]);
   const blogPosts = (await getPublicBlogPosts()).slice(0, 4);
@@ -59,7 +80,7 @@ export default async function HomePage() {
       <HeroSection content={heroContent} />
 
       {/* 2. Daftar Layanan */}
-      <ServicesSection />
+      <ServicesSection services={homeServices} />
 
       {/* 3. Promo Spesial */}
       <PromoSection />

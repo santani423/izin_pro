@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE `services` ADD COLUMN `metaDescription` VARCHAR(191) NULL,
+    ADD COLUMN `metaTitle` VARCHAR(191) NULL,
+    ADD COLUMN `status` ENUM('DRAFT', 'PUBLISHED') NOT NULL DEFAULT 'PUBLISHED';

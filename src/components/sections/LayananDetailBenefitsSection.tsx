@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/Reveal";
-import type { LayananDetail } from "@/lib/layanan-detail";
+import type { LayananDetail } from "@/lib/hydrate-layanan-detail";
 
 /* ─── Keuntungan / manfaat layanan — grid 5 kartu ─── */
 export default function LayananDetailBenefitsSection({

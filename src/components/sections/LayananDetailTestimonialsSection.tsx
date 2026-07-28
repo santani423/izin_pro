@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/Reveal";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { COMPANY_INFO } from "@/lib/constants";
-import type { LayananDetail } from "@/lib/layanan-detail";
+import type { LayananDetail } from "@/lib/hydrate-layanan-detail";
 
 /* Inisial nama untuk avatar, mis. "Budi Santoso" → "BS" */
 function getInitials(name: string) {

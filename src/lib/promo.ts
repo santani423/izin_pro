@@ -15,7 +15,7 @@ import {
   Zap,
 } from "lucide-react";
 import type { HighlightItem } from "@/components/shared/HighlightsBar";
-import type { DetailStep } from "@/lib/layanan-detail";
+import type { DetailStep } from "@/lib/hydrate-layanan-detail";
 
 /* ─── Highlight bar di bawah hero ─── */
 export const PROMO_HIGHLIGHTS: HighlightItem[] = [
