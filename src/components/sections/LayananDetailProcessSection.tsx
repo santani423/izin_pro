@@ -23,7 +23,7 @@ export default function LayananDetailProcessSection({
         )}
       >
         {process.steps.map(({ icon: Icon, title, description }, index) => (
-          <Reveal key={title} delay={index * 0.08}>
+          <Reveal key={index} delay={index * 0.08}>
             <li className="relative flex flex-col items-center text-center">
               {/* Panah putus-putus ke langkah berikutnya — hanya saat 5 kolom sejajar (lg) */}
               {index < process.steps.length - 1 && (

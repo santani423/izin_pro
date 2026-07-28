@@ -29,7 +29,7 @@ export default function LayananDetailPricingSection({
             );
             return (
               <Reveal
-                key={pkg.name}
+                key={index}
                 delay={index * 0.08}
                 className="relative h-full"
               >
@@ -65,8 +65,8 @@ export default function LayananDetailPricingSection({
                       {pkg.price}
                     </p>
                     <ul className="mt-4 flex-1 space-y-2.5">
-                      {pkg.features.map((feature) => (
-                        <li key={feature} className="flex items-start gap-2">
+                      {pkg.features.map((feature, featureIndex) => (
+                        <li key={featureIndex} className="flex items-start gap-2">
                           <Check
                             className={cn(
                               "mt-0.5 size-4 shrink-0",
@@ -120,8 +120,8 @@ export default function LayananDetailPricingSection({
               {packages.documents.title}
             </h3>
             <ul className="mt-3 space-y-2.5">
-              {packages.documents.items.map((doc) => (
-                <li key={doc} className="flex items-start gap-2.5">
+              {packages.documents.items.map((doc, docIndex) => (
+                <li key={docIndex} className="flex items-start gap-2.5">
                   <ClipboardCheck
                     className="mt-0.5 size-4 shrink-0 text-primary"
                     aria-hidden="true"

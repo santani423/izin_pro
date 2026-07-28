@@ -25,7 +25,7 @@ export default function LayananDetailFaqSection({
         {faqs.items.map((faq, index) => {
           const isOpen = openIndex === index;
           return (
-            <Reveal key={faq.question} delay={index * 0.05}>
+            <Reveal key={index} delay={index * 0.05}>
               <div
                 className={cn(
                   "overflow-hidden rounded-xl border bg-card transition-colors",

@@ -31,7 +31,7 @@ export default function LayananDetailTestimonialsSection({
         </h2>
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {testimonials.items.map(({ name, role, content }, index) => (
-            <Reveal key={name} delay={index * 0.08}>
+            <Reveal key={index} delay={index * 0.08}>
               <Card className="h-full gap-0 rounded-xl border-border/60 py-0">
                 <CardContent className="flex h-full flex-col px-4 py-5">
                   <p

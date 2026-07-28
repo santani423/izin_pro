@@ -19,6 +19,7 @@ export default async function AdminLayananDetailEditPage({
     where: { id },
     include: {
       featuredMedia: { select: { id: true, url: true } },
+      aboutMedia: { select: { id: true, url: true } },
       packages: { orderBy: { sortOrder: "asc" } },
       faqs: { where: { scope: "SERVICE" }, orderBy: { sortOrder: "asc" } },
     },

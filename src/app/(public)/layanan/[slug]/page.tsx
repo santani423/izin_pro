@@ -57,6 +57,7 @@ async function getServiceForDetail(slug: string) {
     where: { slug },
     include: {
       featuredMedia: { select: { url: true } },
+      aboutMedia: { select: { url: true } },
       packages: { orderBy: { sortOrder: "asc" } },
       category: true,
     },
@@ -115,7 +116,7 @@ export default async function LayananDetailPage({ params }: Props) {
       <LayananDetailHeroSection detail={detail} />
 
       {/* 2. Apa itu layanan ini */}
-      <LayananDetailAboutSection about={detail.about} imageUrl={detail.imageUrl} />
+      <LayananDetailAboutSection about={detail.about} imageUrl={detail.about.imageUrl} />
 
       {/* 3. Keuntungan / manfaat (opsional) */}
       {detail.benefits && (

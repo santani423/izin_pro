@@ -134,6 +134,41 @@ export async function updateServiceFeaturedMediaAction(
   }
 }
 
+/** Gambar khusus section "Tentang" — independen dari gambar Hero
+ * (Service.featuredMediaId). Kalau gak diisi, section Tentang fallback ke
+ * gambar Hero (lihat hydrateLayananDetail), jadi service yg belum diisi
+ * gambar khusus ini tampilannya gak berubah. */
+export async function uploadServiceAboutImageAction(formData: FormData): Promise<UploadImageResult> {
+  try {
+    const session = await requireContentEditor();
+    const file = formData.get("image") as File | null;
+    if (!file || file.size === 0) return { ok: false, message: "File gambar wajib diunggah." };
+    const media = await saveUploadedImage(file, "layanan", session.user.id);
+    return { ok: true, mediaId: media.id, url: media.url };
+  } catch (e) {
+    return { ok: false, message: errorMessage(e, "Gagal mengunggah gambar Tentang.") };
+  }
+}
+
+/** Tautkan (atau lepas, mediaId=null) gambar khusus ke Service.aboutMediaId —
+ * dipanggil setelah uploadServiceAboutImageAction sukses. */
+export async function updateServiceAboutMediaAction(
+  id: string,
+  mediaId: string | null,
+): Promise<ActionResult> {
+  try {
+    const session = await requireContentEditor();
+    const service = await prisma.service.update({
+      where: { id },
+      data: { aboutMediaId: mediaId, updatedById: session.user.id },
+    });
+    revalidateServiceDetailPaths(service.slug);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: errorMessage(e, "Gagal menautkan gambar Tentang.") };
+  }
+}
+
 export async function toggleServiceActiveAction(id: string, isActive: boolean): Promise<ActionResult> {
   try {
     const session = await requireContentEditor();

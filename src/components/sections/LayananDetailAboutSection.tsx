@@ -17,9 +17,9 @@ export default function LayananDetailAboutSection({
         <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           {about.title}
         </h2>
-        {about.paragraphs.map((paragraph) => (
+        {about.paragraphs.map((paragraph, index) => (
           <p
-            key={paragraph}
+            key={index}
             className="mt-4 text-sm leading-relaxed text-muted-foreground sm:text-base"
           >
             {paragraph}
@@ -42,8 +42,8 @@ export default function LayananDetailAboutSection({
             />
           )}
           <ul className="space-y-3">
-            {about.checklist.map((item) => (
-              <li key={item} className="flex items-start gap-2.5">
+            {about.checklist.map((item, index) => (
+              <li key={index} className="flex items-start gap-2.5">
                 <CheckCircle2
                   className="mt-0.5 size-4 shrink-0 text-primary"
                   aria-hidden="true"

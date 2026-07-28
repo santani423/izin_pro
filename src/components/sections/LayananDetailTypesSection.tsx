@@ -22,7 +22,7 @@ export default function LayananDetailTypesSection({
         {types.items.map(({ title, description }, index) => {
           const Icon = TYPE_ICONS[index % TYPE_ICONS.length];
           return (
-            <Reveal key={title} delay={index * 0.08}>
+            <Reveal key={index} delay={index * 0.08}>
               <Card className="h-full gap-0 overflow-hidden rounded-xl border-border/60 py-0">
                 {/* Placeholder foto — gradient hijau brand */}
                 <div

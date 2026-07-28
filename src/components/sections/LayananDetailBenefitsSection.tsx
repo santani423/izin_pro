@@ -16,7 +16,7 @@ export default function LayananDetailBenefitsSection({
 
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {benefits.items.map(({ icon: Icon, title, description }, index) => (
-          <Reveal key={title} delay={index * 0.08}>
+          <Reveal key={index} delay={index * 0.08}>
             <Card className="h-full gap-0 rounded-xl border-border/60 py-0">
               <CardContent className="flex h-full flex-col items-center px-4 py-6 text-center">
                 <span className="flex size-11 items-center justify-center rounded-lg border border-primary/30 text-primary">

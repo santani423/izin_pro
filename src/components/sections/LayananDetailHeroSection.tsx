@@ -53,8 +53,8 @@ export default function LayananDetailHeroSection({
 
           {/* Highlight pills */}
           <ul className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {detail.highlights.map(({ icon: Icon, label }) => (
-              <li key={label} className="flex items-center gap-2.5">
+            {detail.highlights.map(({ icon: Icon, label }, index) => (
+              <li key={index} className="flex items-center gap-2.5">
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-primary/30 text-primary">
                   <Icon className="size-4" aria-hidden="true" />
                 </span>
@@ -103,9 +103,9 @@ export default function LayananDetailHeroSection({
             />
           )}
           <div className="mt-4 flex flex-wrap gap-4 lg:absolute lg:-right-2 lg:bottom-6 lg:mt-0 lg:flex-col">
-            {detail.stats.map(({ icon: Icon, value, label, withStars }) => (
+            {detail.stats.map(({ icon: Icon, value, label, withStars }, index) => (
               <div
-                key={label}
+                key={index}
                 className="flex-1 rounded-xl border border-border/60 bg-background px-4 py-3 shadow-sm lg:flex-none"
               >
                 <p className="flex items-center gap-2 text-lg font-extrabold text-foreground">

@@ -31,6 +31,8 @@ import {
   updateServiceMetaAction,
   updateServiceFeaturedMediaAction,
   uploadServiceFeaturedImageAction,
+  updateServiceAboutMediaAction,
+  uploadServiceAboutImageAction,
 } from "@/lib/actions/services";
 import {
   createServicePackageAction,
@@ -55,6 +57,7 @@ type SerializedPackage = Omit<ServicePackage, "price" | "originalPrice"> & {
 
 type ServiceWithRelations = Service & {
   featuredMedia: { id: string; url: string } | null;
+  aboutMedia: { id: string; url: string } | null;
   packages: SerializedPackage[];
   faqs: Faq[];
 };
@@ -143,6 +146,7 @@ export default function LayananDetailEditor({
   const [isSavingContent, startSaveContent] = useTransition();
   const [isSavingMeta, startSaveMeta] = useTransition();
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isUploadingAboutImage, setIsUploadingAboutImage] = useState(false);
 
   const initialContent = (service.detailContent as ServiceDetailContent | null) ?? FALLBACK_CONTENT;
 
@@ -153,6 +157,7 @@ export default function LayananDetailEditor({
   const [ctaOverrideEnabled, setCtaOverrideEnabled] = useState(Boolean(initialContent.cta));
 
   const [imageUrl, setImageUrl] = useState(service.featuredMedia?.url ?? null);
+  const [aboutImageUrl, setAboutImageUrl] = useState(service.aboutMedia?.url ?? null);
 
   const [metaTitle, setMetaTitle] = useState(service.metaTitle ?? "");
   const [metaDescription, setMetaDescription] = useState(service.metaDescription ?? "");
@@ -209,6 +214,52 @@ export default function LayananDetailEditor({
       swalError("Gagal menghapus gambar. Cek koneksi lalu coba lagi.");
     } finally {
       setIsUploadingImage(false);
+    }
+  };
+
+  /* Gambar khusus section Tentang — independen dari gambar Hero di atas.
+   * Kalau gak diisi, section Tentang otomatis pakai gambar Hero (lihat
+   * hydrateLayananDetail di src/lib/hydrate-layanan-detail.ts). */
+  const uploadAboutImage = async (file: File) => {
+    setIsUploadingAboutImage(true);
+    try {
+      const fd = new FormData();
+      fd.append("image", file);
+      const uploadRes = await uploadServiceAboutImageAction(fd);
+      if (!uploadRes.ok) {
+        swalError(uploadRes.message);
+        return;
+      }
+      const linkRes = await updateServiceAboutMediaAction(service.id, uploadRes.mediaId);
+      if (linkRes.ok) {
+        setAboutImageUrl(uploadRes.url);
+        swalSuccess("Gambar Tentang berhasil disimpan");
+        router.refresh();
+      } else {
+        swalError(linkRes.message);
+      }
+    } catch {
+      swalError("Gagal mengunggah gambar. Cek koneksi lalu coba lagi.");
+    } finally {
+      setIsUploadingAboutImage(false);
+    }
+  };
+
+  const removeAboutImage = async () => {
+    setIsUploadingAboutImage(true);
+    try {
+      const res = await updateServiceAboutMediaAction(service.id, null);
+      if (res.ok) {
+        setAboutImageUrl(null);
+        swalSuccess("Gambar Tentang dihapus, kembali memakai gambar Hero");
+        router.refresh();
+      } else {
+        swalError(res.message);
+      }
+    } catch {
+      swalError("Gagal menghapus gambar. Cek koneksi lalu coba lagi.");
+    } finally {
+      setIsUploadingAboutImage(false);
     }
   };
 
@@ -635,6 +686,38 @@ export default function LayananDetailEditor({
 
         {/* ─── Tentang ─── */}
         <TabsContent value="about" className="space-y-5">
+          <SectionCard icon={Info} title="Gambar Tentang" description="Khusus section ini, independen dari Gambar Hero. Kosongkan untuk otomatis memakai Gambar Hero.">
+            <div className="flex items-center gap-3">
+              <div className="flex h-20 w-28 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
+                {aboutImageUrl ? (
+                  <Image src={aboutImageUrl} alt="" width={112} height={80} unoptimized className="h-full w-full object-cover" />
+                ) : (
+                  <ImagePlus size={20} className="text-gray-300" />
+                )}
+              </div>
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                <ImagePlus size={15} />
+                {isUploadingAboutImage ? "Mengunggah..." : "Pilih Gambar"}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  disabled={isUploadingAboutImage}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) uploadAboutImage(file);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+              {aboutImageUrl && (
+                <Button type="button" variant="outline" size="sm" className="gap-1.5 rounded-lg text-red-500 hover:bg-red-50" onClick={removeAboutImage} disabled={isUploadingAboutImage}>
+                  <Trash2 size={13} /> Hapus
+                </Button>
+              )}
+            </div>
+          </SectionCard>
+
           <SectionCard icon={Info} title="Bagian &quot;Apa itu...&quot;">
             <div className="space-y-1.5">
               <Label>Judul</Label>

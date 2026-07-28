@@ -75,6 +75,7 @@ export interface LayananDetail {
     checklist?: string[];
     imageLabel: string;
     badge?: string;
+    imageUrl: string | null;
   };
   benefits?: {
     title: string;
@@ -169,7 +170,7 @@ function fallbackContent(service: Service): ServiceDetailContent {
 }
 
 export function hydrateLayananDetail(
-  service: Service & { featuredMedia: Pick<Media, "url"> | null },
+  service: Service & { featuredMedia: Pick<Media, "url"> | null; aboutMedia: Pick<Media, "url"> | null },
   packages: ServicePackage[],
   faqs: Faq[],
   testimonials: Testimonial[],
@@ -193,7 +194,13 @@ export function hydrateLayananDetail(
       label: s.label,
       withStars: s.withStars,
     })),
-    about: content.about,
+    about: {
+      ...content.about,
+      // Fallback ke gambar Hero kalau belum diisi tersendiri — biar semua
+      // service yg udah ke-seed (belum punya aboutMediaId) gak berubah
+      // tampilannya, tapi admin bisa override per-service kalau mau beda.
+      imageUrl: service.aboutMedia?.url ?? service.featuredMedia?.url ?? null,
+    },
     benefits: content.benefits
       ? {
           title: content.benefits.title,

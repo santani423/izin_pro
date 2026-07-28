@@ -274,6 +274,7 @@ model Media {
   blogPostsFeatured BlogPost[]    @relation("BlogPostFeaturedMedia")
   teamMembers       TeamMember[]  @relation("TeamMemberPhoto")
   services          Service[]     @relation("ServiceFeaturedMedia")
+  servicesAbout     Service[]     @relation("ServiceAboutMedia")
   testimonials      Testimonial[] @relation("TestimonialPhoto")
   partners          Partner[]     @relation("PartnerLogo")
 
@@ -355,6 +356,8 @@ model Service {
   category        ServiceCategory @relation(fields: [categoryId], references: [id])
   featuredMediaId String?
   featuredMedia   Media?          @relation("ServiceFeaturedMedia", fields: [featuredMediaId], references: [id])
+  aboutMediaId    String? // gambar khusus section "Tentang" di /layanan/[slug] — opsional, fallback ke featuredMedia (gambar Hero) kalau kosong
+  aboutMedia      Media?          @relation("ServiceAboutMedia", fields: [aboutMediaId], references: [id])
   features        Json
   detailContent   Json? // ServiceDetailContent (lihat src/lib/types/service-detail-content.ts) — highlights, stats, about, benefits, jenis izin, proses, dokumen, durasi, dll utk /layanan/[slug]
   metaTitle       String?
