@@ -35,27 +35,35 @@ const VIDEO_GRADIENTS = [
   "from-red-500 to-red-950",
 ];
 
-/** Konversi link YouTube (watch/short/embed) jadi URL embed. */
-function getYouTubeEmbedUrl(url: string | null): string | null {
+/** Ekstrak video ID dari link YouTube (watch/short/embed). */
+function getYouTubeVideoId(url: string | null): string | null {
   if (!url) return null;
   try {
     const u = new URL(url);
-    let videoId: string | null = null;
     if (u.hostname.includes("youtu.be")) {
-      videoId = u.pathname.slice(1);
-    } else if (u.hostname.includes("youtube.com")) {
-      if (u.pathname === "/watch") {
-        videoId = u.searchParams.get("v");
-      } else if (u.pathname.startsWith("/embed/")) {
-        videoId = u.pathname.split("/embed/")[1];
-      } else if (u.pathname.startsWith("/shorts/")) {
-        videoId = u.pathname.split("/shorts/")[1];
-      }
+      return u.pathname.slice(1);
     }
-    return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+    if (u.hostname.includes("youtube.com")) {
+      if (u.pathname === "/watch") return u.searchParams.get("v");
+      if (u.pathname.startsWith("/embed/")) return u.pathname.split("/embed/")[1];
+      if (u.pathname.startsWith("/shorts/")) return u.pathname.split("/shorts/")[1];
+    }
+    return null;
   } catch {
     return null;
   }
+}
+
+/** Konversi link YouTube jadi URL embed. */
+function getYouTubeEmbedUrl(url: string | null): string | null {
+  const videoId = getYouTubeVideoId(url);
+  return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+}
+
+/** Frame asli video dari YouTube — dipakai sbg thumbnail kalau admin belum unggah thumbnailUrl sendiri. */
+function getYouTubeThumbnailUrl(url: string | null): string | null {
+  const videoId = getYouTubeVideoId(url);
+  return videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null;
 }
 
 /* ─── Video Testimoni Klien — klik kartu membuka pop-up pemutar ─── */
@@ -81,6 +89,10 @@ export default function VideoTestimonialsSection({
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {videos.map((video, index) => {
           const gradient = VIDEO_GRADIENTS[index % VIDEO_GRADIENTS.length];
+          /* Thumbnail — thumbnailUrl manual, lalu frame asli dari YouTube, gradient warna sbg fallback terakhir.
+           * Pakai || (bukan ??) krn thumbnailUrl kadang tersimpan "" (bukan null) dari form kosong. */
+          const thumbnailSrc =
+            video.thumbnailUrl || getYouTubeThumbnailUrl(video.videoUrl);
           return (
           <Reveal key={video.id} delay={index * 0.08}>
             <article className="group">
@@ -93,10 +105,9 @@ export default function VideoTestimonialsSection({
                 }}
                 className="relative block w-full overflow-hidden rounded-xl"
               >
-                {/* Thumbnail — pakai thumbnailUrl kalau ada, gradient warna sbg fallback */}
-                {video.thumbnailUrl ? (
+                {thumbnailSrc ? (
                   <img
-                    src={video.thumbnailUrl}
+                    src={thumbnailSrc}
                     alt={video.title}
                     className="aspect-video w-full object-cover"
                   />

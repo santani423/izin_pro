@@ -1,7 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Pencil, Trash2, MoreHorizontal, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import {
+  Plus, Pencil, Trash2, MoreHorizontal, Search, ChevronLeft, ChevronRight,
+  ChevronUp, ChevronDown, ImagePlus,
+} from "lucide-react";
+import type { TeamMember } from "@prisma/client";
 import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,44 +33,65 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { TEAM_MEMBERS } from "@/lib/constants";
+import {
+  createTeamMemberAction,
+  updateTeamMemberAction,
+  deleteTeamMemberAction,
+  toggleTeamMemberActiveAction,
+  reorderTeamMembersAction,
+  uploadTeamPhotoAction,
+} from "@/lib/actions/team";
 
-/* ─── Data anggota tim diperluas dengan departemen & status ─── */
-const teamData = TEAM_MEMBERS.map((m, i) => ({
-  ...m,
-  id: String(i + 1),
-  department: ["Manajemen", "Legal", "Konsultasi", "Operasional", "Business Dev", "Customer Relations"][i] ?? "Lainnya",
-  email: `${m.initials.toLowerCase()}@izinpro.co.id`,
-  phone: `+62 812-000-000${i + 1}`,
-  location: ["Jakarta", "Bandung", "Surabaya", "Yogyakarta", "Semarang", "Medan"][i] ?? "Jakarta",
-  active: true,
-}));
-
-type MemberRow = (typeof teamData)[number];
-
-const GRADIENTS = [
-  "from-emerald-400 to-green-600",
-  "from-sky-400 to-blue-600",
-  "from-amber-400 to-orange-600",
-  "from-violet-400 to-purple-600",
-  "from-rose-400 to-red-500",
-];
+type MemberRow = TeamMember & { photoMedia: { url: string } | null };
 
 const initialsOf = (name: string) =>
   name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
 
-const emptyForm = (): MemberRow => ({
-  id: "",
-  name: "",
-  role: "",
-  initials: "",
-  gradient: GRADIENTS[0],
-  department: "Lainnya",
-  email: "",
-  phone: "",
-  location: "",
-  active: true,
-});
+interface MemberFormState {
+  id: string;
+  name: string;
+  role: string;
+  department: string;
+  email: string;
+  phone: string;
+  location: string;
+  linkedinUrl: string;
+  photoUrl: string | null;
+  photoMediaId: string | null;
+  isActive: boolean;
+}
+
+function emptyForm(): MemberFormState {
+  return {
+    id: "",
+    name: "",
+    role: "",
+    department: "",
+    email: "",
+    phone: "",
+    location: "",
+    linkedinUrl: "",
+    photoUrl: null,
+    photoMediaId: null,
+    isActive: true,
+  };
+}
+
+function toForm(m: MemberRow): MemberFormState {
+  return {
+    id: m.id,
+    name: m.name,
+    role: m.role,
+    department: m.department ?? "",
+    email: m.email ?? "",
+    phone: m.phone ?? "",
+    location: m.location ?? "",
+    linkedinUrl: m.linkedinUrl ?? "",
+    photoUrl: m.photoMedia?.url ?? null,
+    photoMediaId: m.photoMediaId,
+    isActive: m.isActive,
+  };
+}
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
 
@@ -174,17 +201,53 @@ function Pagination({
 }
 
 /* ─── Halaman Manajemen Tim Admin ─── */
-export default function TimPageClient() {
-  const [members, setMembers] = useState(teamData);
-  const [form, setForm] = useState<MemberRow | null>(null);
+export default function TimPageClient({ members: initialMembers }: { members: MemberRow[] }) {
+  const router = useRouter();
+  // Sinkron ulang tiap kali router.refresh() ngasih initialMembers baru —
+  // pola resmi React "adjusting state when a prop changes", bukan useEffect.
+  const [prevInitialMembers, setPrevInitialMembers] = useState(initialMembers);
+  const [members, setMembers] = useState(initialMembers);
+  if (initialMembers !== prevInitialMembers) {
+    setPrevInitialMembers(initialMembers);
+    setMembers(initialMembers);
+  }
+
+  const [form, setForm] = useState<MemberFormState | null>(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isSaving, startSaveTransition] = useTransition();
+  const [isReordering, startReorderTransition] = useTransition();
 
-  const toggleActive = (id: string) => {
-    setMembers((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, active: !m.active } : m)),
-    );
+  const toggleActive = (id: string, current: boolean) => {
+    setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, isActive: !current } : m)));
+    startSaveTransition(async () => {
+      const res = await toggleTeamMemberActiveAction(id, !current);
+      if (!res.ok) {
+        swalError(res.message);
+        setMembers(initialMembers);
+      }
+    });
+  };
+
+  const uploadPhoto = async (file: File) => {
+    if (!form) return;
+    setIsUploadingPhoto(true);
+    try {
+      const fd = new FormData();
+      fd.append("image", file);
+      const res = await uploadTeamPhotoAction(fd);
+      if (res.ok) {
+        setForm({ ...form, photoUrl: res.url, photoMediaId: res.mediaId });
+      } else {
+        swalError(res.message);
+      }
+    } catch {
+      swalError("Gagal mengunggah foto. Cek koneksi lalu coba lagi.");
+    } finally {
+      setIsUploadingPhoto(false);
+    }
   };
 
   const save = () => {
@@ -193,25 +256,46 @@ export default function TimPageClient() {
       swalError("Nama dan jabatan wajib diisi");
       return;
     }
-    const next = { ...form, initials: initialsOf(form.name) };
-    if (form.id) {
-      setMembers((prev) => prev.map((m) => (m.id === form.id ? next : m)));
-      swalSuccess("Anggota tim diperbarui");
-    } else {
-      setMembers((prev) => [
-        ...prev,
-        { ...next, id: String(Date.now()), gradient: GRADIENTS[prev.length % GRADIENTS.length] },
-      ]);
-      swalSuccess("Anggota tim ditambahkan");
-    }
-    setForm(null);
+    startSaveTransition(async () => {
+      try {
+        const payload = {
+          name: form.name,
+          role: form.role,
+          department: form.department || null,
+          email: form.email || null,
+          phone: form.phone || null,
+          location: form.location || null,
+          linkedinUrl: form.linkedinUrl || null,
+          photoMediaId: form.photoMediaId,
+        };
+        const res = form.id
+          ? await updateTeamMemberAction(form.id, payload)
+          : await createTeamMemberAction(payload);
+        if (res.ok) {
+          swalSuccess(form.id ? "Anggota tim diperbarui" : "Anggota tim ditambahkan");
+          setForm(null);
+          router.refresh();
+        } else {
+          swalError(res.message);
+        }
+      } catch {
+        swalError("Gagal menyimpan. Cek koneksi lalu coba lagi.");
+      }
+    });
   };
 
   const removeMember = async (member: MemberRow) => {
     const confirmed = await swalConfirmDelete(`Anggota tim "${member.name}"`);
     if (!confirmed) return;
-    setMembers((prev) => prev.filter((m) => m.id !== member.id));
-    swalSuccess("Anggota tim dihapus");
+    startSaveTransition(async () => {
+      const res = await deleteTeamMemberAction(member.id);
+      if (res.ok) {
+        swalSuccess("Anggota tim dihapus");
+        router.refresh();
+      } else {
+        swalError(res.message);
+      }
+    });
   };
 
   const filtered = members.filter((m) => {
@@ -220,17 +304,36 @@ export default function TimPageClient() {
     return (
       m.name.toLowerCase().includes(q) ||
       m.role.toLowerCase().includes(q) ||
-      m.department.toLowerCase().includes(q)
+      (m.department ?? "").toLowerCase().includes(q)
     );
   });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const pageItems = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  // Urutan cuma bisa diubah kalau daftar gak lagi difilter/dipaginasi — sama
+  // pola dgn LayananManager (drag-reorder di sana), di sini pakai tombol
+  // naik/turun krn layout kartu Tim berupa grid multi-kolom (bukan list
+  // vertikal 1-kolom), yg gak cocok sama strategi sort vertikal SortableList.
+  const canReorder = search.trim() === "" && totalPages === 1;
+
+  const moveMember = (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= members.length) return;
+    const next = [...members];
+    [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+    setMembers(next);
+    startReorderTransition(async () => {
+      const res = await reorderTeamMembersAction(next.map((m) => m.id));
+      if (!res.ok) {
+        swalError(res.message);
+        setMembers(initialMembers);
+      }
+    });
+  };
 
   return (
     <>
-
       <div className="p-6 lg:p-8 space-y-6">
         <div className="flex flex-col sm:flex-row justify-between gap-3">
           <div className="flex gap-2 flex-1 sm:max-w-sm">
@@ -246,9 +349,6 @@ export default function TimPageClient() {
                 }}
               />
             </div>
-            <Button type="button" className="rounded-xl h-10 flex-shrink-0">
-              Search
-            </Button>
           </div>
           <Button size="sm" className="gap-1.5 rounded-xl flex-shrink-0" onClick={() => setForm(emptyForm())}>
             <Plus size={14} />
@@ -256,17 +356,48 @@ export default function TimPageClient() {
           </Button>
         </div>
 
-        <p className="text-sm text-gray-500">{filtered.length} anggota tim</p>
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-gray-500">{filtered.length} anggota tim</p>
+          {!canReorder && filtered.length > 0 && (
+            <p className="text-xs text-gray-400">
+              Kosongkan pencarian &amp; tampilkan &ldquo;Semua&rdquo; per halaman untuk mengurutkan.
+            </p>
+          )}
+        </div>
 
         {/* ─── Grid Kartu Tim ─── */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {pageItems.map((member) => (
+          {pageItems.map((member, index) => (
             <div
               key={member.id}
               className={`relative bg-white rounded-2xl border border-admin-line p-5 transition-all ${
-                !member.active ? "opacity-50" : ""
+                !member.isActive ? "opacity-50" : ""
               }`}
             >
+              {/* Naik/turun urutan */}
+              {canReorder && (
+                <div className="absolute top-4 left-4 flex flex-col gap-0.5">
+                  <button
+                    type="button"
+                    disabled={index === 0 || isReordering}
+                    onClick={() => moveMember(index, -1)}
+                    className="p-0.5 rounded text-gray-400 hover:text-primary disabled:opacity-30 disabled:pointer-events-none"
+                    aria-label="Naikkan urutan"
+                  >
+                    <ChevronUp size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={index === pageItems.length - 1 || isReordering}
+                    onClick={() => moveMember(index, 1)}
+                    className="p-0.5 rounded text-gray-400 hover:text-primary disabled:opacity-30 disabled:pointer-events-none"
+                    aria-label="Turunkan urutan"
+                  >
+                    <ChevronDown size={14} />
+                  </button>
+                </div>
+              )}
+
               {/* Menu aksi */}
               <DropdownMenu>
                 <DropdownMenuTrigger
@@ -276,7 +407,7 @@ export default function TimPageClient() {
                   <MoreHorizontal size={16} />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-40 rounded-xl">
-                  <DropdownMenuItem className="text-sm cursor-pointer gap-2" onClick={() => setForm(member)}>
+                  <DropdownMenuItem className="text-sm cursor-pointer gap-2" onClick={() => setForm(toForm(member))}>
                     <Pencil size={13} className="text-gray-400" />
                     Edit
                   </DropdownMenuItem>
@@ -291,51 +422,61 @@ export default function TimPageClient() {
               </DropdownMenu>
 
               {/* Avatar */}
-              <div
-                className={`w-16 h-16 rounded-full bg-gradient-to-br ${member.gradient} flex items-center justify-center text-white font-bold text-xl flex-shrink-0`}
-              >
-                {member.initials}
-              </div>
+              {member.photoMedia?.url ? (
+                <div className="relative size-16 rounded-full overflow-hidden flex-shrink-0">
+                  <Image src={member.photoMedia.url} alt={member.name} fill sizes="64px" className="object-cover" />
+                </div>
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
+                  {initialsOf(member.name)}
+                </div>
+              )}
 
               {/* Nama & jabatan */}
               <div className="mt-4">
                 <div className="font-bold text-gray-900 text-lg truncate">{member.name}</div>
                 <div className="text-sm text-gray-500 mt-0.5">{member.role}</div>
-                <Badge
-                  variant="secondary"
-                  className="mt-2 text-[10px] px-2 py-0.5 bg-gray-100 text-gray-600 font-medium w-fit"
-                >
-                  {member.department}
-                </Badge>
+                {member.department && (
+                  <Badge
+                    variant="secondary"
+                    className="mt-2 text-[10px] px-2 py-0.5 bg-gray-100 text-gray-600 font-medium w-fit"
+                  >
+                    {member.department}
+                  </Badge>
+                )}
               </div>
 
               {/* Email */}
-              <div className="mt-4 pt-4 border-t border-gray-50">
-                <div className="text-xs text-gray-400">Email</div>
-                <div className="text-sm font-semibold text-gray-900 truncate mt-0.5">{member.email}</div>
-              </div>
+              {member.email && (
+                <div className="mt-4 pt-4 border-t border-gray-50">
+                  <div className="text-xs text-gray-400">Email</div>
+                  <div className="text-sm font-semibold text-gray-900 truncate mt-0.5">{member.email}</div>
+                </div>
+              )}
 
               {/* Phone & Location */}
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                <div>
-                  <div className="text-xs text-gray-400">Phone</div>
-                  <div className="text-sm font-semibold text-gray-900 mt-0.5">{member.phone}</div>
+              {(member.phone || member.location) && (
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <div>
+                    <div className="text-xs text-gray-400">Phone</div>
+                    <div className="text-sm font-semibold text-gray-900 mt-0.5">{member.phone || "-"}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-400">Location</div>
+                    <div className="text-sm font-semibold text-gray-900 mt-0.5">{member.location || "-"}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-xs text-gray-400">Location</div>
-                  <div className="text-sm font-semibold text-gray-900 mt-0.5">{member.location}</div>
-                </div>
-              </div>
+              )}
 
               {/* Status aktif */}
               <div className="flex items-center gap-2 mt-4 pt-3 border-t border-admin-line">
                 <Switch
-                  checked={member.active}
-                  onCheckedChange={() => toggleActive(member.id)}
+                  checked={member.isActive}
+                  onCheckedChange={() => toggleActive(member.id, member.isActive)}
                   className="data-[state=checked]:bg-primary"
                 />
                 <span className="text-xs font-medium text-gray-600">
-                  {member.active ? "Aktif" : "Nonaktif"}
+                  {member.isActive ? "Aktif" : "Nonaktif"}
                 </span>
               </div>
             </div>
@@ -370,7 +511,31 @@ export default function TimPageClient() {
                 <DialogTitle className="text-base font-bold text-gray-900">
                   {form.id ? "Edit Anggota Tim" : "Tambah Anggota Tim"}
                 </DialogTitle>
-                <div className="space-y-4">
+                <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-gray-50">
+                      {form.photoUrl ? (
+                        <Image src={form.photoUrl} alt="" width={64} height={64} unoptimized className="h-full w-full object-cover" />
+                      ) : (
+                        <ImagePlus size={18} className="text-gray-300" />
+                      )}
+                    </div>
+                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50">
+                      <ImagePlus size={14} />
+                      {isUploadingPhoto ? "Mengunggah..." : "Pilih Foto"}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="hidden"
+                        disabled={isUploadingPhoto}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) uploadPhoto(file);
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                  </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="t-name" className="text-sm font-semibold text-gray-700">Nama</Label>
@@ -394,7 +559,7 @@ export default function TimPageClient() {
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor="t-dept" className="text-sm font-semibold text-gray-700">Departemen</Label>
+                    <Label htmlFor="t-dept" className="text-sm font-semibold text-gray-700">Departemen (opsional)</Label>
                     <Input
                       id="t-dept"
                       className="mt-1.5 rounded-lg"
@@ -405,7 +570,7 @@ export default function TimPageClient() {
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label htmlFor="t-email" className="text-sm font-semibold text-gray-700">Email</Label>
+                      <Label htmlFor="t-email" className="text-sm font-semibold text-gray-700">Email (opsional)</Label>
                       <Input
                         id="t-email"
                         type="email"
@@ -416,7 +581,7 @@ export default function TimPageClient() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="t-phone" className="text-sm font-semibold text-gray-700">Telepon</Label>
+                      <Label htmlFor="t-phone" className="text-sm font-semibold text-gray-700">Telepon (opsional)</Label>
                       <Input
                         id="t-phone"
                         className="mt-1.5 rounded-lg"
@@ -427,7 +592,7 @@ export default function TimPageClient() {
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor="t-location" className="text-sm font-semibold text-gray-700">Lokasi</Label>
+                    <Label htmlFor="t-location" className="text-sm font-semibold text-gray-700">Lokasi (opsional)</Label>
                     <Input
                       id="t-location"
                       className="mt-1.5 rounded-lg"
@@ -436,13 +601,24 @@ export default function TimPageClient() {
                       onChange={(e) => setForm({ ...form, location: e.target.value })}
                     />
                   </div>
+                  <div>
+                    <Label htmlFor="t-linkedin" className="text-sm font-semibold text-gray-700">LinkedIn (opsional)</Label>
+                    <Input
+                      id="t-linkedin"
+                      className="mt-1.5 rounded-lg"
+                      placeholder="https://linkedin.com/in/..."
+                      value={form.linkedinUrl}
+                      onChange={(e) => setForm({ ...form, linkedinUrl: e.target.value })}
+                    />
+                    <p className="mt-1 text-xs text-gray-400">Kosongkan untuk sembunyikan tombol LinkedIn di halaman Tentang Kami.</p>
+                  </div>
                 </div>
                 <div className="flex gap-2 pt-1">
                   <Button variant="outline" className="flex-1 rounded-lg" onClick={() => setForm(null)}>
                     Batal
                   </Button>
-                  <Button className="flex-1 rounded-lg" onClick={save}>
-                    Simpan
+                  <Button className="flex-1 rounded-lg" onClick={save} disabled={isSaving}>
+                    {isSaving ? "Menyimpan..." : "Simpan"}
                   </Button>
                 </div>
               </>

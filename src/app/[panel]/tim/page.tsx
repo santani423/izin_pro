@@ -1,9 +1,10 @@
 import { requirePanelAccess } from "@/lib/admin-guard";
+import { prisma } from "@/lib/db";
 import TimPageClient from "./TimPageClient";
 
 /* ─── Halaman Tim Admin ───
- * Server Component: cek role (Author gak boleh akses) lalu render konten
- * (masih mock React state, belum tersambung Prisma). */
+ * Server Component: cek role (Author gak boleh akses) lalu baca TeamMember
+ * dari Prisma (dulu mock React state, sekarang tersambung beneran). */
 export default async function AdminTimPage({
   params,
 }: {
@@ -12,5 +13,11 @@ export default async function AdminTimPage({
   const { panel } = await params;
   await requirePanelAccess(panel, "/tim");
 
-  return <TimPageClient />;
+  const members = await prisma.teamMember.findMany({
+    where: { deletedAt: null },
+    include: { photoMedia: { select: { url: true } } },
+    orderBy: { sortOrder: "asc" },
+  });
+
+  return <TimPageClient members={members} />;
 }

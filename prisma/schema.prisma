@@ -57,46 +57,50 @@ model User {
 
   // Jejak "dibuat oleh" / "diubah oleh" — satu pasang relasi per tabel konten
   // (nama relasi eksplisit krn 2 relasi berbeda ke User yg sama per tabel)
-  createdCategories        Category[]        @relation("CategoryCreatedBy")
-  updatedCategories        Category[]        @relation("CategoryUpdatedBy")
-  updatedBlogPosts         BlogPost[]        @relation("BlogPostUpdatedBy")
-  deletedBlogPosts         BlogPost[]        @relation("BlogPostDeletedBy")
-  createdPages             Page[]            @relation("PageCreatedBy")
-  updatedPages             Page[]            @relation("PageUpdatedBy")
-  createdTeamMembers       TeamMember[]      @relation("TeamMemberCreatedBy")
-  updatedTeamMembers       TeamMember[]      @relation("TeamMemberUpdatedBy")
-  createdServiceCategories ServiceCategory[] @relation("ServiceCategoryCreatedBy")
-  updatedServiceCategories ServiceCategory[] @relation("ServiceCategoryUpdatedBy")
-  createdServices          Service[]         @relation("ServiceCreatedBy")
-  updatedServices          Service[]         @relation("ServiceUpdatedBy")
-  deletedServices          Service[]         @relation("ServiceDeletedBy")
-  createdServicePackages   ServicePackage[]  @relation("ServicePackageCreatedBy")
-  updatedServicePackages   ServicePackage[]  @relation("ServicePackageUpdatedBy")
-  createdTestimonials      Testimonial[]     @relation("TestimonialCreatedBy")
-  updatedTestimonials      Testimonial[]     @relation("TestimonialUpdatedBy")
-  deletedTestimonials      Testimonial[]     @relation("TestimonialDeletedBy")
-  createdPartners          Partner[]         @relation("PartnerCreatedBy")
-  updatedPartners          Partner[]         @relation("PartnerUpdatedBy")
-  deletedPartners          Partner[]         @relation("PartnerDeletedBy")
-  createdFaqs              Faq[]             @relation("FaqCreatedBy")
-  updatedFaqs              Faq[]             @relation("FaqUpdatedBy")
-  createdPromoBanners      PromoBanner[]     @relation("PromoBannerCreatedBy")
-  updatedPromoBanners      PromoBanner[]     @relation("PromoBannerUpdatedBy")
-  createdPromoPackages     PromoPackage[]    @relation("PromoPackageCreatedBy")
-  updatedPromoPackages     PromoPackage[]    @relation("PromoPackageUpdatedBy")
-  createdCtas              Cta[]             @relation("CtaCreatedBy")
-  updatedCtas              Cta[]             @relation("CtaUpdatedBy")
-  updatedInquiries         Inquiry[]         @relation("InquiryUpdatedBy")
-  createdOrders            Order[]           @relation("OrderCreatedBy")
-  updatedOrders            Order[]           @relation("OrderUpdatedBy")
-  createdMenus             Menu[]            @relation("MenuCreatedBy")
-  updatedMenus             Menu[]            @relation("MenuUpdatedBy")
-  deletedMenus             Menu[]            @relation("MenuDeletedBy")
-  createdMenuItems         MenuItem[]        @relation("MenuItemCreatedBy")
-  updatedMenuItems         MenuItem[]        @relation("MenuItemUpdatedBy")
-  deletedMenuItems         MenuItem[]        @relation("MenuItemDeletedBy")
-  updatedSettings          Settings[]        @relation("SettingsUpdatedBy")
-  updatedHeroContents      HeroContent[]     @relation("HeroContentUpdatedBy")
+  createdCategories            Category[]             @relation("CategoryCreatedBy")
+  updatedCategories            Category[]             @relation("CategoryUpdatedBy")
+  updatedBlogPosts             BlogPost[]             @relation("BlogPostUpdatedBy")
+  deletedBlogPosts             BlogPost[]             @relation("BlogPostDeletedBy")
+  createdPages                 Page[]                 @relation("PageCreatedBy")
+  updatedPages                 Page[]                 @relation("PageUpdatedBy")
+  createdTeamMembers           TeamMember[]           @relation("TeamMemberCreatedBy")
+  updatedTeamMembers           TeamMember[]           @relation("TeamMemberUpdatedBy")
+  createdServiceCategories     ServiceCategory[]      @relation("ServiceCategoryCreatedBy")
+  updatedServiceCategories     ServiceCategory[]      @relation("ServiceCategoryUpdatedBy")
+  createdServices              Service[]              @relation("ServiceCreatedBy")
+  updatedServices              Service[]              @relation("ServiceUpdatedBy")
+  deletedServices              Service[]              @relation("ServiceDeletedBy")
+  createdServicePackages       ServicePackage[]       @relation("ServicePackageCreatedBy")
+  updatedServicePackages       ServicePackage[]       @relation("ServicePackageUpdatedBy")
+  createdTestimonials          Testimonial[]          @relation("TestimonialCreatedBy")
+  updatedTestimonials          Testimonial[]          @relation("TestimonialUpdatedBy")
+  deletedTestimonials          Testimonial[]          @relation("TestimonialDeletedBy")
+  createdPartners              Partner[]              @relation("PartnerCreatedBy")
+  updatedPartners              Partner[]              @relation("PartnerUpdatedBy")
+  deletedPartners              Partner[]              @relation("PartnerDeletedBy")
+  createdFaqs                  Faq[]                  @relation("FaqCreatedBy")
+  updatedFaqs                  Faq[]                  @relation("FaqUpdatedBy")
+  createdPromoBanners          PromoBanner[]          @relation("PromoBannerCreatedBy")
+  updatedPromoBanners          PromoBanner[]          @relation("PromoBannerUpdatedBy")
+  createdPromoPackages         PromoPackage[]         @relation("PromoPackageCreatedBy")
+  updatedPromoPackages         PromoPackage[]         @relation("PromoPackageUpdatedBy")
+  createdCtas                  Cta[]                  @relation("CtaCreatedBy")
+  updatedCtas                  Cta[]                  @relation("CtaUpdatedBy")
+  updatedInquiries             Inquiry[]              @relation("InquiryUpdatedBy")
+  createdOrders                Order[]                @relation("OrderCreatedBy")
+  updatedOrders                Order[]                @relation("OrderUpdatedBy")
+  createdMenus                 Menu[]                 @relation("MenuCreatedBy")
+  updatedMenus                 Menu[]                 @relation("MenuUpdatedBy")
+  deletedMenus                 Menu[]                 @relation("MenuDeletedBy")
+  createdMenuItems             MenuItem[]             @relation("MenuItemCreatedBy")
+  updatedMenuItems             MenuItem[]             @relation("MenuItemUpdatedBy")
+  deletedMenuItems             MenuItem[]             @relation("MenuItemDeletedBy")
+  updatedSettings              Settings[]             @relation("SettingsUpdatedBy")
+  updatedHeroContents          HeroContent[]          @relation("HeroContentUpdatedBy")
+  updatedAboutPageContents     AboutPageContent[]     @relation("AboutPageContentUpdatedBy")
+  updatedTestimoniPageContents TestimoniPageContent[] @relation("TestimoniPageContentUpdatedBy")
+  updatedPromoPageContents     PromoPageContent[]     @relation("PromoPageContentUpdatedBy")
+  updatedKontakPageContents    KontakPageContent[]    @relation("KontakPageContentUpdatedBy")
 
   @@map("users")
 }
@@ -289,6 +293,7 @@ model TeamMember {
   email        String?
   phone        String?
   location     String?
+  linkedinUrl  String?
   photoMediaId String?
   photoMedia   Media?    @relation("TeamMemberPhoto", fields: [photoMediaId], references: [id])
   isActive     Boolean   @default(true)
@@ -662,8 +667,8 @@ model Settings {
   seoKeywords    String
 
   // Branding / identitas visual
-  appLogoUrl   String?
-  faviconUrl   String?
+  appLogoUrl String?
+  faviconUrl String?
 
   // Tab Maintenance — nyala = pengunjung publik cuma liat halaman
   // "Under Maintenance", ADMIN/SUPER_ADMIN tetap bisa browsing situs asli
@@ -706,6 +711,180 @@ model HeroContent {
   updatedAt   DateTime @updatedAt
 
   @@map("hero_content")
+}
+
+// Singleton konten halaman /tentang-kami — sama pola dgn HeroContent
+// (single row id="1", JSON utk array item berulang, gambar nullable dgn
+// fallback placeholder/gradient bawaan kalau kosong). Anggota tim ASLI-nya
+// ada di TeamMember (dikelola /admin/tim), bukan di sini.
+model AboutPageContent {
+  id String @id @default("1")
+
+  heroKicker         String?
+  heroTitle          String
+  heroTitleHighlight String
+  heroSubtitleBold   String
+  heroSubtitleBody   String  @db.Text
+  heroImageUrl       String?
+
+  aboutKicker         String
+  aboutTitle          String
+  aboutTitleHighlight String
+  aboutParagraphs     Json // string[]
+  aboutImageUrl       String?
+  stats               Json // { icon: string; value: string; label: string }[] — stats[0] jadi sumber badge foto mengambang juga
+
+  valuesEnabled        Boolean @default(true)
+  valuesTitle          String
+  valuesTitleHighlight String
+  valuesSubtitle       String
+  values               Json // { icon: string; title: string; description: string }[]
+
+  visiMisiEnabled Boolean @default(true)
+  vision          String  @db.Text
+  visionImageUrl  String? // null -> pakai ilustrasi skyline bawaan /images/tentang-skyline-v3.png (bukan gradient)
+  mission         Json // string[]
+  missionImageUrl String? // null -> kartu gradient placeholder bawaan (beda dari Visi, blm ada ilustrasi desain asli utk Misi)
+
+  teamEnabled        Boolean @default(true)
+  teamTitle          String // prefix, mis. "Tim" — lihat TentangTeamSection: "{teamTitle} {teamTitleHighlight} Kami"
+  teamTitleHighlight String // kata di tengah yg dirender warna primary, mis. "Profesional"
+  teamSubtitle       String
+
+  metaTitle       String?
+  metaDescription String?
+
+  // Singleton, gak pernah "dibuat" lewat admin (selalu ada dari seed) -> gak ada createdBy
+  updatedById String?
+  updatedBy   User?    @relation("AboutPageContentUpdatedBy", fields: [updatedById], references: [id])
+  updatedAt   DateTime @updatedAt
+
+  @@map("about_page_content")
+}
+
+// Singleton konten Hero/banner /testimoni — sama pola dgn HeroContent/AboutPageContent
+// (single row id="1", gambar nullable dgn fallback gradient placeholder bawaan).
+model TestimoniPageContent {
+  id String @id @default("1")
+
+  heroKicker         String?
+  heroTitle          String
+  heroTitleHighlight String
+  heroDescription    String  @db.Text
+  heroImageUrl       String? // null -> kartu gradient placeholder bawaan (lihat PageHero.tsx)
+
+  // Kartu statistik yg menimpa bawah banner (TestimoniStatsBar) — { icon: string; value: string; label: string }[]
+  stats Json
+
+  // Singleton, gak pernah "dibuat" lewat admin (selalu ada dari seed) -> gak ada createdBy
+  updatedById String?
+  updatedBy   User?    @relation("TestimoniPageContentUpdatedBy", fields: [updatedById], references: [id])
+  updatedAt   DateTime @updatedAt
+
+  @@map("testimoni_page_content")
+}
+
+// Singleton konten seluruh halaman /promo (banner + tiap section body) — sama
+// pola dgn TestimoniPageContent. Paket promo (3 kartu) TETAP di tabel relasional
+// PromoPackage (sudah ada di schema), bukan di sini — cuma teks section & array
+// item kecil (highlight/why/steps) yg disimpan Json.
+model PromoPageContent {
+  id String @id @default("1")
+
+  // Banner
+  heroKicker         String?
+  heroTitle          String
+  heroTitleHighlight String
+  heroDescription    String  @db.Text
+  heroImageUrl       String? // null -> kartu gradient placeholder bawaan (lihat PageHero.tsx)
+
+  // Highlight bar di bawah banner — { icon: string; label: string }[]
+  highlights Json
+
+  // Section "Promo Pilihan untuk Anda" (kartu paket-nya di PromoPackage)
+  packagesTitlePrefix    String // "Promo"
+  packagesTitleHighlight String // "Pilihan"
+  packagesTitleSuffix    String // "untuk Anda"
+  packagesSubtitle       String
+
+  // Section countdown diskon
+  countdownTitlePrefix    String // "Diskon Spesial"
+  countdownTitleHighlight String // "Konsultasi Gratis"
+  countdownDescription    String @db.Text
+
+  // Section "Kenapa Pilih Promo IzinPro?" — { icon: string; title: string; description: string }[]
+  whyTitlePrefix    String // "Kenapa Pilih Promo"
+  whyTitleHighlight String // "IzinPro?"
+  whyItems          Json
+
+  // Section "Cara Mendapatkan Promo" — { icon: string; title: string; description: string }[]
+  stepsTitle String
+  steps      Json
+
+  // Banner ajakan klaim promo (foto kiri, CTA kanan)
+  consultTitlePrefix    String // "Siap Dapatkan"
+  consultTitleHighlight String // "Promo Spesial Ini?"
+  consultDescription    String  @db.Text
+  consultImageUrl       String? // null -> pakai foto bawaan /images/promo-konsultasi.png
+
+  // CTA Banner penutup (override CtaSection default)
+  ctaTitle       String
+  ctaSubtitle    String @db.Text
+  ctaButtonLabel String
+
+  // Singleton, gak pernah "dibuat" lewat admin (selalu ada dari seed) -> gak ada createdBy
+  updatedById String?
+  updatedBy   User?    @relation("PromoPageContentUpdatedBy", fields: [updatedById], references: [id])
+  updatedAt   DateTime @updatedAt
+
+  @@map("promo_page_content")
+}
+
+// Singleton konten seluruh halaman /kontak (banner + tiap section body) —
+// sama pola dgn PromoPageContent. Pesan yang dikirim dari form-nya TETAP di
+// tabel relasional Inquiry (sudah ada di schema), bukan di sini. FAQ section
+// juga TETAP baca dari model Faq (scope=KONTAK, sudah ada admin-nya di
+// /admin/faq) — di sini cuma judul section & kartu bantuan di sampingnya.
+model KontakPageContent {
+  id String @id @default("1")
+
+  // Banner
+  heroKicker         String?
+  heroTitle          String
+  heroTitleHighlight String
+  heroDescription    String  @db.Text
+  heroImageUrl       String? // null -> kartu gradient placeholder bawaan (lihat PageHero.tsx)
+
+  // Bar info kontak di bawah banner — { icon: string; title: string; value: string; note: string }[]
+  infoCards Json
+
+  // Section form + sidebar kanal kontak
+  formTitle       String
+  formSubtitle    String @db.Text
+  sidebarTitle    String
+  sidebarSubtitle String @db.Text
+  // { icon: string; title: string; value?: string; note?: string; href: string }[]
+  channels        Json
+
+  // Section lokasi kantor — alamat & tombol maps tetap dari Settings (COMPANY_INFO),
+  // cuma judul & embed peta yang disimpan di sini (spesifik halaman ini).
+  locationTitle String
+  mapsEmbedUrl  String @db.Text
+
+  // Section FAQ — judul + kartu bantuan (daftar FAQ-nya sendiri di model Faq scope=KONTAK)
+  faqTitlePrefix      String // "Pertanyaan yang"
+  faqTitleHighlight   String // "Sering Diajukan"
+  helpCardTitle       String
+  helpCardDescription String  @db.Text
+  helpCardButtonLabel String
+  helpCardImageUrl    String? // null -> pakai foto bawaan /images/promo-konsultasi.png
+
+  // Singleton, gak pernah "dibuat" lewat admin (selalu ada dari seed) -> gak ada createdBy
+  updatedById String?
+  updatedBy   User?    @relation("KontakPageContentUpdatedBy", fields: [updatedById], references: [id])
+  updatedAt   DateTime @updatedAt
+
+  @@map("kontak_page_content")
 }
 
 // ====================================================

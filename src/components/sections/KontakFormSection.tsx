@@ -17,8 +17,11 @@ import {
 } from "@/components/ui/select";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { cn } from "@/lib/utils";
-import { SERVICES } from "@/lib/constants";
-import { KONTAK_CHANNELS } from "@/lib/kontak";
+import { submitInquiryAction } from "@/lib/actions/inquiry";
+import { resolveDetailIcon } from "@/lib/detail-icons";
+import type { KontakChannelRaw } from "@/lib/hydrate-kontak-content";
+
+const LAINNYA = "lainnya";
 
 /* ─── Skema validasi form kontak ─── */
 const kontakSchema = z.object({
@@ -34,18 +37,27 @@ const kontakSchema = z.object({
 
 type KontakFormValues = z.infer<typeof kontakSchema>;
 
-/* Pilihan layanan untuk dropdown — label dipetakan dari value */
-const LAYANAN_ITEMS = Object.fromEntries([
-  ...SERVICES.map((service) => [service.title, service.title]),
-  ["Lainnya", "Lainnya"],
-]);
-
 const inputClass =
   "h-10 w-full rounded-lg border border-border/60 bg-background px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20";
 
 /* ─── Form kontak + sidebar informasi kontak ─── */
-export default function KontakFormSection() {
+export default function KontakFormSection({
+  title,
+  subtitle,
+  sidebarTitle,
+  sidebarSubtitle,
+  channels,
+  services,
+}: {
+  title: string;
+  subtitle: string;
+  sidebarTitle: string;
+  sidebarSubtitle: string;
+  channels: KontakChannelRaw[];
+  services: { id: string; title: string }[];
+}) {
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const {
     register,
     control,
@@ -57,11 +69,21 @@ export default function KontakFormSection() {
     defaultValues: { layanan: "" },
   });
 
-  /* Simulasi kirim — backend belum tersedia (frontend-only) */
-  const onSubmit = async () => {
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setSubmitted(true);
-    reset();
+  const onSubmit = async (values: KontakFormValues) => {
+    setSubmitError(null);
+    const res = await submitInquiryAction({
+      name: values.nama,
+      email: values.email,
+      whatsapp: values.whatsapp,
+      serviceId: values.layanan === LAINNYA ? null : values.layanan,
+      message: values.pesan,
+    });
+    if (res.ok) {
+      setSubmitted(true);
+      reset();
+    } else {
+      setSubmitError(res.message);
+    }
   };
 
   return (
@@ -71,10 +93,10 @@ export default function KontakFormSection() {
       <Card className="gap-0 rounded-2xl border-border/60 py-0">
         <CardContent className="px-6 py-7 sm:px-8">
           <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-            Kirim Pesan Kepada Kami
+            {title}
           </h2>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            Isi form di bawah ini dan tim kami akan segera menghubungi Anda.
+            {subtitle}
           </p>
 
           {submitted ? (
@@ -181,7 +203,10 @@ export default function KontakFormSection() {
                     control={control}
                     render={({ field }) => (
                       <Select
-                        items={LAYANAN_ITEMS}
+                        items={Object.fromEntries([
+                          ...services.map((s) => [s.id, s.title]),
+                          [LAINNYA, "Lainnya"],
+                        ])}
                         value={field.value || null}
                         onValueChange={(value) => field.onChange(value ?? "")}
                       >
@@ -196,12 +221,12 @@ export default function KontakFormSection() {
                           alignItemWithTrigger={false}
                           align="start"
                         >
-                          {SERVICES.map((service) => (
-                            <SelectItem key={service.slug} value={service.title}>
+                          {services.map((service) => (
+                            <SelectItem key={service.id} value={service.id}>
                               {service.title}
                             </SelectItem>
                           ))}
-                          <SelectItem value="Lainnya">Lainnya</SelectItem>
+                          <SelectItem value={LAINNYA}>Lainnya</SelectItem>
                         </SelectContent>
                       </Select>
                     )}
@@ -239,6 +264,12 @@ export default function KontakFormSection() {
                 )}
               </div>
 
+              {submitError && (
+                <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {submitError}
+                </p>
+              )}
+
               <Button
                 type="submit"
                 size="lg"
@@ -261,13 +292,15 @@ export default function KontakFormSection() {
       {/* ─── Sidebar informasi kontak — tiap kanal kartu putih tersendiri ─── */}
       <div className="lg:py-2">
         <h2 className="text-lg font-bold text-foreground sm:text-xl">
-          Informasi Kontak
+          {sidebarTitle}
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Pilih cara terbaik untuk menghubungi kami.
+          {sidebarSubtitle}
         </p>
         <ul className="mt-5 space-y-4">
-          {KONTAK_CHANNELS.map(({ icon: Icon, title, value, note, href }) => (
+          {channels.map(({ icon, title, value, note, href }) => {
+            const Icon = resolveDetailIcon(icon);
+            return (
             <li key={title}>
               <a
                 href={href}
@@ -279,7 +312,7 @@ export default function KontakFormSection() {
                   className="shrink-0 text-primary"
                   aria-hidden="true"
                 >
-                  {Icon === "whatsapp" ? (
+                  {icon === "whatsapp" ? (
                     <WhatsAppIcon className="size-7" />
                   ) : (
                     <Icon className="size-7" strokeWidth={1.7} />
@@ -306,7 +339,8 @@ export default function KontakFormSection() {
                 />
               </a>
             </li>
-          ))}
+            );
+          })}
         </ul>
       </div>
       </div>

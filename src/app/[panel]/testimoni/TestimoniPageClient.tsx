@@ -1,10 +1,14 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Pencil, Trash2, Star, Video, Upload, Play, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import Image from "next/image";
+import {
+  Plus, Pencil, Trash2, Star, Video, Upload, Play, ChevronLeft, ChevronRight, Search,
+  ImagePlus, Save, LayoutTemplate, Award,
+} from "lucide-react";
 import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
-import type { ServiceCategory, Testimonial } from "@prisma/client";
+import type { ServiceCategory, Testimonial, TestimoniPageContent } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,6 +28,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SortableList } from "@/components/admin/SortableList";
+import { IconPicker } from "@/components/admin/IconPicker";
 import { cn } from "@/lib/utils";
 import {
   createTestimonialAction,
@@ -33,6 +39,19 @@ import {
   uploadTestimonialThumbnailAction,
   type TestimonialFormData,
 } from "@/lib/actions/testimonials";
+import {
+  saveTestimoniHeroContentAction,
+  saveTestimoniHeroImageAction,
+  saveTestimoniStatsAction,
+  type TestimoniStatInput,
+} from "@/lib/actions/testimoni-page";
+
+/** Buang field `_key` sintetis (dipakai SortableList sbg id drag) sebelum
+ * item balik disimpan ke state/DB — sama pola dgn AboutPageEditor. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function stripKey<T extends { _key: string }>({ _key, ...rest }: T): Omit<T, "_key"> {
+  return rest;
+}
 
 type TestimonialWithRelations = Testimonial & {
   category: ServiceCategory | null;
@@ -63,27 +82,35 @@ function matchesSearch(t: TestimonialWithRelations, query: string) {
   );
 }
 
-/** Konversi link YouTube (watch/short/embed) jadi URL embed. */
-function getYouTubeEmbedUrl(url: string | null): string | null {
+/** Ekstrak video ID dari link YouTube (watch/short/embed). */
+function getYouTubeVideoId(url: string | null): string | null {
   if (!url) return null;
   try {
     const u = new URL(url);
-    let videoId: string | null = null;
     if (u.hostname.includes("youtu.be")) {
-      videoId = u.pathname.slice(1);
-    } else if (u.hostname.includes("youtube.com")) {
-      if (u.pathname === "/watch") {
-        videoId = u.searchParams.get("v");
-      } else if (u.pathname.startsWith("/embed/")) {
-        videoId = u.pathname.split("/embed/")[1];
-      } else if (u.pathname.startsWith("/shorts/")) {
-        videoId = u.pathname.split("/shorts/")[1];
-      }
+      return u.pathname.slice(1);
     }
-    return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+    if (u.hostname.includes("youtube.com")) {
+      if (u.pathname === "/watch") return u.searchParams.get("v");
+      if (u.pathname.startsWith("/embed/")) return u.pathname.split("/embed/")[1];
+      if (u.pathname.startsWith("/shorts/")) return u.pathname.split("/shorts/")[1];
+    }
+    return null;
   } catch {
     return null;
   }
+}
+
+/** Konversi link YouTube jadi URL embed. */
+function getYouTubeEmbedUrl(url: string | null): string | null {
+  const videoId = getYouTubeVideoId(url);
+  return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+}
+
+/** Frame asli video dari YouTube — dipakai sbg thumbnail preview kalau admin belum unggah thumbnailUrl sendiri. */
+function getYouTubeThumbnailUrl(url: string | null): string | null {
+  const videoId = getYouTubeVideoId(url);
+  return videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null;
 }
 
 interface FormState {
@@ -226,9 +253,11 @@ const emptyForm = (isVideo: boolean): FormState => ({
 export default function TestimoniPageClient({
   initialTestimonials,
   categories,
+  bannerContent,
 }: {
   initialTestimonials: TestimonialWithRelations[];
   categories: ServiceCategory[];
+  bannerContent: TestimoniPageContent;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -242,6 +271,20 @@ export default function TestimoniPageClient({
   const [videoPageSize, setVideoPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
   const [textSearch, setTextSearch] = useState("");
   const [videoSearch, setVideoSearch] = useState("");
+
+  /* ─── Banner (Hero) ─── */
+  const [heroKicker, setHeroKicker] = useState(bannerContent.heroKicker ?? "");
+  const [heroTitle, setHeroTitle] = useState(bannerContent.heroTitle);
+  const [heroTitleHighlight, setHeroTitleHighlight] = useState(bannerContent.heroTitleHighlight);
+  const [heroDescription, setHeroDescription] = useState(bannerContent.heroDescription);
+  const [heroImageUrl, setHeroImageUrl] = useState(bannerContent.heroImageUrl);
+  const [uploadingHeroImage, setUploadingHeroImage] = useState(false);
+  const [isSavingBanner, startSaveBanner] = useTransition();
+  const [stats, setStats] = useState<TestimoniStatInput[]>(
+    bannerContent.stats as unknown as TestimoniStatInput[],
+  );
+  const [isSavingStats, startSaveStats] = useTransition();
+  const statsList = useMemo(() => stats.map((s, i) => ({ ...s, _key: `s-${i}` })), [stats]);
 
   const openForm = (t: TestimonialWithRelations | null, isVideo: boolean) => {
     setForm(
@@ -261,6 +304,84 @@ export default function TestimoniPageClient({
           }
         : emptyForm(isVideo),
     );
+  };
+
+  /* ─── Banner (Hero) ─── */
+  const uploadHeroImage = async (file: File) => {
+    setUploadingHeroImage(true);
+    try {
+      const fd = new FormData();
+      fd.append("image", file);
+      const res = await saveTestimoniHeroImageAction(fd);
+      if (res.ok) {
+        setHeroImageUrl(res.imageUrl);
+        swalSuccess("Gambar banner berhasil disimpan");
+        router.refresh();
+      } else {
+        swalError(res.message);
+      }
+    } catch {
+      swalError("Gagal mengunggah gambar. Cek koneksi lalu coba lagi.");
+    } finally {
+      setUploadingHeroImage(false);
+    }
+  };
+
+  const removeHeroImage = async () => {
+    setUploadingHeroImage(true);
+    try {
+      const fd = new FormData();
+      fd.append("reset", "true");
+      const res = await saveTestimoniHeroImageAction(fd);
+      if (res.ok) {
+        setHeroImageUrl(null);
+        swalSuccess("Gambar banner dihapus");
+        router.refresh();
+      } else {
+        swalError(res.message);
+      }
+    } catch {
+      swalError("Gagal menghapus gambar. Cek koneksi lalu coba lagi.");
+    } finally {
+      setUploadingHeroImage(false);
+    }
+  };
+
+  const saveBanner = () => {
+    startSaveBanner(async () => {
+      try {
+        const res = await saveTestimoniHeroContentAction({
+          heroKicker,
+          heroTitle,
+          heroTitleHighlight,
+          heroDescription,
+        });
+        if (res.ok) {
+          swalSuccess("Banner berhasil disimpan");
+          router.refresh();
+        } else {
+          swalError(res.message);
+        }
+      } catch {
+        swalError("Gagal menyimpan banner. Cek koneksi lalu coba lagi.");
+      }
+    });
+  };
+
+  const saveStats = () => {
+    startSaveStats(async () => {
+      try {
+        const res = await saveTestimoniStatsAction({ stats });
+        if (res.ok) {
+          swalSuccess("Kartu statistik berhasil disimpan");
+          router.refresh();
+        } else {
+          swalError(res.message);
+        }
+      } catch {
+        swalError("Gagal menyimpan kartu statistik. Cek koneksi lalu coba lagi.");
+      }
+    });
   };
 
   const uploadThumbnail = async (file: File) => {
@@ -347,6 +468,11 @@ export default function TestimoniPageClient({
 
   const textTestimonials = initialTestimonials.filter((t) => !t.isVideo && matchesSearch(t, textSearch));
   const videoTestimonials = initialTestimonials.filter((t) => t.isVideo && matchesSearch(t, videoSearch));
+
+  /* Preview thumbnail di form edit — manual kalau ada, kalau kosong pakai frame otomatis dari YouTube */
+  const formAutoThumbnail = form?.isVideo ? getYouTubeThumbnailUrl(form.videoUrl) : null;
+  const formThumbnailPreview = form?.thumbnailUrl || formAutoThumbnail;
+  const isAutoThumbnail = form?.isVideo && !form.thumbnailUrl && !!formAutoThumbnail;
 
   const textTotalPages = Math.max(1, Math.ceil(textTestimonials.length / textPageSize));
   const textCurrentPage = Math.min(textPage, textTotalPages);
@@ -441,7 +567,11 @@ export default function TestimoniPageClient({
 
   const renderVideoGrid = (list: TestimonialWithRelations[]) => (
     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {list.map((t) => (
+      {list.map((t) => {
+        /* Thumbnail — thumbnailUrl manual, lalu frame asli dari YouTube, abu-abu sbg fallback terakhir.
+         * Pakai || (bukan ??) krn thumbnailUrl kadang tersimpan "" (bukan null) dari form kosong. */
+        const thumbnailSrc = t.thumbnailUrl || getYouTubeThumbnailUrl(t.videoUrl);
+        return (
         <div
           key={t.id}
           className={`bg-white rounded-2xl border border-admin-line overflow-hidden transition-all ${!t.isActive ? "opacity-50" : ""}`}
@@ -453,9 +583,9 @@ export default function TestimoniPageClient({
             aria-label={`Putar video: ${t.name}`}
             className="group relative block aspect-video w-full overflow-hidden bg-gray-100"
           >
-            {t.thumbnailUrl ? (
+            {thumbnailSrc ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={t.thumbnailUrl} alt={t.name} className="size-full object-cover" />
+              <img src={thumbnailSrc} alt={t.name} className="size-full object-cover" />
             ) : (
               <div className="grid size-full place-items-center bg-gradient-to-br from-gray-300 to-gray-400 text-[11px] text-gray-500">
                 Belum ada thumbnail
@@ -509,7 +639,8 @@ export default function TestimoniPageClient({
             </div>
           </div>
         </div>
-      ))}
+        );
+      })}
       {list.length === 0 && (
         <div className="col-span-full bg-white rounded-2xl border border-admin-line px-5 py-10 text-center text-sm text-gray-400">
           Belum ada video testimoni.
@@ -520,14 +651,165 @@ export default function TestimoniPageClient({
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
-      <Tabs defaultValue="teks">
+      <Tabs defaultValue="banner">
         <TabsList className="rounded-xl bg-gray-200">
+          <TabsTrigger value="banner" className="rounded-lg gap-1.5">
+            <LayoutTemplate size={13} />
+            Banner
+          </TabsTrigger>
           <TabsTrigger value="teks" className="rounded-lg">Testimoni</TabsTrigger>
           <TabsTrigger value="video" className="rounded-lg gap-1.5">
             <Video size={13} />
             Video Testimoni
           </TabsTrigger>
         </TabsList>
+
+        {/* ─── Tab Banner (Hero /testimoni) ─── */}
+        <TabsContent value="banner" className="space-y-4 mt-4">
+          <div className="bg-white rounded-2xl border border-admin-line p-5 space-y-4">
+            <div>
+              <h3 className="font-bold text-gray-900">Gambar Banner</h3>
+              <p className="mt-1 text-sm text-gray-500">Kosongkan untuk pakai kartu gradient bawaan.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex h-20 w-32 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
+                {heroImageUrl ? (
+                  <Image src={heroImageUrl} alt="" width={128} height={80} unoptimized className="h-full w-full object-cover" />
+                ) : (
+                  <ImagePlus size={20} className="text-gray-300" />
+                )}
+              </div>
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                <ImagePlus size={15} />
+                {uploadingHeroImage ? "Mengunggah..." : "Pilih Gambar"}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  disabled={uploadingHeroImage}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) uploadHeroImage(file);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+              {heroImageUrl && (
+                <Button type="button" variant="outline" size="sm" className="gap-1.5 rounded-lg text-red-500 hover:bg-red-50" onClick={removeHeroImage} disabled={uploadingHeroImage}>
+                  <Trash2 size={13} /> Hapus
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-admin-line p-5 space-y-4">
+            <h3 className="font-bold text-gray-900">Judul & Deskripsi</h3>
+            <div>
+              <Label htmlFor="banner-kicker" className="text-sm font-semibold text-gray-700">Kicker (label kecil di atas judul, opsional)</Label>
+              <Input
+                id="banner-kicker"
+                className="mt-1.5 rounded-lg"
+                value={heroKicker}
+                onChange={(e) => setHeroKicker(e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="banner-title" className="text-sm font-semibold text-gray-700">Judul</Label>
+                <Input
+                  id="banner-title"
+                  className="mt-1.5 rounded-lg"
+                  placeholder="Testimoni"
+                  value={heroTitle}
+                  onChange={(e) => setHeroTitle(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="banner-title-highlight" className="text-sm font-semibold text-gray-700">Judul (bagian hijau)</Label>
+                <Input
+                  id="banner-title-highlight"
+                  className="mt-1.5 rounded-lg"
+                  placeholder="Klien"
+                  value={heroTitleHighlight}
+                  onChange={(e) => setHeroTitleHighlight(e.target.value)}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-gray-400">Tampil sebagai: &quot;{heroTitle} {heroTitleHighlight}&quot;</p>
+            <div>
+              <Label htmlFor="banner-description" className="text-sm font-semibold text-gray-700">Deskripsi</Label>
+              <Textarea
+                id="banner-description"
+                rows={3}
+                className="mt-1.5 rounded-lg resize-none"
+                value={heroDescription}
+                onChange={(e) => setHeroDescription(e.target.value)}
+              />
+            </div>
+            <Button onClick={saveBanner} disabled={isSavingBanner} className="gap-2 rounded-xl">
+              <Save size={15} />
+              {isSavingBanner ? "Menyimpan..." : "Simpan Banner"}
+            </Button>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-admin-line p-5 space-y-4">
+            <div>
+              <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                <Award size={16} className="text-primary" />
+                Kartu Statistik
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">Kartu putih yang menimpa bagian bawah banner.</p>
+            </div>
+            <SortableList
+              id="testimoni-stats-list"
+              items={statsList}
+              getId={(s) => s._key}
+              onReorder={(next) => setStats(next.map(stripKey))}
+              renderItem={(s, i) => (
+                <div className="grid grid-cols-[9rem_6rem_1fr_auto] items-center gap-2 rounded-xl border border-gray-200 p-2.5">
+                  <IconPicker
+                    value={s.icon}
+                    onChange={(icon) => setStats((prev) => prev.map((x, idx) => (idx === i ? { ...x, icon } : x)))}
+                  />
+                  <Input
+                    value={s.value}
+                    onChange={(e) => setStats((prev) => prev.map((x, idx) => (idx === i ? { ...x, value: e.target.value } : x)))}
+                    className="rounded-lg"
+                    placeholder="5.000+"
+                  />
+                  <Input
+                    value={s.label}
+                    onChange={(e) => setStats((prev) => prev.map((x, idx) => (idx === i ? { ...x, label: e.target.value } : x)))}
+                    className="rounded-lg"
+                    placeholder="Label"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setStats((prev) => prev.filter((_, idx) => idx !== i))}
+                    className="p-1.5 text-gray-400 hover:text-red-500"
+                    aria-label="Hapus statistik"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              )}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5 rounded-lg"
+              onClick={() => setStats((prev) => [...prev, { icon: "star", value: "", label: "" }])}
+            >
+              <Plus size={14} /> Tambah Statistik
+            </Button>
+
+            <Button onClick={saveStats} disabled={isSavingStats} className="gap-2 rounded-xl">
+              <Save size={15} />
+              {isSavingStats ? "Menyimpan..." : "Simpan Statistik"}
+            </Button>
+          </div>
+        </TabsContent>
 
         {/* ─── Tab Testimoni (teks) ─── */}
         <TabsContent value="teks" className="space-y-4 mt-4">
@@ -725,19 +1007,24 @@ export default function TestimoniPageClient({
                     <div className="col-span-2">
                       <Label className="text-sm font-semibold text-gray-700">Thumbnail Video</Label>
                       <div className="mt-1.5 flex items-center gap-3">
-                        {form.thumbnailUrl && (
+                        {formThumbnailPreview && (
                           <button
                             type="button"
-                            onClick={() => setPreviewThumbnail(form.thumbnailUrl)}
-                            className="flex-shrink-0 cursor-zoom-in"
+                            onClick={() => setPreviewThumbnail(formThumbnailPreview)}
+                            className="relative flex-shrink-0 cursor-zoom-in"
                             aria-label="Lihat thumbnail lebih besar"
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
-                              src={form.thumbnailUrl}
+                              src={formThumbnailPreview}
                               alt="Thumbnail"
                               className="h-16 w-28 rounded-lg border border-admin-line object-cover"
                             />
+                            {isAutoThumbnail && (
+                              <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-gray-900/80 px-1.5 py-0.5 text-[9px] font-medium text-white">
+                                Otomatis dari YouTube
+                              </span>
+                            )}
                           </button>
                         )}
                         <div className="flex-1">
@@ -761,7 +1048,9 @@ export default function TestimoniPageClient({
                             <Upload size={13} />
                             {uploadingThumbnail ? "Mengunggah..." : form.thumbnailUrl ? "Ganti gambar" : "Unggah gambar"}
                           </label>
-                          <p className="mt-1 text-[11px] text-gray-400">PNG/JPG/WebP, maks 2MB. Opsional — kosongkan utk placeholder.</p>
+                          <p className="mt-1 text-[11px] text-gray-400">
+                            PNG/JPG/WebP, maks 2MB. Opsional — kalau kosong, otomatis pakai frame dari video YouTube di atas.
+                          </p>
                         </div>
                       </div>
                     </div>

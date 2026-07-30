@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SortableList } from "@/components/admin/SortableList";
-import { DETAIL_ICONS, DEFAULT_DETAIL_ICON } from "@/lib/detail-icons";
+import { IconPicker } from "@/components/admin/IconPicker";
 import type { ServiceDetailContent } from "@/lib/types/service-detail-content";
 import {
   updateServiceDetailContentAction,
@@ -80,35 +80,6 @@ const FALLBACK_CONTENT: ServiceDetailContent = {
   testimonialsHelp: { title: "Butuh Bantuan?", description: "" },
   faqsTitle: "Pertanyaan yang Sering Diajukan",
 };
-
-function IconPicker({
-  value,
-  onChange,
-  disabled,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  disabled?: boolean;
-}) {
-  const Icon = DETAIL_ICONS[value] ?? DEFAULT_DETAIL_ICON;
-  return (
-    <div className="flex items-center gap-2">
-      <span className="flex size-9 flex-shrink-0 items-center justify-center rounded-lg border border-gray-200 text-primary">
-        <Icon size={16} />
-      </span>
-      <Select items={Object.fromEntries(Object.keys(DETAIL_ICONS).map((k) => [k, k]))} value={value} onValueChange={(v) => v && onChange(v)}>
-        <SelectTrigger className="h-9 flex-1 rounded-lg" disabled={disabled}>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent alignItemWithTrigger={false} align="start">
-          {Object.keys(DETAIL_ICONS).map((k) => (
-            <SelectItem key={k} value={k}>{k}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  );
-}
 
 function SectionCard({
   icon: Icon,
@@ -1037,7 +1008,7 @@ export default function LayananDetailEditor({
               onReorder={reorderPackages}
               renderItem={(pkg) => (
                 <div className="space-y-2.5 rounded-xl border border-gray-200 p-3">
-                  <div className="grid gap-2 sm:grid-cols-3">
+                  <div className="grid gap-2 sm:grid-cols-4">
                     <Input
                       value={pkg.name}
                       onChange={(e) => setPackages((prev) => prev.map((p) => (p.id === pkg.id ? { ...p, name: e.target.value } : p)))}
@@ -1050,6 +1021,13 @@ export default function LayananDetailEditor({
                       onChange={(e) => setPackages((prev) => prev.map((p) => (p.id === pkg.id ? { ...p, price: e.target.value as unknown as typeof p.price } : p)))}
                       className="rounded-lg"
                       placeholder="Harga (Rp)"
+                    />
+                    <Input
+                      type="number"
+                      value={pkg.originalPrice ?? ""}
+                      onChange={(e) => setPackages((prev) => prev.map((p) => (p.id === pkg.id ? { ...p, originalPrice: e.target.value === "" ? null : (e.target.value as unknown as typeof p.originalPrice) } : p)))}
+                      className="rounded-lg"
+                      placeholder="Harga coret (opsional)"
                     />
                     <label className="flex items-center gap-1.5 text-xs text-gray-500">
                       <Switch

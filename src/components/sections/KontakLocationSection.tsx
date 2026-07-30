@@ -3,18 +3,20 @@ import { ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { COMPANY_INFO } from "@/lib/constants";
 
-/* Embed Google Maps tanpa API key (mode output=embed) */
-const MAPS_EMBED_URL =
-  "https://www.google.com/maps?q=Wisma+Laena+Jl+KH+Abdullah+Syafei+No+7+Jakarta+Selatan&z=15&output=embed";
-
 /* ─── Lokasi kantor — peta lebar + kartu alamat mengambang di kiri ─── */
-export default function KontakLocationSection() {
+export default function KontakLocationSection({
+  title,
+  mapsEmbedUrl,
+}: {
+  title: string;
+  mapsEmbedUrl: string;
+}) {
   return (
     <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
       <div className="relative overflow-hidden rounded-3xl border border-border/60 shadow-sm">
         <iframe
           title="Peta lokasi kantor IzinPro"
-          src={MAPS_EMBED_URL}
+          src={mapsEmbedUrl}
           className="block h-72 w-full border-0 sm:h-96 lg:h-[34rem]"
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
@@ -26,7 +28,7 @@ export default function KontakLocationSection() {
          * di bawah lg ditumpuk setelah peta agar tidak saling menutup */}
         <div className="bg-background p-6 lg:absolute lg:left-4 lg:top-56 lg:w-80 lg:rounded-2xl lg:p-7 lg:shadow-xl">
           <h2 className="text-lg font-bold text-foreground sm:text-xl">
-            Lokasi Kantor
+            {title}
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             {COMPANY_INFO.address}

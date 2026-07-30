@@ -1,52 +1,59 @@
 import Image from "next/image";
 import { CheckCircle2, Eye, Target } from "lucide-react";
 
-import { TENTANG_MISSION, TENTANG_VISION } from "@/lib/tentang";
+import type { AboutVisiMisi } from "@/lib/hydrate-about-content";
 
 /* ─── Visi & Misi — dua kartu berdampingan ─── */
-export default function TentangVisiMisiSection() {
+export default function TentangVisiMisiSection({ content }: { content: AboutVisiMisi }) {
   return (
     <section className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 pb-14 sm:px-6 md:grid-cols-2 lg:px-8">
-      {/* Visi */}
-      <div className="flex flex-col overflow-hidden rounded-2xl bg-brand-surface p-6">
+      {/* Visi — gambar skyline jadi background penuh kartu, hijau basic nongol kalau gambar transparan */}
+      <div className="relative isolate flex min-h-[22rem] flex-col overflow-hidden rounded-2xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark p-6">
+        <Image
+          src={content.visionImageUrl}
+          alt="Ilustrasi gedung perkantoran"
+          fill
+          sizes="(min-width: 768px) 50vw, 100vw"
+          className="-z-10 object-cover"
+        />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/85 via-black/50 to-black/10" />
         <div className="flex items-center gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-primary/30 text-primary">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/10 text-white backdrop-blur-sm">
             <Eye className="size-5" aria-hidden="true" />
           </span>
-          <h2 className="text-lg font-bold text-foreground">Visi Kami</h2>
+          <h2 className="text-lg font-bold text-white">Visi Kami</h2>
         </div>
-        <p className="mt-4 text-sm leading-relaxed text-muted-foreground sm:ml-[3.25rem] sm:text-base">
-          {TENTANG_VISION}
+        <p className="mt-4 text-sm leading-relaxed text-white/85 sm:ml-[3.25rem] sm:text-base">
+          {content.vision}
         </p>
-        {/* Ilustrasi skyline gedung — full-bleed nempel tepi bawah kartu */}
-        <div className="-mx-6 -mb-6 mt-auto pt-6">
-          <Image
-            src="/images/tentang-skyline-v3.png"
-            alt="Ilustrasi gedung perkantoran"
-            width={864}
-            height={240}
-            sizes="(min-width: 768px) 50vw, 100vw"
-            className="w-full"
-          />
-        </div>
       </div>
 
-      {/* Misi */}
-      <div className="rounded-2xl bg-brand-surface p-6">
+      {/* Misi — gambar ilustrasi jadi background penuh kartu, hijau basic nongol kalau gambar transparan/belum diisi */}
+      <div className="relative isolate flex min-h-[22rem] flex-col overflow-hidden rounded-2xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark p-6">
+        {content.missionImageUrl && (
+          <Image
+            src={content.missionImageUrl}
+            alt="Ilustrasi misi perusahaan"
+            fill
+            sizes="(min-width: 768px) 50vw, 100vw"
+            className="-z-10 object-cover"
+          />
+        )}
+        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/85 via-black/50 to-black/10" />
         <div className="flex items-center gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-primary/30 text-primary">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/10 text-white backdrop-blur-sm">
             <Target className="size-5" aria-hidden="true" />
           </span>
-          <h2 className="text-lg font-bold text-foreground">Misi Kami</h2>
+          <h2 className="text-lg font-bold text-white">Misi Kami</h2>
         </div>
         <ul className="mt-4 space-y-3.5 sm:ml-[3.25rem]">
-          {TENTANG_MISSION.map((item) => (
-            <li key={item} className="flex items-start gap-2.5">
+          {content.mission.map((item, index) => (
+            <li key={index} className="flex items-start gap-2.5">
               <CheckCircle2
-                className="mt-0.5 size-4 shrink-0 text-primary"
+                className="mt-0.5 size-4 shrink-0 text-white"
                 aria-hidden="true"
               />
-              <span className="text-sm leading-relaxed text-foreground sm:text-base">
+              <span className="text-sm leading-relaxed text-white/90 sm:text-base">
                 {item}
               </span>
             </li>

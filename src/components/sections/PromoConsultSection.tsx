@@ -6,7 +6,17 @@ import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { COMPANY_INFO } from "@/lib/constants";
 
 /* ─── Banner ajakan klaim promo — foto kiri, CTA kanan ─── */
-export default function PromoConsultSection() {
+export default function PromoConsultSection({
+  titlePrefix,
+  titleHighlight,
+  description,
+  imageUrl,
+}: {
+  titlePrefix: string;
+  titleHighlight: string;
+  description: string;
+  imageUrl?: string | null;
+}) {
   const waMessage = encodeURIComponent(
     "Halo IzinPro, saya ingin menanyakan promo spesial yang sedang berjalan.",
   );
@@ -17,7 +27,7 @@ export default function PromoConsultSection() {
         {/* Foto tim — PNG transparan, rata bawah agar terlihat berdiri di banner */}
         <div className="relative -mb-8 hidden aspect-[3/2] w-80 self-end lg:block">
           <Image
-            src="/images/promo-konsultasi.png"
+            src={imageUrl || "/images/promo-konsultasi.png"}
             alt="Tim IzinPro siap membantu Anda"
             fill
             sizes="320px"
@@ -27,11 +37,10 @@ export default function PromoConsultSection() {
 
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            Siap Dapatkan <span className="text-primary">Promo Spesial Ini?</span>
+            {titlePrefix} <span className="text-primary">{titleHighlight}</span>
           </h2>
           <p className="mt-3 max-w-md text-sm text-muted-foreground sm:text-base">
-            Konsultasikan kebutuhan perizinan bisnis Anda sekarang juga dan
-            dapatkan penawaran terbaik dari kami.
+            {description}
           </p>
 
           <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">

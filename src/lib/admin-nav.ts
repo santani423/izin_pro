@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, FileText, Newspaper, Image as ImageIcon, Users, Settings,
   Star, Megaphone, Package, HelpCircle, BarChart3, Inbox, Headset, UserCog,
-  Building2, Menu as MenuIcon, UserCircle, Sparkles, type LucideIcon,
+  Building2, Menu as MenuIcon, UserCircle, Sparkles, Info, Phone, type LucideIcon,
 } from "lucide-react";
 
 export interface AdminNavItem {
@@ -41,11 +41,13 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: "Company Profile",
     items: [
       { label: "Hero Beranda", href: "/beranda", icon: Sparkles },
+      { label: "Tentang Kami", href: "/tentang-kami", icon: Info },
       { label: "Layanan", href: "/layanan", icon: Package },
       { label: "Tim", href: "/tim", icon: Users },
       { label: "Testimoni", href: "/testimoni", icon: Star },
       { label: "Promo / Banner", href: "/promo", icon: Megaphone },
       { label: "Klien", href: "/klien", icon: Building2 },
+      { label: "Kontak", href: "/kontak", icon: Phone },
       { label: "CTA Banner", href: "/cta-banner", icon: Headset },
       { label: "FAQ", href: "/faq", icon: HelpCircle },
     ],

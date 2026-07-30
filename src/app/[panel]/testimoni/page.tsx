@@ -14,7 +14,7 @@ export default async function AdminTestimoniPage({
   const { panel } = await params;
   await requirePanelAccess(panel, "/testimoni");
 
-  const [testimonials, categories] = await Promise.all([
+  const [testimonials, categories, bannerContent] = await Promise.all([
     prisma.testimonial.findMany({
       where: { deletedAt: null },
       include: {
@@ -25,7 +25,14 @@ export default async function AdminTestimoniPage({
       orderBy: { sortOrder: "asc" },
     }),
     prisma.serviceCategory.findMany({ orderBy: { name: "asc" } }),
+    prisma.testimoniPageContent.findUniqueOrThrow({ where: { id: "1" } }),
   ]);
 
-  return <TestimoniPageClient initialTestimonials={testimonials} categories={categories} />;
+  return (
+    <TestimoniPageClient
+      initialTestimonials={testimonials}
+      categories={categories}
+      bannerContent={bannerContent}
+    />
+  );
 }

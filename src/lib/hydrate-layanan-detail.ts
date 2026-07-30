@@ -40,6 +40,7 @@ export interface DetailStep {
 export interface DetailPackage {
   name: string;
   price: string;
+  originalPrice?: string;
   features: string[];
   popular?: boolean;
 }
@@ -220,13 +221,19 @@ export function hydrateLayananDetail(
         description: s.description,
       })),
     },
+    // Dokumen & durasi independen dari ada/tidaknya ServicePackage — dulu
+    // ke-tumpuk jadi satu kondisi "packages.length > 0", jadi kalau service
+    // belum punya paket harga, Dokumen & Durasi yg udah diisi admin ikut
+    // gak muncul sama sekali padahal datanya ada. Section cuma disembunyikan
+    // kalau ketiga-tiganya (paket, dokumen, durasi) sama sekali kosong.
     packages:
-      packages.length > 0
+      packages.length > 0 || (content.documents?.items.length ?? 0) > 0 || content.duration?.value
         ? {
             title: content.packagesTitle ?? `Pilih Paket ${service.title}`,
             items: packages.map((p) => ({
               name: p.name,
               price: formatRupiah(Number(p.price)),
+              originalPrice: p.originalPrice ? formatRupiah(Number(p.originalPrice)) : undefined,
               features: p.features as string[],
               popular: p.isPopular,
             })),

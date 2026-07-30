@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -15,6 +16,8 @@ interface PageHeroProps {
   title: ReactNode;
   description: ReactNode;
   imageLabel: string;
+  /** Foto asli — kosong/null = pakai kartu gradient placeholder bawaan */
+  imageUrl?: string | null;
   /** Label kecil uppercase di atas judul (opsional) */
   kicker?: string;
   /** Konten tambahan kolom kiri: chip, tombol, dsb. (opsional) */
@@ -31,6 +34,7 @@ export default function PageHero({
   title,
   description,
   imageLabel,
+  imageUrl,
   kicker,
   children,
   overlap = false,
@@ -96,21 +100,33 @@ export default function PageHero({
           <>
             {breadcrumbNav}
             <div className="order-last lg:order-none">{textContent}</div>
-            <div
-              role="img"
-              aria-label={imageLabel}
-              className="aspect-[16/9] w-full rounded-2xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark"
-            />
+            {imageUrl ? (
+              <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl">
+                <Image src={imageUrl} alt={imageLabel} fill sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover" priority />
+              </div>
+            ) : (
+              <div
+                role="img"
+                aria-label={imageLabel}
+                className="aspect-[16/9] w-full rounded-2xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark"
+              />
+            )}
           </>
         ) : (
           <>
             <div>{textContent}</div>
-            {/* Placeholder foto hero — gradient hijau brand */}
-            <div
-              role="img"
-              aria-label={imageLabel}
-              className="hidden aspect-[16/9] w-full rounded-2xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark lg:block"
-            />
+            {imageUrl ? (
+              <div className="relative hidden aspect-[16/9] w-full overflow-hidden rounded-2xl lg:block">
+                <Image src={imageUrl} alt={imageLabel} fill sizes="50vw" className="object-cover" priority />
+              </div>
+            ) : (
+              /* Placeholder foto hero — gradient hijau brand */
+              <div
+                role="img"
+                aria-label={imageLabel}
+                className="hidden aspect-[16/9] w-full rounded-2xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark lg:block"
+              />
+            )}
           </>
         )}
       </div>

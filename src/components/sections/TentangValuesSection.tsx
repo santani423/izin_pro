@@ -1,24 +1,23 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/Reveal";
-import { TENTANG_VALUES } from "@/lib/tentang";
+import type { AboutValues } from "@/lib/hydrate-about-content";
 
 /* ─── Nilai-nilai perusahaan — grid 5 kartu ─── */
-export default function TentangValuesSection() {
+export default function TentangValuesSection({ content }: { content: AboutValues }) {
   return (
     <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
       <div className="mx-auto mb-8 max-w-2xl text-center">
         <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          <span className="text-primary">Nilai-Nilai</span> yang Kami Junjung
+          <span className="text-primary">{content.titleHighlight}</span> {content.title}
         </h2>
         <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-          Nilai-nilai ini menjadi komitmen kami dalam memberikan layanan
-          terbaik bagi klien.
+          {content.subtitle}
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {TENTANG_VALUES.map(({ icon: Icon, title, description }, index) => (
-          <Reveal key={title} delay={index * 0.08}>
+        {content.items.map(({ icon: Icon, title, description }, index) => (
+          <Reveal key={index} delay={index * 0.08}>
             <Card className="h-full gap-0 rounded-xl border-border/60 py-0">
               <CardContent className="flex h-full flex-col items-center px-4 py-6 text-center">
                 <span className="flex size-11 items-center justify-center rounded-lg border border-primary/30 text-primary">

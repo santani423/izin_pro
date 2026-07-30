@@ -14,6 +14,19 @@ import {
   TEAM_MEMBERS,
 } from "../src/lib/constants";
 import { HERO_HIGHLIGHTS } from "../src/lib/landing";
+import { TENTANG_STATS, TENTANG_VALUES, TENTANG_VISION, TENTANG_MISSION } from "../src/lib/tentang";
+import { DETAIL_ICONS } from "../src/lib/detail-icons";
+import type { LucideIcon } from "lucide-react";
+
+/* Reverse lookup ikon (komponen -> string key) — sama pola dgn
+ * prisma/service-detail-seed-helpers.ts, biar gak perlu nulis ulang key
+ * manual & gak salah transkripsi. */
+const REVERSE_ICON_MAP = new Map<LucideIcon, string>(
+  Object.entries(DETAIL_ICONS).map(([key, icon]) => [icon, key] as const),
+);
+function iconKey(icon: LucideIcon): string {
+  return REVERSE_ICON_MAP.get(icon) ?? "file-text";
+}
 /* Sumber logo klien — sebelumnya LANDING_CLIENTS di landing.ts, dipindah ke
  * sini krn ClientsSection.tsx sekarang baca Partner dari Prisma langsung
  * (landing.ts gak butuh data ini lagi). */
@@ -83,8 +96,8 @@ const FOOTER_COLUMNS = [
   },
 ];
 import { LAYANAN_CATEGORIES } from "../src/lib/layanan";
-import { KONTAK_FAQS } from "../src/lib/kontak";
-import { PROMO_PACKAGES } from "../src/lib/promo";
+import { KONTAK_FAQS, KONTAK_INFO_CARDS, KONTAK_CHANNELS } from "../src/lib/kontak";
+import { PROMO_PACKAGES, PROMO_HIGHLIGHTS, PROMO_WHY, PROMO_STEPS } from "../src/lib/promo";
 import { getLayananDetail } from "../src/lib/layanan-detail";
 import { toServiceDetailContent, parsePriceToNumber } from "./service-detail-seed-helpers";
 import { getArticleDetail } from "../src/lib/blog-detail";
@@ -356,6 +369,84 @@ async function main() {
     },
   });
   console.log("HeroContent di-seed.");
+
+  /* ═══ 3c. AboutPageContent (singleton) — teks /tentang-kami, copy asli dari
+   * (public)/tentang-kami/page.tsx + src/lib/tentang.ts (biar tampilan gak
+   * berubah begitu diaktifkan) ═══ */
+  await prisma.aboutPageContent.create({
+    data: {
+      id: "1",
+      heroKicker: null,
+      heroTitle: "Tentang",
+      heroTitleHighlight: "IzinPro",
+      heroSubtitleBold:
+        "Solusi Perizinan Terpercaya untuk Mendukung Pertumbuhan Bisnis Anda",
+      heroSubtitleBody:
+        "IzinPro hadir untuk memberikan layanan perizinan usaha yang mudah, cepat, transparan, dan legal. Kami berkomitmen menjadi partner terbaik bagi setiap pelaku bisnis dalam mewujudkan legalitas usaha yang aman dan berkelanjutan.",
+      heroImageUrl: null,
+
+      aboutKicker: "Tentang Kami",
+      aboutTitle: "IzinPro, Partner Tepat untuk",
+      aboutTitleHighlight: "Legalitas Bisnis Anda",
+      aboutParagraphs: [
+        "IzinPro adalah penyedia jasa perizinan usaha terpercaya di Indonesia yang berfokus pada kemudahan, kecepatan, dan kepastian hukum dalam setiap proses perizinan.",
+        "Kami memahami bahwa setiap bisnis membutuhkan legalitas yang kuat sebagai fondasi untuk berkembang. Karena itu, kami hadir dengan layanan terlengkap dan pendampingan dari tim ahli berpengalaman.",
+      ],
+      aboutImageUrl: null,
+      stats: TENTANG_STATS.map((s) => ({ icon: iconKey(s.icon), value: s.value, label: s.label })),
+
+      valuesEnabled: true,
+      // Tampil "{highlight} {title}" di komponen (beda urutan dari About/Team,
+      // krn desain aslinya kata primary-nya di depan) — lihat TentangValuesSection.
+      valuesTitle: "yang Kami Junjung",
+      valuesTitleHighlight: "Nilai-Nilai",
+      valuesSubtitle:
+        "Nilai-nilai ini menjadi komitmen kami dalam memberikan layanan terbaik bagi klien.",
+      values: TENTANG_VALUES.map((v) => ({ icon: iconKey(v.icon), title: v.title, description: v.description })),
+
+      visiMisiEnabled: true,
+      vision: TENTANG_VISION,
+      visionImageUrl: null,
+      mission: TENTANG_MISSION,
+      missionImageUrl: null,
+
+      teamEnabled: true,
+      teamTitle: "Tim",
+      teamTitleHighlight: "Profesional",
+      teamSubtitle:
+        "Didukung oleh tim ahli berpengalaman yang siap membantu kebutuhan perizinan bisnis Anda.",
+
+      metaTitle: "Tentang IzinPro — Solusi Perizinan Terpercaya",
+      metaDescription:
+        "Kenali IzinPro — penyedia jasa perizinan usaha terpercaya di Indonesia dengan 10+ tahun pengalaman, 5.000+ perizinan selesai, dan tim profesional berpengalaman.",
+
+      updatedById: admin.id,
+    },
+  });
+  console.log("AboutPageContent di-seed.");
+
+  /* ═══ 3d. TestimoniPageContent (singleton) — teks Hero + kartu statistik
+   * /testimoni, copy asli dari (public)/testimoni/page.tsx + TestimoniStatsBar
+   * (lib/testimoni.ts) ═══ */
+  await prisma.testimoniPageContent.create({
+    data: {
+      id: "1",
+      heroKicker: null,
+      heroTitle: "Testimoni",
+      heroTitleHighlight: "Klien",
+      heroDescription:
+        "Kepercayaan dan kepuasan klien adalah prioritas kami. Berikut pengalaman mereka bersama IzinPro.",
+      heroImageUrl: null,
+      stats: [
+        { icon: "users", value: "5.000+", label: "Perizinan Selesai" },
+        { icon: "smile", value: "99%", label: "Kepuasan Klien" },
+        { icon: "building", value: "Berbagai", label: "Industri Terlayani" },
+        { icon: "award", value: "10+", label: "Tahun Pengalaman" },
+      ],
+      updatedById: admin.id,
+    },
+  });
+  console.log("TestimoniPageContent di-seed.");
 
   /* ═══ 4. Menu + MenuItem (header dari landing.ts, footer dari FOOTER_COLUMNS) ═══ */
   const headerMenu = await prisma.menu.create({
@@ -648,6 +739,90 @@ async function main() {
     });
   }
   console.log(`${PROMO_PACKAGES.length} PromoPackage di-seed.`);
+
+  /* ═══ 12b. PromoPageContent (singleton) — teks Hero + tiap section body
+   * /promo, copy asli dari (public)/promo/page.tsx + lib/promo.ts (paket
+   * promo-nya sendiri tetap di PromoPackage di atas) ═══ */
+  await prisma.promoPageContent.create({
+    data: {
+      id: "1",
+      heroKicker: null,
+      heroTitle: "Promosi",
+      heroTitleHighlight: "Spesial",
+      heroDescription:
+        "Penawaran terbaik untuk membantu bisnis Anda tumbuh dengan legalitas yang lengkap dan profesional.",
+      heroImageUrl: null,
+      highlights: PROMO_HIGHLIGHTS.map((h) => ({ icon: iconKey(h.icon), label: h.label })),
+      packagesTitlePrefix: "Promo",
+      packagesTitleHighlight: "Pilihan",
+      packagesTitleSuffix: "untuk Anda",
+      packagesSubtitle: "Pilih paket layanan yang paling sesuai dengan kebutuhan bisnis Anda.",
+      countdownTitlePrefix: "Diskon Spesial",
+      countdownTitleHighlight: "Konsultasi Gratis",
+      countdownDescription:
+        "Dapatkan diskon hingga 25% untuk setiap layanan pilihan Anda. Promo terbatas bulan ini!",
+      whyTitlePrefix: "Kenapa Pilih Promo",
+      whyTitleHighlight: "IzinPro?",
+      whyItems: PROMO_WHY.map((w) => ({ icon: iconKey(w.icon), title: w.title, description: w.description })),
+      stepsTitle: "Cara Mendapatkan Promo",
+      steps: PROMO_STEPS.map((s) => ({ icon: iconKey(s.icon), title: s.title, description: s.description })),
+      consultTitlePrefix: "Siap Dapatkan",
+      consultTitleHighlight: "Promo Spesial Ini?",
+      consultDescription:
+        "Konsultasikan kebutuhan perizinan bisnis Anda sekarang juga dan dapatkan penawaran terbaik dari kami.",
+      consultImageUrl: null,
+      ctaTitle: "Butuh Bantuan Memilih Promo yang Tepat?",
+      ctaSubtitle: "Tim kami siap membantu Anda menemukan solusi terbaik untuk bisnis Anda.",
+      ctaButtonLabel: "Chat Konsultasi Gratis",
+      updatedById: admin.id,
+    },
+  });
+  console.log("PromoPageContent di-seed.");
+
+  /* ═══ 12c. KontakPageContent (singleton) — teks Hero + tiap section body
+   * /kontak, copy asli dari (public)/kontak/page.tsx + lib/kontak.ts. Daftar
+   * FAQ-nya sendiri udah di-seed di Faq (scope KONTAK) di atas, pesan yang
+   * dikirim pengunjung disimpan di Inquiry (bukan di sini). ═══ */
+  await prisma.kontakPageContent.create({
+    data: {
+      id: "1",
+      heroKicker: null,
+      heroTitle: "Hubungi",
+      heroTitleHighlight: "IzinPro",
+      heroDescription:
+        "Kami siap membantu kebutuhan perizinan bisnis Anda. Hubungi kami melalui form, WhatsApp, email, atau datang langsung ke kantor kami.",
+      heroImageUrl: null,
+      infoCards: KONTAK_INFO_CARDS.map((c) => ({
+        icon: c.icon === "whatsapp" ? "whatsapp" : iconKey(c.icon),
+        title: c.title,
+        value: c.value,
+        note: c.note,
+      })),
+      formTitle: "Kirim Pesan Kepada Kami",
+      formSubtitle: "Isi form di bawah ini dan tim kami akan segera menghubungi Anda.",
+      sidebarTitle: "Informasi Kontak",
+      sidebarSubtitle: "Pilih cara terbaik untuk menghubungi kami.",
+      channels: KONTAK_CHANNELS.map((c) => ({
+        icon: c.icon === "whatsapp" ? "whatsapp" : iconKey(c.icon),
+        title: c.title,
+        value: c.value ?? null,
+        note: c.note ?? null,
+        href: c.href,
+      })),
+      locationTitle: "Lokasi Kantor",
+      mapsEmbedUrl:
+        "https://www.google.com/maps?q=Wisma+Laena+Jl+KH+Abdullah+Syafei+No+7+Jakarta+Selatan&z=15&output=embed",
+      faqTitlePrefix: "Pertanyaan yang",
+      faqTitleHighlight: "Sering Diajukan",
+      helpCardTitle: "Masih Punya Pertanyaan?",
+      helpCardDescription:
+        "Tim ahli kami siap membantu Anda memberikan solusi terbaik untuk kebutuhan bisnis Anda.",
+      helpCardButtonLabel: "Konsultasikan Gratis Sekarang",
+      helpCardImageUrl: null,
+      updatedById: admin.id,
+    },
+  });
+  console.log("KontakPageContent di-seed.");
 
   /* ═══ 13. Cta (default + 3 varian, dari mock admin/cta-banner) ═══ */
   await prisma.cta.create({

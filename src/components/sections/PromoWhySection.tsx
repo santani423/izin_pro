@@ -1,17 +1,31 @@
+import type { LucideIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/Reveal";
-import { PROMO_WHY } from "@/lib/promo";
+
+export interface PromoWhyItem {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+}
 
 /* ─── Kenapa pilih promo IzinPro — grid 5 kartu ─── */
-export default function PromoWhySection() {
+export default function PromoWhySection({
+  titlePrefix,
+  titleHighlight,
+  items,
+}: {
+  titlePrefix: string;
+  titleHighlight: string;
+  items: PromoWhyItem[];
+}) {
   return (
     <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
       <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-        Kenapa Pilih Promo <span className="text-primary">IzinPro?</span>
+        {titlePrefix} <span className="text-primary">{titleHighlight}</span>
       </h2>
 
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {PROMO_WHY.map(({ icon: Icon, title, description }, index) => (
+        {items.map(({ icon: Icon, title, description }, index) => (
           <Reveal key={title} delay={index * 0.08}>
             <Card className="h-full gap-0 rounded-xl border-border/60 py-0">
               <CardContent className="flex h-full flex-col px-4 py-5">

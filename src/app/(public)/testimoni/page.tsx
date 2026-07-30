@@ -5,6 +5,14 @@ import PageHero from "@/components/shared/PageHero";
 import TestimoniStatsBar from "@/components/sections/TestimoniStatsBar";
 import TestimoniGridSection from "@/components/sections/TestimoniGridSection";
 import { getPublicTestimonials } from "@/lib/testimonials-data";
+import { prisma } from "@/lib/db";
+import { resolveDetailIcon } from "@/lib/detail-icons";
+
+interface RawTestimoniStat {
+  icon: string;
+  value: string;
+  label: string;
+}
 
 /* ─── Lazy load sections below the fold (reuse dari homepage) ─── */
 const VideoTestimonialsSection = dynamic(
@@ -26,25 +34,35 @@ export const metadata: Metadata = {
 
 /* ─── Halaman Testimoni Klien (desain baru) ─── */
 export default async function TestimoniPage() {
-  const { gridTestimonials, videoTestimonials } = await getPublicTestimonials();
+  const [{ gridTestimonials, videoTestimonials }, banner] = await Promise.all([
+    getPublicTestimonials(),
+    prisma.testimoniPageContent.findUniqueOrThrow({ where: { id: "1" } }),
+  ]);
+  const stats = (banner.stats as unknown as RawTestimoniStat[]).map((s) => ({
+    icon: resolveDetailIcon(s.icon),
+    value: s.value,
+    label: s.label,
+  }));
 
   return (
     <>
-      {/* 1. Hero + breadcrumb */}
+      {/* 1. Hero + breadcrumb — dikelola admin di /testimoni tab Banner */}
       <PageHero
         crumbs={[{ label: "Beranda", href: "/" }, { label: "Testimoni" }]}
+        kicker={banner.heroKicker ?? undefined}
         title={
           <>
-            Testimoni <span className="text-primary">Klien</span>
+            {banner.heroTitle} <span className="text-primary">{banner.heroTitleHighlight}</span>
           </>
         }
-        description="Kepercayaan dan kepuasan klien adalah prioritas kami. Berikut pengalaman mereka bersama IzinPro."
+        description={banner.heroDescription}
+        imageUrl={banner.heroImageUrl}
         imageLabel="Foto klien IzinPro yang puas dengan layanan"
         overlap
       />
 
-      {/* 2. Bar statistik */}
-      <TestimoniStatsBar />
+      {/* 2. Bar statistik — dikelola admin di /testimoni tab Banner */}
+      <TestimoniStatsBar stats={stats} />
 
       {/* 3. Grid testimoni + filter kategori */}
       <TestimoniGridSection testimonials={gridTestimonials} />

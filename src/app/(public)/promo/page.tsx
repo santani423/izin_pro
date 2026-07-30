@@ -5,7 +5,8 @@ import PageHero from "@/components/shared/PageHero";
 import HighlightsBar from "@/components/shared/HighlightsBar";
 import PromoPackagesSection from "@/components/sections/PromoPackagesSection";
 import LayananDetailProcessSection from "@/components/sections/LayananDetailProcessSection";
-import { PROMO_HIGHLIGHTS, PROMO_STEPS } from "@/lib/promo";
+import { prisma } from "@/lib/db";
+import { hydratePromoContent, hydratePromoPackage } from "@/lib/hydrate-promo-content";
 
 /* ─── Lazy load sections below the fold ─── */
 const PromoCountdownSection = dynamic(
@@ -28,51 +29,73 @@ export const metadata: Metadata = {
   },
 };
 
-/* ─── Halaman Promo (desain baru) ─── */
-export default function PromoPage() {
+/* ─── Halaman Promo (desain baru) — seluruh konten dikelola admin di /promo ─── */
+export default async function PromoPage() {
+  const [rawContent, rawPackages] = await Promise.all([
+    prisma.promoPageContent.findUniqueOrThrow({ where: { id: "1" } }),
+    prisma.promoPackage.findMany({
+      include: { service: { select: { slug: true } } },
+      orderBy: { sortOrder: "asc" },
+    }),
+  ]);
+
+  const content = hydratePromoContent(rawContent);
+  const packages = rawPackages.map(hydratePromoPackage);
+
   return (
     <>
       {/* 1. Hero + breadcrumb */}
       <PageHero
         crumbs={[{ label: "Beranda", href: "/" }, { label: "Promo" }]}
+        kicker={content.hero.kicker ?? undefined}
         title={
           <>
-            Promosi <span className="text-primary">Spesial</span>
+            {content.hero.title} <span className="text-primary">{content.hero.titleHighlight}</span>
           </>
         }
-        description="Penawaran terbaik untuk membantu bisnis Anda tumbuh dengan legalitas yang lengkap dan profesional."
+        description={content.hero.description}
+        imageUrl={content.hero.imageUrl}
         imageLabel="Ilustrasi kado promo spesial IzinPro"
         overlap
       />
 
       {/* 2. Highlight keunggulan */}
       <HighlightsBar
-        items={PROMO_HIGHLIGHTS}
+        items={content.highlights}
         ariaLabel="Keunggulan promo IzinPro"
       />
 
       {/* 3. Paket promo pilihan */}
-      <PromoPackagesSection />
+      <PromoPackagesSection heading={content.packagesHeading} packages={packages} />
 
       {/* 4. Countdown diskon */}
-      <PromoCountdownSection />
+      <PromoCountdownSection heading={content.countdown} />
 
       {/* 5. Kenapa pilih promo */}
-      <PromoWhySection />
+      <PromoWhySection
+        titlePrefix={content.why.titlePrefix}
+        titleHighlight={content.why.titleHighlight}
+        items={content.why.items}
+      />
 
       {/* 6. Cara mendapatkan promo */}
       <LayananDetailProcessSection
-        process={{ title: "Cara Mendapatkan Promo", steps: PROMO_STEPS }}
+        process={{ title: content.steps.title, steps: content.steps.steps }}
       />
 
       {/* 7. Banner ajakan klaim promo */}
-      <PromoConsultSection />
+      <PromoConsultSection
+        titlePrefix={content.consult.titlePrefix}
+        titleHighlight={content.consult.titleHighlight}
+        description={content.consult.description}
+        imageUrl={content.consult.imageUrl}
+      />
 
       {/* 8. CTA Banner */}
       <CtaSection
-        title="Butuh Bantuan Memilih Promo yang Tepat?"
-        subtitle="Tim kami siap membantu Anda menemukan solusi terbaik untuk bisnis Anda."
-        buttonLabel="Chat Konsultasi Gratis"
+        title={content.cta.title}
+        subtitle={content.cta.subtitle}
+        buttonLabel={content.cta.buttonLabel}
       />
     </>
   );

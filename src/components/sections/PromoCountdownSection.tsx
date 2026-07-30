@@ -23,8 +23,14 @@ function getRemaining() {
   };
 }
 
+export interface PromoCountdownHeading {
+  titlePrefix: string;
+  titleHighlight: string;
+  description: string;
+}
+
 /* ─── Banner countdown diskon — hitung mundur ke akhir bulan ─── */
-export default function PromoCountdownSection() {
+export default function PromoCountdownSection({ heading }: { heading: PromoCountdownHeading }) {
   /* null saat SSR/first paint agar tidak hydration mismatch */
   const [remaining, setRemaining] = useState<ReturnType<
     typeof getRemaining
@@ -58,12 +64,11 @@ export default function PromoCountdownSection() {
           </span>
           <div>
             <h2 className="text-xl font-bold text-foreground sm:text-2xl">
-              Diskon Spesial{" "}
-              <span className="text-primary">Konsultasi Gratis</span>
+              {heading.titlePrefix}{" "}
+              <span className="text-primary">{heading.titleHighlight}</span>
             </h2>
             <p className="mt-2 max-w-xl text-base text-muted-foreground">
-              Dapatkan diskon hingga 25% untuk setiap layanan pilihan Anda.
-              Promo terbatas bulan ini!
+              {heading.description}
             </p>
           </div>
         </div>

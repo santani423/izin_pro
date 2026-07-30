@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Search, Trash2, Eye, Clock, ChevronLeft, ChevronRight } from "lucide-react";
-import { swalSuccess, swalConfirmDelete } from "@/lib/swal";
+import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
+import type { Inquiry, InquiryStatus } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,37 +20,37 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { updateInquiryStatusAction, deleteInquiryAction } from "@/lib/actions/inquiry";
 
-type InquiryStatus = "Baru" | "Diproses" | "Selesai";
+type InquiryWithService = Inquiry & { service: { title: string } | null };
 
-interface Inquiry {
-  id: string;
-  name: string;
-  email: string;
-  whatsapp: string;
-  layanan: string;
-  pesan: string;
-  time: string;
-  status: InquiryStatus;
-}
+const STATUS_ORDER: InquiryStatus[] = ["BARU", "DIPROSES", "SELESAI"];
 
-/* ─── Data mock inquiry (frontend-only) ─── */
-const SEED: Inquiry[] = [
-  { id: "1", name: "Andi Setiawan", email: "andi.s@gmail.com", whatsapp: "0812-1111-2233", layanan: "Pendirian PT", pesan: "Halo, saya ingin mendirikan PT untuk usaha kuliner. Kira-kira butuh dokumen apa saja dan berapa lama prosesnya?", time: "5 menit lalu", status: "Baru" },
-  { id: "2", name: "Siti Nurhaliza", email: "siti.nur@yahoo.com", whatsapp: "0813-2222-3344", layanan: "NIB Online", pesan: "Saya butuh NIB untuk toko online saya. Apakah bisa dibantu prosesnya sampai selesai?", time: "1 jam lalu", status: "Diproses" },
-  { id: "3", name: "Budi Santoso", email: "budi.santoso@gmail.com", whatsapp: "0821-3333-4455", layanan: "Izin Usaha", pesan: "Usaha bengkel saya belum ada izin resmi. Mohon info paket dan biayanya.", time: "3 jam lalu", status: "Selesai" },
-  { id: "4", name: "Rina Wijaya", email: "rina.w@outlook.com", whatsapp: "0856-4444-5566", layanan: "Izin Komersial", pesan: "Perusahaan kami mau ekspansi dan butuh izin komersial baru. Bisa konsultasi dulu?", time: "5 jam lalu", status: "Selesai" },
-  { id: "5", name: "Deni Hermawan", email: "deni.hermawan@gmail.com", whatsapp: "0877-5555-6677", layanan: "Pendirian PT", pesan: "Mau tanya paket pendirian PT yang termasuk virtual office ada tidak ya?", time: "Kemarin", status: "Diproses" },
-  { id: "6", name: "Maya Kusuma", email: "maya.k@gmail.com", whatsapp: "0898-6666-7788", layanan: "Lainnya", pesan: "Saya ingin mengurus sertifikasi halal untuk produk makanan ringan. Apakah IzinPro melayani ini?", time: "Kemarin", status: "Baru" },
-];
-
-const STATUS_ORDER: InquiryStatus[] = ["Baru", "Diproses", "Selesai"];
+const STATUS_LABEL: Record<InquiryStatus, string> = {
+  BARU: "Baru",
+  DIPROSES: "Diproses",
+  SELESAI: "Selesai",
+};
 
 const statusColor: Record<InquiryStatus, string> = {
-  Baru: "bg-primary/10 text-primary",
-  Diproses: "bg-amber-50 text-amber-600",
-  Selesai: "bg-emerald-50 text-emerald-600",
+  BARU: "bg-primary/10 text-primary",
+  DIPROSES: "bg-amber-50 text-amber-600",
+  SELESAI: "bg-emerald-50 text-emerald-600",
 };
+
+/** Waktu relatif ringkas ("5 menit lalu", "3 jam lalu", "Kemarin", dst). */
+function formatTimeAgo(date: Date): string {
+  const diffMs = Date.now() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60_000);
+  if (diffMin < 1) return "Baru saja";
+  if (diffMin < 60) return `${diffMin} menit lalu`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour} jam lalu`;
+  const diffDay = Math.floor(diffHour / 24);
+  if (diffDay === 1) return "Kemarin";
+  if (diffDay < 7) return `${diffDay} hari lalu`;
+  return date.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+}
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
 
@@ -157,19 +159,25 @@ function Pagination({
   );
 }
 
-/* ─── Halaman Manajemen Inquiry Admin ─── */
-export default function InquiryPageClient() {
-  const [items, setItems] = useState<Inquiry[]>(SEED);
+/* ─── Halaman Manajemen Inquiry Admin (tersambung Prisma) ─── */
+export default function InquiryPageClient({
+  initialInquiries,
+}: {
+  initialInquiries: InquiryWithService[];
+}) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<InquiryStatus | "Semua">("Semua");
-  const [detail, setDetail] = useState<Inquiry | null>(null);
+  const [detail, setDetail] = useState<InquiryWithService | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
 
-  const filtered = items.filter((i) => {
+  const filtered = initialInquiries.filter((i) => {
     const q = search.toLowerCase();
+    const layanan = i.service?.title ?? "Lainnya";
     const matchSearch =
-      i.name.toLowerCase().includes(q) || i.layanan.toLowerCase().includes(q);
+      i.name.toLowerCase().includes(q) || layanan.toLowerCase().includes(q);
     const matchFilter = filter === "Semua" || i.status === filter;
     return matchSearch && matchFilter;
   });
@@ -179,16 +187,30 @@ export default function InquiryPageClient() {
   const pageItems = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const setStatus = (id: string, status: InquiryStatus) => {
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, status } : i)));
-    setDetail((d) => (d && d.id === id ? { ...d, status } : d));
-    swalSuccess(`Status inquiry diubah ke "${status}"`);
+    startTransition(async () => {
+      const res = await updateInquiryStatusAction(id, status);
+      if (res.ok) {
+        setDetail((d) => (d && d.id === id ? { ...d, status } : d));
+        swalSuccess(`Status inquiry diubah ke "${STATUS_LABEL[status]}"`);
+        router.refresh();
+      } else {
+        swalError(res.message);
+      }
+    });
   };
 
-  const remove = async (item: Inquiry) => {
+  const remove = async (item: InquiryWithService) => {
     const confirmed = await swalConfirmDelete(`Inquiry dari ${item.name}`);
     if (!confirmed) return;
-    setItems((prev) => prev.filter((i) => i.id !== item.id));
-    swalSuccess("Inquiry dihapus");
+    startTransition(async () => {
+      const res = await deleteInquiryAction(item.id);
+      if (res.ok) {
+        swalSuccess("Inquiry dihapus");
+        router.refresh();
+      } else {
+        swalError(res.message);
+      }
+    });
   };
 
   return (
@@ -225,7 +247,7 @@ export default function InquiryPageClient() {
                 filter === s ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700",
               )}
             >
-              {s}
+              {s === "Semua" ? "Semua" : STATUS_LABEL[s]}
             </button>
           ))}
         </div>
@@ -258,16 +280,17 @@ export default function InquiryPageClient() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-5 py-3.5 text-gray-500 hidden md:table-cell whitespace-nowrap">{item.layanan}</td>
+                  <td className="px-5 py-3.5 text-gray-500 hidden md:table-cell whitespace-nowrap">{item.service?.title ?? "Lainnya"}</td>
                   <td className="px-5 py-3.5 hidden lg:table-cell">
                     <span className="flex items-center gap-1 text-xs text-gray-400 whitespace-nowrap">
                       <Clock size={11} />
-                      {item.time}
+                      {formatTimeAgo(item.createdAt)}
                     </span>
                   </td>
                   <td className="px-5 py-3.5">
                     {/* Klik pill status untuk lanjut ke status berikutnya */}
                     <button
+                      disabled={isPending}
                       onClick={() =>
                         setStatus(
                           item.id,
@@ -276,11 +299,11 @@ export default function InquiryPageClient() {
                       }
                       title="Klik untuk ubah status"
                       className={cn(
-                        "text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap transition-opacity hover:opacity-75",
+                        "text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap transition-opacity hover:opacity-75 disabled:pointer-events-none disabled:opacity-50",
                         statusColor[item.status],
                       )}
                     >
-                      {item.status}
+                      {STATUS_LABEL[item.status]}
                     </button>
                   </td>
                   <td className="px-5 py-3.5">
@@ -294,7 +317,8 @@ export default function InquiryPageClient() {
                       </button>
                       <button
                         onClick={() => remove(item)}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                        disabled={isPending}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:pointer-events-none disabled:opacity-50"
                         aria-label="Hapus"
                       >
                         <Trash2 size={14} />
@@ -344,8 +368,8 @@ export default function InquiryPageClient() {
                   ["Nama", detail.name],
                   ["Email", detail.email],
                   ["WhatsApp", detail.whatsapp],
-                  ["Layanan", detail.layanan],
-                  ["Waktu", detail.time],
+                  ["Layanan", detail.service?.title ?? "Lainnya"],
+                  ["Waktu", formatTimeAgo(detail.createdAt)],
                 ].map(([label, value]) => (
                   <div key={label} className="flex gap-3">
                     <span className="w-24 flex-shrink-0 text-gray-400">{label}</span>
@@ -355,7 +379,7 @@ export default function InquiryPageClient() {
                 <div>
                   <span className="text-gray-400">Pesan</span>
                   <p className="mt-1 rounded-lg bg-gray-50 p-3 text-gray-700 leading-relaxed">
-                    {detail.pesan}
+                    {detail.message}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 pt-1">
@@ -363,15 +387,16 @@ export default function InquiryPageClient() {
                   {STATUS_ORDER.map((s) => (
                     <button
                       key={s}
+                      disabled={isPending}
                       onClick={() => setStatus(detail.id, s)}
                       className={cn(
-                        "text-xs font-medium px-2.5 py-1 rounded-full transition-all",
+                        "text-xs font-medium px-2.5 py-1 rounded-full transition-all disabled:pointer-events-none disabled:opacity-50",
                         detail.status === s
                           ? statusColor[s]
                           : "bg-gray-50 text-gray-400 hover:bg-gray-100",
                       )}
                     >
-                      {s}
+                      {STATUS_LABEL[s]}
                     </button>
                   ))}
                 </div>

@@ -8,23 +8,44 @@ import { Button } from "@/components/ui/button";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { cn } from "@/lib/utils";
 import { WHATSAPP_URL } from "@/lib/landing";
-import { KONTAK_FAQS } from "@/lib/kontak";
+
+export interface KontakFaqItem {
+  question: string;
+  answer: string;
+}
+
+export interface KontakHelpCard {
+  title: string;
+  description: string;
+  buttonLabel: string;
+  imageUrl: string | null;
+}
 
 /* ─── FAQ singkat + kartu "Masih Punya Pertanyaan?" — panel abu ─── */
-export default function KontakFaqSection() {
+export default function KontakFaqSection({
+  titlePrefix,
+  titleHighlight,
+  faqs,
+  helpCard,
+}: {
+  titlePrefix: string;
+  titleHighlight: string;
+  faqs: KontakFaqItem[];
+  helpCard: KontakHelpCard;
+}) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
     <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
       <div className="rounded-3xl bg-muted/40 p-4 sm:p-6 lg:p-8">
         <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          Pertanyaan yang <span className="text-primary">Sering Diajukan</span>
+          {titlePrefix} <span className="text-primary">{titleHighlight}</span>
         </h2>
 
         <div className="mt-6 grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2">
           {/* Daftar FAQ — kartu putih per pertanyaan */}
           <div className="space-y-3">
-            {KONTAK_FAQS.map((faq, index) => {
+            {faqs.map((faq, index) => {
               const isOpen = openIndex === index;
               return (
                 <div
@@ -82,11 +103,10 @@ export default function KontakFaqSection() {
               />
               <div>
                 <h3 className="text-lg font-bold text-foreground sm:text-xl">
-                  Masih Punya Pertanyaan?
+                  {helpCard.title}
                 </h3>
                 <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
-                  Tim ahli kami siap membantu Anda memberikan solusi terbaik
-                  untuk kebutuhan bisnis Anda.
+                  {helpCard.description}
                 </p>
                 {/* Tombol — lebar penuh & teks kecil di mobile, ukuran normal ≥sm */}
                 <Button
@@ -99,7 +119,7 @@ export default function KontakFaqSection() {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    Konsultasikan Gratis Sekarang
+                    {helpCard.buttonLabel}
                     <WhatsAppIcon className="size-3.5 sm:size-4" />
                   </a>
                 </Button>
@@ -109,7 +129,7 @@ export default function KontakFaqSection() {
             {/* Foto tim — PNG transparan rata bawah-kanan kartu, hanya ≥xl */}
             <div className="pointer-events-none absolute bottom-0 right-0 hidden w-48 xl:block">
               <Image
-                src="/images/promo-konsultasi.png"
+                src={helpCard.imageUrl || "/images/promo-konsultasi.png"}
                 alt=""
                 width={612}
                 height={408}

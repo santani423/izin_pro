@@ -5,21 +5,45 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/Reveal";
 import { cn } from "@/lib/utils";
-import { PROMO_PACKAGES } from "@/lib/promo";
+
+export interface PromoPackageItem {
+  id: string;
+  badge: string | null;
+  title: string;
+  price: string;
+  originalPrice: string | null;
+  saving: string | null;
+  features: string[];
+  href: string;
+  dark: boolean;
+}
+
+export interface PromoPackagesHeading {
+  titlePrefix: string;
+  titleHighlight: string;
+  titleSuffix: string;
+  subtitle: string;
+}
 
 /* ─── Paket promo pilihan — 3 kartu (tengah gelap) ─── */
-export default function PromoPackagesSection() {
+export default function PromoPackagesSection({
+  heading,
+  packages,
+}: {
+  heading: PromoPackagesHeading;
+  packages: PromoPackageItem[];
+}) {
   return (
     <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
       <h2 className="text-center text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-        Promo <span className="text-primary">Pilihan</span> untuk Anda
+        {heading.titlePrefix} <span className="text-primary">{heading.titleHighlight}</span> {heading.titleSuffix}
       </h2>
       <p className="mx-auto mt-2 max-w-xl text-center text-sm text-muted-foreground sm:text-base">
-        Pilih paket layanan yang paling sesuai dengan kebutuhan bisnis Anda.
+        {heading.subtitle}
       </p>
 
       <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
-        {PROMO_PACKAGES.map((pkg, index) => (
+        {packages.map((pkg, index) => (
           <Reveal key={pkg.id} delay={index * 0.08} className="h-full">
             <Card
               className={cn(
@@ -30,16 +54,18 @@ export default function PromoPackagesSection() {
               )}
             >
               <CardContent className="flex h-full flex-col px-6 py-7">
-                <span
-                  className={cn(
-                    "self-start rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide",
-                    pkg.dark
-                      ? "bg-primary text-white"
-                      : "bg-primary/10 text-primary",
-                  )}
-                >
-                  {pkg.badge}
-                </span>
+                {pkg.badge && (
+                  <span
+                    className={cn(
+                      "self-start rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide",
+                      pkg.dark
+                        ? "bg-primary text-white"
+                        : "bg-primary/10 text-primary",
+                    )}
+                  >
+                    {pkg.badge}
+                  </span>
+                )}
                 <h3
                   className={cn(
                     "mt-4 text-lg font-bold leading-snug",
@@ -65,25 +91,29 @@ export default function PromoPackagesSection() {
                   >
                     {pkg.price}
                   </span>
+                  {pkg.originalPrice && (
+                    <span
+                      className={cn(
+                        "text-sm line-through",
+                        pkg.dark ? "text-white/50" : "text-muted-foreground/70",
+                      )}
+                    >
+                      {pkg.originalPrice}
+                    </span>
+                  )}
+                </p>
+                {pkg.saving && (
                   <span
                     className={cn(
-                      "text-sm line-through",
-                      pkg.dark ? "text-white/50" : "text-muted-foreground/70",
+                      "mt-2 self-start rounded-full px-2.5 py-1 text-xs font-bold",
+                      pkg.dark
+                        ? "bg-primary/20 text-brand-lime"
+                        : "bg-primary/10 text-primary",
                     )}
                   >
-                    {pkg.originalPrice}
+                    {pkg.saving}
                   </span>
-                </p>
-                <span
-                  className={cn(
-                    "mt-2 self-start rounded-full px-2.5 py-1 text-xs font-bold",
-                    pkg.dark
-                      ? "bg-primary/20 text-brand-lime"
-                      : "bg-primary/10 text-primary",
-                  )}
-                >
-                  {pkg.saving}
-                </span>
+                )}
 
                 <ul className="mt-5 flex-1 space-y-2.5">
                   {pkg.features.map((feature) => (
