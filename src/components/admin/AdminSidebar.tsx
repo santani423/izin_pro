@@ -3,10 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ChevronRight, X } from "lucide-react";
+import { ChevronRight, ChevronDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { COMPANY_INFO } from "@/lib/constants";
-import { ADMIN_NAV_GROUPS } from "@/lib/admin-nav";
+import { ADMIN_NAV_GROUPS, type AdminNavItem } from "@/lib/admin-nav";
 import { useAdminSidebar } from "@/contexts/AdminSidebarContext";
 import { useSession } from "@/lib/auth-client";
 import { canAccessAdminRoute } from "@/lib/permissions";
@@ -29,6 +29,17 @@ export default function AdminSidebar() {
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
+  // Grup dgn children yg lagi expanded — default semua expanded (cuma 1
+  // grup skrg, "Transaksi Layanan"), toggle manual via chevron.
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const toggleGroup = (href: string) =>
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(href)) next.delete(href);
+      else next.add(href);
+      return next;
+    });
+
   useEffect(() => {
     fetch("/api/branding")
       .then((res) => res.json())
@@ -39,10 +50,18 @@ export default function AdminSidebar() {
   /* Sembunyikan menu yg gak boleh diakses role ini — belum tau role (session
    * lom kebaca) -> tampilin semua dulu spy gak "flash" kosong, page.tsx tetap
    * jadi penjaga terakhir kalau nekat buka URL langsung. */
+  const filterItem = (item: AdminNavItem): AdminNavItem | null => {
+    if (!role) return item;
+    const children = item.children?.filter((c) => canAccessAdminRoute(role, c.href));
+    const ownAccess = canAccessAdminRoute(role, item.href);
+    if (!ownAccess && (!children || children.length === 0)) return null;
+    return { ...item, children };
+  };
+
   const visibleGroups = ADMIN_NAV_GROUPS
     .map((group) => ({
       ...group,
-      items: role ? group.items.filter((item) => canAccessAdminRoute(role, item.href)) : group.items,
+      items: group.items.map(filterItem).filter((item): item is AdminNavItem => item !== null),
     }))
     .filter((group) => group.items.length > 0);
 
@@ -102,25 +121,67 @@ export default function AdminSidebar() {
               </div>
             )}
             <ul className="space-y-0.5">
-              {group.items.map(({ label, href, icon: Icon }) => {
+              {group.items.map(({ label, href, icon: Icon, children }) => {
                 const fullHref = `/${panel}${href}`;
+                const isGroupCollapsed = collapsedGroups.has(href);
+                const hasChildren = !collapsed && children && children.length > 0;
                 return (
                   <li key={href}>
-                    <Link
-                      href={fullHref}
-                      onClick={close}
-                      title={collapsed ? label : undefined}
-                      className={cn(
-                        "flex items-center rounded-xl text-sm font-medium transition-all",
-                        collapsed ? "justify-center w-10 h-10 mx-auto" : "gap-3 px-3 py-2.5",
-                        isActive(fullHref)
-                          ? "bg-primary/10 text-primary"
-                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                    <div className="flex items-center">
+                      <Link
+                        href={fullHref}
+                        onClick={close}
+                        title={collapsed ? label : undefined}
+                        className={cn(
+                          "flex flex-1 items-center rounded-xl text-sm font-medium transition-all",
+                          collapsed ? "justify-center w-10 h-10 mx-auto" : "gap-3 px-3 py-2.5",
+                          isActive(fullHref)
+                            ? "bg-primary/10 text-primary"
+                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                        )}
+                      >
+                        <Icon size={17} className="flex-shrink-0" />
+                        {!collapsed && <span className="flex-1">{label}</span>}
+                      </Link>
+                      {hasChildren && (
+                        <button
+                          type="button"
+                          onClick={() => toggleGroup(href)}
+                          aria-label={isGroupCollapsed ? `Buka submenu ${label}` : `Tutup submenu ${label}`}
+                          className="mr-1 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-50 hover:text-gray-600"
+                        >
+                          <ChevronDown
+                            size={14}
+                            className={cn("transition-transform", isGroupCollapsed && "-rotate-90")}
+                          />
+                        </button>
                       )}
-                    >
-                      <Icon size={17} className="flex-shrink-0" />
-                      {!collapsed && <span className="flex-1">{label}</span>}
-                    </Link>
+                    </div>
+                    {hasChildren && !isGroupCollapsed && (
+                      <ul className="mt-0.5 ml-4 space-y-0.5 border-l border-admin-line pl-3">
+                        {children!.map((child) => {
+                          const childHref = `/${panel}${child.href}`;
+                          const ChildIcon = child.icon;
+                          return (
+                            <li key={child.href}>
+                              <Link
+                                href={childHref}
+                                onClick={close}
+                                className={cn(
+                                  "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-all",
+                                  pathname === childHref
+                                    ? "bg-primary/10 text-primary"
+                                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                                )}
+                              >
+                                <ChildIcon size={15} className="flex-shrink-0" />
+                                <span className="flex-1">{child.label}</span>
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
                   </li>
                 );
               })}

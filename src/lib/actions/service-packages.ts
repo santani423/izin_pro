@@ -29,6 +29,8 @@ export interface ServicePackageFormData {
   originalPrice: number | null;
   features: string[];
   isPopular: boolean;
+  estimatedDurationLabel: string | null;
+  isActive: boolean;
 }
 
 async function revalidateForService(serviceId: string) {
@@ -55,6 +57,8 @@ export async function createServicePackageAction(
         originalPrice: data.originalPrice,
         features: data.features.filter(Boolean),
         isPopular: data.isPopular,
+        estimatedDurationLabel: data.estimatedDurationLabel,
+        isActive: data.isActive,
         sortOrder: count,
       },
     });
@@ -82,6 +86,8 @@ export async function updateServicePackageAction(
         originalPrice: data.originalPrice,
         features: data.features.filter(Boolean),
         isPopular: data.isPopular,
+        estimatedDurationLabel: data.estimatedDurationLabel,
+        isActive: data.isActive,
       },
     });
     await revalidateForService(pkg.serviceId);

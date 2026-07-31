@@ -77,19 +77,16 @@ export interface PublicBlogPostDetail extends PublicBlogPost {
   tags: string[];
 }
 
-/* ─── Satu artikel by slug — dipakai halaman detail, sekalian nambah
- * views (raw incrementable counter, lihat komentar di schema). ─── */
+/* ─── Satu artikel by slug — dipakai halaman detail. Pure read (gak nambah
+ * views di sini) krn dipanggil dari generateMetadata() DAN body halaman;
+ * increment sungguhan ada di recordArticleVisit() (lib/article-stats.ts),
+ * dipanggil sekali aja dari body halaman. ─── */
 export async function getPublicBlogPostBySlug(slug: string): Promise<PublicBlogPostDetail | null> {
-  const existing = await prisma.blogPost.findFirst({
+  const row = await prisma.blogPost.findFirst({
     where: { slug, deletedAt: null, status: "PUBLISHED" },
-  });
-  if (!existing) return null;
-
-  const row = await prisma.blogPost.update({
-    where: { id: existing.id },
-    data: { views: { increment: 1 } },
     include: { category: true, featuredMedia: true, tags: { include: { tag: true } } },
   });
+  if (!row) return null;
 
   return {
     ...mapPublicPost(row),
@@ -116,6 +113,12 @@ export async function getBlogCategories(): Promise<BlogCategory[]> {
     { label: "Semua Artikel", count: total },
     ...categories.map((c) => ({ label: c.name, count: c._count.posts })),
   ];
+}
+
+/* ─── Konten banner /blog (singleton id="1"), dikelola dari admin tab
+ * "Banner Halaman" — sama pola dgn KontakPageContent/TestimoniPageContent. ─── */
+export async function getBlogPageContent() {
+  return prisma.blogPageContent.findUniqueOrThrow({ where: { id: "1" } });
 }
 
 /* ─── Slug + updatedAt ringan, dipakai sitemap.ts ─── */

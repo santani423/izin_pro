@@ -10,6 +10,7 @@ import { prisma } from "@/lib/db";
 
 /* ─── Lazy load sections below the fold ─── */
 const ArticlesSection = dynamic(() => import("@/components/sections/ArticlesSection"));
+const TrackHomeSection = dynamic(() => import("@/components/sections/TrackHomeSection"));
 const LocationSection = dynamic(() => import("@/components/sections/LocationSection"));
 const TestimonialsSection = dynamic(() => import("@/components/sections/TestimonialsSection"));
 const VideoTestimonialsSection = dynamic(() => import("@/components/sections/VideoTestimonialsSection"));
@@ -91,22 +92,25 @@ export default async function HomePage() {
       {/* 5. Artikel Terbaru */}
       <ArticlesSection posts={blogPosts} />
 
-      {/* 6. Lokasi Kami */}
+      {/* 6. Lacak Layanan */}
+      <TrackHomeSection />
+
+      {/* 7. Lokasi Kami */}
       <LocationSection />
 
-      {/* 7. Testimoni Klien */}
+      {/* 8. Testimoni Klien */}
       <TestimonialsSection testimonials={textTestimonials} />
 
-      {/* 8. Video Testimoni */}
+      {/* 9. Video Testimoni */}
       <VideoTestimonialsSection videos={videoTestimonials} />
 
-      {/* 9. Klien Kami */}
+      {/* 10. Klien Kami */}
       <ClientsSection />
 
-      {/* 10. FAQ */}
+      {/* 11. FAQ */}
       <FaqSection />
 
-      {/* 11. CTA Banner */}
+      {/* 12. CTA Banner */}
       <CtaSection />
     </>
   );

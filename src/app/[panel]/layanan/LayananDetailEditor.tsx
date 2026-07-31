@@ -285,6 +285,8 @@ export default function LayananDetailEditor({
           originalPrice: null,
           features: [],
           isPopular: false,
+          estimatedDurationLabel: null,
+          isActive: true,
         });
         if (res.ok) {
           router.refresh();
@@ -306,6 +308,8 @@ export default function LayananDetailEditor({
           originalPrice: pkg.originalPrice ? Number(pkg.originalPrice) : null,
           features: pkg.features as string[],
           isPopular: pkg.isPopular,
+          estimatedDurationLabel: pkg.estimatedDurationLabel,
+          isActive: pkg.isActive,
         });
         if (res.ok) {
           swalSuccess("Paket disimpan");
@@ -1036,6 +1040,22 @@ export default function LayananDetailEditor({
                         className="data-[state=checked]:bg-primary"
                       />
                       Paling Populer
+                    </label>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-4">
+                    <Input
+                      value={pkg.estimatedDurationLabel ?? ""}
+                      onChange={(e) => setPackages((prev) => prev.map((p) => (p.id === pkg.id ? { ...p, estimatedDurationLabel: e.target.value || null } : p)))}
+                      className="rounded-lg sm:col-span-3"
+                      placeholder="Estimasi durasi (mis. 5-7 hari kerja) — dipakai modul Transaksi"
+                    />
+                    <label className="flex items-center gap-1.5 text-xs text-gray-500">
+                      <Switch
+                        checked={pkg.isActive}
+                        onCheckedChange={(v) => setPackages((prev) => prev.map((p) => (p.id === pkg.id ? { ...p, isActive: v } : p)))}
+                        className="data-[state=checked]:bg-primary"
+                      />
+                      Aktif
                     </label>
                   </div>
                   <Textarea

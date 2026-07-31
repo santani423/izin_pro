@@ -25,8 +25,15 @@ export default async function AdminLayananPage({
       },
       orderBy: { sortOrder: "asc" },
     }),
-    prisma.serviceCategory.findMany({ orderBy: { name: "asc" } }),
+    prisma.serviceCategory.findMany({ orderBy: { sortOrder: "asc" } }),
   ]);
 
-  return <LayananManager initialServices={services} categories={categories} />;
+  // Prisma Decimal bukan plain object — gak bisa lolos batas Server -> Client
+  // Component, harus dikonversi ke number dulu (sama pola dgn PromoPageClient).
+  const servicesForClient = services.map((s) => ({
+    ...s,
+    basePrice: s.basePrice ? s.basePrice.toNumber() : null,
+  }));
+
+  return <LayananManager initialServices={servicesForClient} categories={categories} />;
 }

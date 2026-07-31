@@ -3,13 +3,13 @@ import dynamic from "next/dynamic";
 
 import PageHero from "@/components/shared/PageHero";
 import BlogCatalogSection from "@/components/sections/BlogCatalogSection";
-import { getPublicBlogPosts, getBlogCategories } from "@/lib/blog-data";
+import { getPublicBlogPosts, getBlogCategories, getBlogPageContent } from "@/lib/blog-data";
 
 /* ─── Lazy load section below the fold ─── */
 const CtaSection = dynamic(() => import("@/components/sections/CtaSection"));
 
 export const metadata: Metadata = {
-  title: "Artikel & Insight Seputar Perizinan Usaha",
+  title: "Blog dan Artikel Seputar Perizinan Usaha",
   description:
     "Informasi terbaru seputar perizinan usaha, regulasi, dan tips untuk mendukung pertumbuhan bisnis Anda — dari tim IzinPro.",
   alternates: {
@@ -19,20 +19,26 @@ export const metadata: Metadata = {
 
 /* ─── Halaman Artikel / Blog (desain baru) ─── */
 export default async function BlogPage() {
-  const [posts, categories] = await Promise.all([getPublicBlogPosts(), getBlogCategories()]);
+  const [posts, categories, banner] = await Promise.all([
+    getPublicBlogPosts(),
+    getBlogCategories(),
+    getBlogPageContent(),
+  ]);
 
   return (
     <>
-      {/* 1. Hero + breadcrumb */}
+      {/* 1. Hero + breadcrumb (banner dikelola dari admin /blog tab "Banner Halaman") */}
       <PageHero
         crumbs={[{ label: "Beranda", href: "/" }, { label: "Artikel" }]}
+        kicker={banner.heroKicker ?? undefined}
         title={
           <>
-            Artikel & <span className="text-primary">Insight</span>
+            {banner.heroTitle} <span className="text-primary">{banner.heroTitleHighlight}</span>
           </>
         }
-        description="Informasi terbaru seputar perizinan usaha, regulasi, dan tips untuk mendukung pertumbuhan bisnis Anda."
+        description={banner.heroDescription}
         imageLabel="Ilustrasi laptop menampilkan artikel IzinPro"
+        imageUrl={banner.heroImageUrl}
         overlap
       />
 

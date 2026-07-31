@@ -41,6 +41,12 @@ export interface ServiceFormData {
   categoryId: string;
   features: string[];
   featuredMediaId: string | null;
+  // Dipakai modul Transaksi (harga dasar & estimasi durasi default saat bikin
+  // transaksi baru, lihat createTransactionAction) — opsional, gak wajib
+  // diisi utk layanan yg cuma tampil di landing page.
+  basePrice: number | null;
+  estimatedDurationLabel: string | null;
+  requiredDocuments: string[];
 }
 
 export async function createServiceAction(data: ServiceFormData): Promise<ActionResult> {
@@ -58,6 +64,9 @@ export async function createServiceAction(data: ServiceFormData): Promise<Action
         categoryId: data.categoryId,
         features: data.features,
         featuredMediaId: data.featuredMediaId,
+        basePrice: data.basePrice,
+        estimatedDurationLabel: data.estimatedDurationLabel,
+        requiredDocuments: data.requiredDocuments,
         sortOrder: count,
         createdById: session.user.id,
         updatedById: session.user.id,
@@ -85,6 +94,9 @@ export async function updateServiceAction(id: string, data: ServiceFormData): Pr
         categoryId: data.categoryId,
         features: data.features,
         featuredMediaId: data.featuredMediaId,
+        basePrice: data.basePrice,
+        estimatedDurationLabel: data.estimatedDurationLabel,
+        requiredDocuments: data.requiredDocuments,
         updatedById: session.user.id,
       },
     });

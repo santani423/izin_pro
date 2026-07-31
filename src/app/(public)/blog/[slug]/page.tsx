@@ -5,7 +5,9 @@ import { CalendarDays, Clock } from "lucide-react";
 
 import PageHero from "@/components/shared/PageHero";
 import BlogDetailProseSection from "@/components/sections/BlogDetailProseSection";
+import BlogCommentsSection from "@/components/sections/BlogCommentsSection";
 import { getPublicBlogPostBySlug, getPublicBlogPosts } from "@/lib/blog-data";
+import { recordArticleVisit, getApprovedComments } from "@/lib/article-stats";
 import { PANDUAN_LEGALITAS_SLUG } from "@/lib/panduan-legalitas";
 
 /* Slug dengan route statis sendiri — dikeluarkan dari route dinamis */
@@ -44,6 +46,9 @@ export default async function BlogDetailPage({ params }: Props) {
   const { slug } = await params;
   const post = await getPublicBlogPostBySlug(slug);
   if (!post) notFound();
+
+  await recordArticleVisit(post.id);
+  const comments = await getApprovedComments(post.id);
 
   const allPosts = await getPublicBlogPosts();
   const related = allPosts
@@ -95,6 +100,9 @@ export default async function BlogDetailPage({ params }: Props) {
 
       {/* 2. Badan artikel + sidebar */}
       <BlogDetailProseSection post={post} related={relatedFallback} />
+
+      {/* 2b. Komentar (approved only) + form komentar baru */}
+      <BlogCommentsSection postId={post.id} comments={comments} />
 
       {/* 3. CTA Banner */}
       <CtaSection

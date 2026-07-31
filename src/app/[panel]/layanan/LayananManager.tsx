@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
-  Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight, ImagePlus, Layers,
+  Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight, ImagePlus, Layers, FolderKanban,
 } from "lucide-react";
 import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import type { Service, ServiceCategory } from "@prisma/client";
@@ -28,6 +28,7 @@ import {
 import { cn } from "@/lib/utils";
 import { SERVICE_ICONS, DEFAULT_SERVICE_ICON } from "@/lib/service-icons";
 import { SortableList } from "@/components/admin/SortableList";
+import CategoryManager from "./CategoryManager";
 import {
   createServiceAction,
   deleteServiceAction,
@@ -37,7 +38,8 @@ import {
   uploadServiceFeaturedImageAction,
 } from "@/lib/actions/services";
 
-type ServiceWithCategory = Service & {
+type ServiceWithCategory = Omit<Service, "basePrice"> & {
+  basePrice: number | null;
   category: ServiceCategory;
   featuredMedia: { id: string; url: string } | null;
   createdBy: { name: string } | null;
@@ -53,6 +55,8 @@ interface FormState {
   bgColor: string;
   categoryId: string;
   featuredMediaId: string | null;
+  basePrice: string;
+  estimatedDurationLabel: string;
 }
 
 const emptyForm = (defaultCategoryId: string): FormState => ({
@@ -64,6 +68,8 @@ const emptyForm = (defaultCategoryId: string): FormState => ({
   bgColor: "#f3fae8",
   categoryId: defaultCategoryId,
   featuredMediaId: null,
+  basePrice: "",
+  estimatedDurationLabel: "",
 });
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
@@ -188,8 +194,10 @@ export default function LayananManager({
   const [isReordering, startReorderTransition] = useTransition();
   const [form, setForm] = useState<FormState | null>(null);
   const [featuresText, setFeaturesText] = useState("");
+  const [requiredDocumentsText, setRequiredDocumentsText] = useState("");
   const [featuredImageUrl, setFeaturedImageUrl] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [categoryManagerOpen, setCategoryManagerOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
@@ -215,10 +223,13 @@ export default function LayananManager({
           bgColor: svc.bgColor ?? "#f3fae8",
           categoryId: svc.categoryId,
           featuredMediaId: svc.featuredMediaId,
+          basePrice: svc.basePrice ? svc.basePrice.toString() : "",
+          estimatedDurationLabel: svc.estimatedDurationLabel ?? "",
         }
       : emptyForm(categories[0]?.id ?? "");
     setForm(target);
     setFeaturesText(svc ? (svc.features as string[]).join("\n") : "");
+    setRequiredDocumentsText(svc?.requiredDocuments ? (svc.requiredDocuments as string[]).join("\n") : "");
     setFeaturedImageUrl(svc?.featuredMedia?.url ?? null);
   };
 
@@ -264,6 +275,7 @@ export default function LayananManager({
       return;
     }
     const features = featuresText.split("\n").map((f) => f.trim()).filter(Boolean);
+    const requiredDocuments = requiredDocumentsText.split("\n").map((f) => f.trim()).filter(Boolean);
     const payload = {
       title: form.title,
       description: form.description,
@@ -273,6 +285,9 @@ export default function LayananManager({
       categoryId: form.categoryId,
       features,
       featuredMediaId: form.featuredMediaId,
+      basePrice: form.basePrice.trim() ? Number(form.basePrice) : null,
+      estimatedDurationLabel: form.estimatedDurationLabel.trim() || null,
+      requiredDocuments,
     };
 
     startTransition(async () => {
@@ -359,10 +374,21 @@ export default function LayananManager({
             Search
           </Button>
         </div>
-        <Button size="sm" className="gap-1.5 rounded-xl flex-shrink-0" onClick={() => openForm(null)}>
-          <Plus size={14} />
-          Tambah Layanan
-        </Button>
+        <div className="flex gap-2 flex-shrink-0">
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 rounded-xl"
+            onClick={() => setCategoryManagerOpen(true)}
+          >
+            <FolderKanban size={14} />
+            Kelola Kategori
+          </Button>
+          <Button size="sm" className="gap-1.5 rounded-xl" onClick={() => openForm(null)}>
+            <Plus size={14} />
+            Tambah Layanan
+          </Button>
+        </div>
       </div>
 
       <div className="flex items-center justify-between">
@@ -597,6 +623,47 @@ export default function LayananManager({
                     onChange={(e) => setFeaturesText(e.target.value)}
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="s-price" className="text-sm font-semibold text-gray-700">
+                      Harga Dasar <span className="font-normal text-gray-400">(opsional)</span>
+                    </Label>
+                    <Input
+                      id="s-price"
+                      type="number"
+                      min={0}
+                      className="mt-1.5 rounded-lg"
+                      placeholder="mis. 3000000"
+                      value={form.basePrice}
+                      onChange={(e) => setForm({ ...form, basePrice: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="s-duration" className="text-sm font-semibold text-gray-700">
+                      Estimasi Durasi <span className="font-normal text-gray-400">(opsional)</span>
+                    </Label>
+                    <Input
+                      id="s-duration"
+                      className="mt-1.5 rounded-lg"
+                      placeholder="mis. 7-14 hari kerja"
+                      value={form.estimatedDurationLabel}
+                      onChange={(e) => setForm({ ...form, estimatedDurationLabel: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="s-docs" className="text-sm font-semibold text-gray-700">
+                    Dokumen Wajib <span className="font-normal text-gray-400">(satu per baris, opsional)</span>
+                  </Label>
+                  <Textarea
+                    id="s-docs"
+                    rows={3}
+                    className="mt-1.5 rounded-lg resize-none"
+                    placeholder={"KTP Direktur\nNPWP Pribadi\nAlamat Domisili Usaha"}
+                    value={requiredDocumentsText}
+                    onChange={(e) => setRequiredDocumentsText(e.target.value)}
+                  />
+                </div>
               </div>
               <div className="flex gap-2 pt-1">
                 <Button variant="outline" className="flex-1 rounded-lg" onClick={() => setForm(null)}>
@@ -610,6 +677,12 @@ export default function LayananManager({
           )}
         </DialogContent>
       </Dialog>
+
+      <CategoryManager
+        open={categoryManagerOpen}
+        onOpenChange={setCategoryManagerOpen}
+        categories={categories}
+      />
     </div>
   );
 }

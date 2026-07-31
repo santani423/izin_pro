@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { auth } from "../src/lib/auth";
 import { prisma } from "../src/lib/db";
-import type { Role } from "@prisma/client";
+import type { Role, WorkflowStepStatus, TransactionStatus, PaymentStatus } from "@prisma/client";
 
 import {
   COMPANY_INFO,
@@ -101,6 +101,7 @@ import { PROMO_PACKAGES, PROMO_HIGHLIGHTS, PROMO_WHY, PROMO_STEPS } from "../src
 import { getLayananDetail } from "../src/lib/layanan-detail";
 import { toServiceDetailContent, parsePriceToNumber } from "./service-detail-seed-helpers";
 import { getArticleDetail } from "../src/lib/blog-detail";
+import { generateTransactionCode, generateInvoiceNumber } from "../src/lib/transaction-code";
 import {
   PANDUAN_LEGALITAS_HERO,
   PANDUAN_LEGALITAS_CHIPS,
@@ -824,6 +825,22 @@ async function main() {
   });
   console.log("KontakPageContent di-seed.");
 
+  /* ═══ 12d. BlogPageContent (singleton) — banner /blog, copy asli dari
+   * (public)/blog/page.tsx sebelum banner ini bisa dikelola dari admin. ═══ */
+  await prisma.blogPageContent.create({
+    data: {
+      id: "1",
+      heroKicker: null,
+      heroTitle: "Blog",
+      heroTitleHighlight: "dan Artikel",
+      heroDescription:
+        "Informasi terbaru seputar perizinan usaha, regulasi, dan tips untuk mendukung pertumbuhan bisnis Anda.",
+      heroImageUrl: null,
+      updatedById: admin.id,
+    },
+  });
+  console.log("BlogPageContent di-seed.");
+
   /* ═══ 13. Cta (default + 3 varian, dari mock admin/cta-banner) ═══ */
   await prisma.cta.create({
     data: {
@@ -1144,33 +1161,219 @@ async function main() {
   }
   console.log(`${pages.length} Page di-seed.`);
 
-  /* ═══ 17. Order (3, model baru — dari tracking.ts MOCK_ORDERS) ═══ */
-  const ORDER_SERVICE_SLUG: Record<string, string> = {
-    "Pendirian PT": "pendirian-pt",
-    "NIB (Nomor Induk Berusaha)": "nib",
-    "Izin Usaha": "izin-usaha",
-  };
-  const orders = [
-    { orderNo: "IZN-2025-0001", service: "Pendirian PT", submittedDate: "7 Juli 2026", estimatedDone: "16 Juli 2026", currentStep: 3, stepDates: ["7 Juli 2026", "9 Juli 2026", null, null, null] },
-    { orderNo: "IZN-2025-0002", service: "NIB (Nomor Induk Berusaha)", submittedDate: "3 Juli 2026", estimatedDone: "6 Juli 2026", currentStep: 5, stepDates: ["3 Juli 2026", "4 Juli 2026", "4 Juli 2026", "5 Juli 2026", "6 Juli 2026"] },
-    { orderNo: "IZN-2025-0003", service: "Izin Usaha", submittedDate: "10 Juli 2026", estimatedDone: "24 Juli 2026", currentStep: 1, stepDates: [null, null, null, null, null] },
-  ];
-  for (const o of orders) {
-    const slug = ORDER_SERVICE_SLUG[o.service];
-    await prisma.order.create({
+  /* ═══ 17. Modul Transaksi (Service Transaction Management, Phase 1) ═══
+   * Menggantikan Order + mock tracking.ts lama TOTAL (lihat komentar di
+   * schema.prisma). Backfill field baru di 2 Service asli buat contoh,
+   * bikin 2 WorkflowTemplate persis 2 contoh di spec (Pendirian PT 9
+   * langkah, Pendaftaran Merek 7 langkah), lalu ~10 ServiceTransaction
+   * dummy tersebar di berbagai status/progress spy modul langsung bisa
+   * didemokan (bukan seeder besar 300 baris — itu ditunda ke sesi
+   * lanjutan). */
+  await prisma.service.update({
+    where: { slug: "pendirian-pt" },
+    data: {
+      basePrice: 3500000,
+      estimatedDurationLabel: "14-21 hari kerja",
+      requiredDocuments: ["KTP & NPWP Direktur/Komisaris", "Rencana Nama PT (3 opsi)", "Alamat Domisili Usaha", "Modal Disetor"],
+    },
+  });
+  await prisma.service.update({
+    where: { slug: "pendaftaran-merk" },
+    data: {
+      basePrice: 2000000,
+      estimatedDurationLabel: "8-12 bulan (proses di DJKI)",
+      requiredDocuments: ["Label/Logo Merek", "KTP & NPWP Pemilik Merek", "Surat Pernyataan Kepemilikan Merek"],
+    },
+  });
+  await prisma.serviceCategory.update({
+    where: { slug: "pendirian-perusahaan" },
+    data: { icon: "building-2", description: "Pendirian badan usaha dari nol sampai legal beroperasi." },
+  });
+  console.log("Field modul Transaksi di-backfill ke Service/ServiceCategory contoh.");
+
+  const pendirianPtId = serviceIdBySlug["pendirian-pt"];
+  const pendaftaranMerkId = serviceIdBySlug["pendaftaran-merk"];
+  const pendirianPtPackages = await prisma.servicePackage.findMany({ where: { serviceId: pendirianPtId }, orderBy: { sortOrder: "asc" } });
+  const merkPackages = await prisma.servicePackage.findMany({ where: { serviceId: pendaftaranMerkId }, orderBy: { sortOrder: "asc" } });
+  if (pendirianPtPackages[0]) {
+    await prisma.servicePackage.update({ where: { id: pendirianPtPackages[0].id }, data: { estimatedDurationLabel: "14-21 hari kerja" } });
+  }
+  if (merkPackages[0]) {
+    await prisma.servicePackage.update({ where: { id: merkPackages[0].id }, data: { estimatedDurationLabel: "8-12 bulan" } });
+  }
+
+  const pendirianPtTemplate = await prisma.workflowTemplate.create({
+    data: {
+      serviceId: pendirianPtId,
+      name: "Pendirian PT",
+      description: "Alur standar pendirian PT dari penerimaan dokumen sampai izin usaha terbit.",
+      createdById: admin.id,
+      updatedById: admin.id,
+      steps: {
+        create: [
+          "Terima Dokumen", "Verifikasi Dokumen", "Reservasi Nama PT", "Draft Dokumen Legal",
+          "Proses Notaris", "Persetujuan Kemenkumham", "Pendaftaran Pajak", "Izin Usaha", "Selesai",
+        ].map((name, order) => ({ name, order, estimatedDays: 2 })),
+      },
+    },
+    include: { steps: { orderBy: { order: "asc" } } },
+  });
+
+  const merkTemplate = await prisma.workflowTemplate.create({
+    data: {
+      serviceId: pendaftaranMerkId,
+      name: "Pendaftaran Merek",
+      description: "Alur standar pendaftaran merek dagang di DJKI.",
+      createdById: admin.id,
+      updatedById: admin.id,
+      steps: {
+        create: [
+          "Pengajuan Permohonan", "Verifikasi Dokumen", "Filing", "Publikasi", "Pemeriksaan", "Persetujuan", "Sertifikat Terbit",
+        ].map((name, order) => ({ name, order, estimatedDays: order === 3 ? 60 : 14 })),
+      },
+    },
+    include: { steps: { orderBy: { order: "asc" } } },
+  });
+  console.log("2 WorkflowTemplate di-seed (Pendirian PT, Pendaftaran Merek).");
+
+  /* Bikin 1 ServiceTransaction dummy + workflow instance-nya sekaligus.
+   * completedCount langkah pertama ditandai COMPLETED, 1 langkah berikutnya
+   * (kalau ada & diminta) IN_PROGRESS/REVISION, sisanya PENDING — pola
+   * simpel yg cukup buat variasi demo tanpa perlu simulasi tanggal rumit.
+   * adminId (bukan admin.id langsung) krn TS gak nge-narrow `admin` yg
+   * nullable ke dalam closure function declaration di bawah ini. */
+  const adminId = admin.id;
+  async function seedDemoTransaction(opts: {
+    template: typeof pendirianPtTemplate;
+    serviceId: string;
+    packageId: string | null;
+    customerName: string;
+    customerEmail: string;
+    customerPhone: string;
+    status: TransactionStatus;
+    paymentStatus: PaymentStatus;
+    completedCount: number;
+    currentStepStatus?: WorkflowStepStatus;
+    daysAgo: number;
+  }) {
+    const createdAt = new Date(Date.now() - opts.daysAgo * 86400000);
+    const price = opts.packageId
+      ? Number((await prisma.servicePackage.findUniqueOrThrow({ where: { id: opts.packageId } })).price)
+      : 3000000;
+    const grandTotal = price;
+
+    const code = await generateTransactionCode(createdAt);
+    const invoiceNumber = await generateInvoiceNumber(createdAt);
+
+    const transaction = await prisma.serviceTransaction.create({
       data: {
-        orderNo: o.orderNo,
-        serviceId: slug ? serviceIdBySlug[slug] ?? null : null,
-        currentStep: o.currentStep,
-        submittedAt: parseIndoDate(o.submittedDate),
-        estimatedDoneAt: parseIndoDate(o.estimatedDone),
-        stepDates: o.stepDates.map((d) => (d ? parseIndoDate(d).toISOString() : null)),
-        createdById: admin.id,
-        updatedById: admin.id,
+        code,
+        invoiceNumber,
+        customerName: opts.customerName,
+        customerEmail: opts.customerEmail,
+        customerPhone: opts.customerPhone,
+        serviceId: opts.serviceId,
+        packageId: opts.packageId,
+        workflowTemplateId: opts.template.id,
+        assignedStaffId: adminId,
+        startDate: createdAt,
+        estimatedCompletionDate: new Date(createdAt.getTime() + 21 * 86400000),
+        completionDate: opts.status === "COMPLETED" ? new Date(createdAt.getTime() + 18 * 86400000) : null,
+        totalPrice: price,
+        discount: 0,
+        tax: 0,
+        grandTotal,
+        status: opts.status,
+        paymentStatus: opts.paymentStatus,
+        createdById: adminId,
+        updatedById: adminId,
+        createdAt,
+        workflowSteps: {
+          create: opts.template.steps.map((s, index) => {
+            const isCompleted = index < opts.completedCount;
+            const isCurrent = index === opts.completedCount && opts.currentStepStatus;
+            const status: WorkflowStepStatus = isCompleted ? "COMPLETED" : isCurrent ? opts.currentStepStatus! : "PENDING";
+            return {
+              templateStepId: s.id,
+              name: s.name,
+              description: s.description,
+              order: s.order,
+              estimatedDays: s.estimatedDays,
+              status,
+              progressPercent: isCompleted ? 100 : isCurrent ? 50 : 0,
+              startedAt: isCompleted || isCurrent ? createdAt : null,
+              completedAt: isCompleted ? createdAt : null,
+            };
+          }),
+        },
+        activityLogs: { create: [{ userId: adminId, action: "CREATED", description: "Transaksi dibuat", createdAt }] },
       },
     });
+
+    if (opts.paymentStatus !== "UNPAID") {
+      const amount = opts.paymentStatus === "PAID" ? grandTotal : Math.round(grandTotal * 0.5);
+      await prisma.payment.create({
+        data: { transactionId: transaction.id, amount, method: "Transfer Bank", paidAt: createdAt, recordedById: adminId },
+      });
+      await prisma.transactionActivityLog.create({
+        data: { transactionId: transaction.id, userId: adminId, action: "PAYMENT_RECORDED", description: `Pembayaran Rp${amount.toLocaleString("id-ID")} dicatat`, createdAt },
+      });
+    }
+
+    return transaction;
   }
-  console.log(`${orders.length} Order di-seed.`);
+
+  await seedDemoTransaction({
+    template: pendirianPtTemplate, serviceId: pendirianPtId, packageId: pendirianPtPackages[0]?.id ?? null,
+    customerName: "Budi Santoso", customerEmail: "budi.santoso@gmail.com", customerPhone: "0821-3333-4455",
+    status: "COMPLETED", paymentStatus: "PAID", completedCount: 9, daysAgo: 30,
+  });
+  await seedDemoTransaction({
+    template: pendirianPtTemplate, serviceId: pendirianPtId, packageId: pendirianPtPackages[0]?.id ?? null,
+    customerName: "Siti Nurhaliza", customerEmail: "siti.nur@yahoo.com", customerPhone: "0813-2222-3344",
+    status: "PROCESSING", paymentStatus: "PARTIAL", completedCount: 4, currentStepStatus: "IN_PROGRESS", daysAgo: 10,
+  });
+  await seedDemoTransaction({
+    template: pendirianPtTemplate, serviceId: pendirianPtId, packageId: pendirianPtPackages[1]?.id ?? null,
+    customerName: "Rina Wijaya", customerEmail: "rina.w@outlook.com", customerPhone: "0856-4444-5566",
+    status: "ON_HOLD", paymentStatus: "PAID", completedCount: 2, currentStepStatus: "REVISION", daysAgo: 15,
+  });
+  await seedDemoTransaction({
+    template: pendirianPtTemplate, serviceId: pendirianPtId, packageId: null,
+    customerName: "Deni Hermawan", customerEmail: "deni.hermawan@gmail.com", customerPhone: "0877-5555-6677",
+    status: "CANCELLED", paymentStatus: "UNPAID", completedCount: 1, daysAgo: 20,
+  });
+  await seedDemoTransaction({
+    template: pendirianPtTemplate, serviceId: pendirianPtId, packageId: pendirianPtPackages[0]?.id ?? null,
+    customerName: "Maya Kusuma", customerEmail: "maya.k@gmail.com", customerPhone: "0898-6666-7788",
+    status: "DRAFT", paymentStatus: "UNPAID", completedCount: 0, daysAgo: 1,
+  });
+  await seedDemoTransaction({
+    template: merkTemplate, serviceId: pendaftaranMerkId, packageId: merkPackages[0]?.id ?? null,
+    customerName: "Andi Setiawan", customerEmail: "andi.s@gmail.com", customerPhone: "0812-1111-2233",
+    status: "WAITING_PAYMENT", paymentStatus: "UNPAID", completedCount: 0, daysAgo: 3,
+  });
+  await seedDemoTransaction({
+    template: merkTemplate, serviceId: pendaftaranMerkId, packageId: merkPackages[0]?.id ?? null,
+    customerName: "Novi Anggraini", customerEmail: "novi.a@gmail.com", customerPhone: "0815-7777-8899",
+    status: "PAID", paymentStatus: "PAID", completedCount: 1, daysAgo: 7,
+  });
+  await seedDemoTransaction({
+    template: merkTemplate, serviceId: pendaftaranMerkId, packageId: merkPackages[0]?.id ?? null,
+    customerName: "Fajar Ramadhan", customerEmail: "fajar.r@gmail.com", customerPhone: "0817-2223-4455",
+    status: "PROCESSING", paymentStatus: "PARTIAL", completedCount: 3, currentStepStatus: "IN_PROGRESS", daysAgo: 45,
+  });
+  await seedDemoTransaction({
+    template: merkTemplate, serviceId: pendaftaranMerkId, packageId: merkPackages[0]?.id ?? null,
+    customerName: "Lestari Putri", customerEmail: "lestari.p@gmail.com", customerPhone: "0819-3334-5566",
+    status: "REVISION", paymentStatus: "PAID", completedCount: 2, currentStepStatus: "REVISION", daysAgo: 60,
+  });
+  await seedDemoTransaction({
+    template: merkTemplate, serviceId: pendaftaranMerkId, packageId: merkPackages[0]?.id ?? null,
+    customerName: "Hendra Gunawan", customerEmail: "hendra.g@gmail.com", customerPhone: "0821-4445-6677",
+    status: "COMPLETED", paymentStatus: "PAID", completedCount: 7, daysAgo: 400,
+  });
+  console.log("10 ServiceTransaction dummy di-seed (workflow + payment + activity log).");
 
   console.log("Selesai — semua data mock berhasil di-migrasi ke database.");
 }

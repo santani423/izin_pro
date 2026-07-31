@@ -87,8 +87,6 @@ model User {
   createdCtas                  Cta[]                  @relation("CtaCreatedBy")
   updatedCtas                  Cta[]                  @relation("CtaUpdatedBy")
   updatedInquiries             Inquiry[]              @relation("InquiryUpdatedBy")
-  createdOrders                Order[]                @relation("OrderCreatedBy")
-  updatedOrders                Order[]                @relation("OrderUpdatedBy")
   createdMenus                 Menu[]                 @relation("MenuCreatedBy")
   updatedMenus                 Menu[]                 @relation("MenuUpdatedBy")
   deletedMenus                 Menu[]                 @relation("MenuDeletedBy")
@@ -101,6 +99,21 @@ model User {
   updatedTestimoniPageContents TestimoniPageContent[] @relation("TestimoniPageContentUpdatedBy")
   updatedPromoPageContents     PromoPageContent[]     @relation("PromoPageContentUpdatedBy")
   updatedKontakPageContents    KontakPageContent[]    @relation("KontakPageContentUpdatedBy")
+  updatedBlogPageContents      BlogPageContent[]      @relation("BlogPageContentUpdatedBy")
+
+  // Modul Transaksi (Service Transaction Management) — sama pola jejak
+  // dibuat/diubah/dihapus dgn model lain di atas.
+  createdWorkflowTemplates WorkflowTemplate[]        @relation("WorkflowTemplateCreatedBy")
+  updatedWorkflowTemplates WorkflowTemplate[]        @relation("WorkflowTemplateUpdatedBy")
+  deletedWorkflowTemplates WorkflowTemplate[]        @relation("WorkflowTemplateDeletedBy")
+  createdTransactions      ServiceTransaction[]      @relation("ServiceTransactionCreatedBy")
+  updatedTransactions      ServiceTransaction[]      @relation("ServiceTransactionUpdatedBy")
+  deletedTransactions      ServiceTransaction[]      @relation("ServiceTransactionDeletedBy")
+  assignedTransactions     ServiceTransaction[]      @relation("ServiceTransactionAssignedStaff")
+  updatedWorkflowSteps     TransactionWorkflowStep[] @relation("TransactionWorkflowStepUpdatedBy")
+  recordedPayments         Payment[]                 @relation("PaymentRecordedBy")
+  uploadedTransactionFiles TransactionAttachment[]   @relation("TransactionAttachmentUploadedBy")
+  transactionActivityLogs  TransactionActivityLog[]  @relation("TransactionActivityLogUser")
 
   @@map("users")
 }
@@ -213,6 +226,8 @@ model BlogPost {
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   tags            PostTag[]
+  comments        Comment[]
+  viewLogs        ArticleView[]
 
   @@map("blog_posts")
 }
@@ -336,6 +351,10 @@ model ServiceCategory {
   id          String   @id @default(cuid())
   slug        String   @unique
   name        String
+  icon        String?
+  description String?  @db.Text
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
   createdById String?
   createdBy   User?    @relation("ServiceCategoryCreatedBy", fields: [createdById], references: [id])
   updatedById String?
@@ -350,61 +369,70 @@ model ServiceCategory {
 }
 
 model Service {
-  id              String          @id @default(cuid())
-  slug            String          @unique
-  title           String
-  description     String          @db.Text
-  icon            String?
-  color           String?
-  bgColor         String?
-  categoryId      String
-  category        ServiceCategory @relation(fields: [categoryId], references: [id])
-  featuredMediaId String?
-  featuredMedia   Media?          @relation("ServiceFeaturedMedia", fields: [featuredMediaId], references: [id])
-  aboutMediaId    String? // gambar khusus section "Tentang" di /layanan/[slug] — opsional, fallback ke featuredMedia (gambar Hero) kalau kosong
-  aboutMedia      Media?          @relation("ServiceAboutMedia", fields: [aboutMediaId], references: [id])
-  features        Json
-  detailContent   Json? // ServiceDetailContent (lihat src/lib/types/service-detail-content.ts) — highlights, stats, about, benefits, jenis izin, proses, dokumen, durasi, dll utk /layanan/[slug]
-  metaTitle       String?
-  metaDescription String?
-  status          ContentStatus   @default(PUBLISHED)
-  isActive        Boolean         @default(true)
-  sortOrder       Int             @default(0)
-  deletedAt       DateTime?
-  deletedById     String?
-  deletedBy       User?           @relation("ServiceDeletedBy", fields: [deletedById], references: [id])
-  createdById     String?
-  createdBy       User?           @relation("ServiceCreatedBy", fields: [createdById], references: [id])
-  updatedById     String?
-  updatedBy       User?           @relation("ServiceUpdatedBy", fields: [updatedById], references: [id])
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id                     String          @id @default(cuid())
+  slug                   String          @unique
+  title                  String
+  description            String          @db.Text
+  icon                   String?
+  color                  String?
+  bgColor                String?
+  categoryId             String
+  category               ServiceCategory @relation(fields: [categoryId], references: [id])
+  featuredMediaId        String?
+  featuredMedia          Media?          @relation("ServiceFeaturedMedia", fields: [featuredMediaId], references: [id])
+  aboutMediaId           String? // gambar khusus section "Tentang" di /layanan/[slug] — opsional, fallback ke featuredMedia (gambar Hero) kalau kosong
+  aboutMedia             Media?          @relation("ServiceAboutMedia", fields: [aboutMediaId], references: [id])
+  features               Json
+  detailContent          Json? // ServiceDetailContent (lihat src/lib/types/service-detail-content.ts) — highlights, stats, about, benefits, jenis izin, proses, dokumen, durasi, dll utk /layanan/[slug]
+  estimatedDurationLabel String? // mis. "7-14 hari kerja" — dipakai modul Transaksi (WorkflowTemplate/ServiceTransaction)
+  basePrice              Decimal?        @db.Decimal(12, 2) // harga dasar dipakai modul Transaksi, beda dari harga per-paket (ServicePackage.price)
+  requiredDocuments      Json? // string[] dokumen yg wajib disiapkan customer, dipakai modul Transaksi
+  gallery                Json? // { url: string; alt: string }[] — galeri foto layanan, dipakai modul Transaksi
+  metaTitle              String?
+  metaDescription        String?
+  status                 ContentStatus   @default(PUBLISHED)
+  isActive               Boolean         @default(true)
+  sortOrder              Int             @default(0)
+  deletedAt              DateTime?
+  deletedById            String?
+  deletedBy              User?           @relation("ServiceDeletedBy", fields: [deletedById], references: [id])
+  createdById            String?
+  createdBy              User?           @relation("ServiceCreatedBy", fields: [createdById], references: [id])
+  updatedById            String?
+  updatedBy              User?           @relation("ServiceUpdatedBy", fields: [updatedById], references: [id])
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
 
-  packages      ServicePackage[]
-  faqs          Faq[]
-  promoPackages PromoPackage[]
-  inquiries     Inquiry[]
-  orders        Order[]
+  packages          ServicePackage[]
+  faqs              Faq[]
+  promoPackages     PromoPackage[]
+  inquiries         Inquiry[]
+  workflowTemplates WorkflowTemplate[]
+  transactions      ServiceTransaction[]
 
   @@map("services")
 }
 
 model ServicePackage {
-  id            String   @id @default(cuid())
-  serviceId     String
-  service       Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  name          String
-  price         Decimal  @db.Decimal(12, 2)
-  originalPrice Decimal? @db.Decimal(12, 2)
-  features      Json
-  isPopular     Boolean  @default(false)
-  sortOrder     Int      @default(0)
-  createdById   String?
-  createdBy     User?    @relation("ServicePackageCreatedBy", fields: [createdById], references: [id])
-  updatedById   String?
-  updatedBy     User?    @relation("ServicePackageUpdatedBy", fields: [updatedById], references: [id])
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                     String   @id @default(cuid())
+  serviceId              String
+  service                Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  name                   String
+  price                  Decimal  @db.Decimal(12, 2)
+  originalPrice          Decimal? @db.Decimal(12, 2)
+  features               Json
+  isPopular              Boolean  @default(false)
+  estimatedDurationLabel String? // mis. "5-7 hari kerja" — dipakai modul Transaksi
+  isActive               Boolean  @default(true)
+  sortOrder              Int      @default(0)
+  createdById            String?
+  createdBy              User?    @relation("ServicePackageCreatedBy", fields: [createdById], references: [id])
+  updatedById            String?
+  updatedBy              User?    @relation("ServicePackageUpdatedBy", fields: [updatedById], references: [id])
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  transactions ServiceTransaction[]
 
   @@map("service_packages")
 }
@@ -571,26 +599,262 @@ model Inquiry {
 }
 
 // ====================================================
-// Domain 5b — Tracking Perizinan (/tracking)
+// Domain 5b — Service Transaction Management (/transaksi, /tracking)
+//
+// Menggantikan Order + mock /tracking lama TOTAL — Order gak pernah punya
+// admin UI/pemakaian nyata (cuma 3 baris seed mock), jadi aman diganti
+// tanpa migrasi data. Satu transaksi = SATU service + SATU paket (bukan
+// keranjang multi-item) — workflow-nya disalin dari WorkflowTemplate milik
+// service itu pas transaksi dibuat, supaya perubahan template belakangan
+// gak mengubah histori transaksi yg udah jalan.
 // ====================================================
 
-model Order {
-  id              String    @id @default(cuid())
-  orderNo         String    @unique
-  serviceId       String?
-  service         Service?  @relation(fields: [serviceId], references: [id])
-  currentStep     Int       @default(1) // 1-5, selaras TRACKING_STEPS statis di frontend (sama utk semua order)
-  submittedAt     DateTime
-  estimatedDoneAt DateTime?
-  stepDates       Json // array 5 tanggal nullable, index sejajar TRACKING_STEPS
-  createdById     String?
-  createdBy       User?     @relation("OrderCreatedBy", fields: [createdById], references: [id])
-  updatedById     String?
-  updatedBy       User?     @relation("OrderUpdatedBy", fields: [updatedById], references: [id])
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+enum WorkflowStepStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  REVISION
+  REJECTED
+  SKIPPED
+}
 
-  @@map("orders")
+/**
+ * Blueprint tahapan kerja per layanan (mis. "Pendirian PT" 9 langkah) —
+ * dikelola admin di /transaksi/workflow, disalin (bukan direferensikan
+ * langsung) ke tiap ServiceTransaction pas dibuat.
+ */
+model WorkflowTemplate {
+  id          String    @id @default(cuid())
+  serviceId   String
+  service     Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  name        String
+  description String?   @db.Text
+  isActive    Boolean   @default(true)
+  deletedAt   DateTime?
+  createdById String?
+  createdBy   User?     @relation("WorkflowTemplateCreatedBy", fields: [createdById], references: [id])
+  updatedById String?
+  updatedBy   User?     @relation("WorkflowTemplateUpdatedBy", fields: [updatedById], references: [id])
+  deletedById String?
+  deletedBy   User?     @relation("WorkflowTemplateDeletedBy", fields: [deletedById], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  steps        WorkflowTemplateStep[]
+  transactions ServiceTransaction[]
+
+  @@map("service_workflow_templates")
+}
+
+model WorkflowTemplateStep {
+  id                       String                    @id @default(cuid())
+  templateId               String
+  template                 WorkflowTemplate          @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  name                     String
+  description              String?                   @db.Text
+  order                    Int
+  estimatedDays            Int?
+  requiredDocuments        Json? // string[]
+  defaultStatus            WorkflowStepStatus        @default(PENDING)
+  transactionWorkflowSteps TransactionWorkflowStep[]
+
+  @@index([templateId])
+  @@map("service_workflow_template_steps")
+}
+
+enum TransactionStatus {
+  DRAFT
+  WAITING_PAYMENT
+  PAID
+  PROCESSING
+  ON_HOLD
+  REVISION
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
+  REFUNDED
+}
+
+enum TransactionPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+model ServiceTransaction {
+  id            String  @id @default(cuid())
+  code          String  @unique // TRX-{YYYYMMDD}-{seq}, lihat lib/transaction-code.ts
+  invoiceNumber String? @unique // INV-{YYYYMM}-{seq}
+
+  customerName    String
+  customerEmail   String
+  customerPhone   String
+  customerCompany String?
+
+  serviceId          String
+  service            Service           @relation(fields: [serviceId], references: [id])
+  packageId          String?
+  package            ServicePackage?   @relation(fields: [packageId], references: [id])
+  workflowTemplateId String? // referensi template asal (buat jejak historis) — workflow instance-nya sendiri ada di TransactionWorkflowStep
+  workflowTemplate   WorkflowTemplate? @relation(fields: [workflowTemplateId], references: [id])
+  assignedStaffId    String?
+  assignedStaff      User?             @relation("ServiceTransactionAssignedStaff", fields: [assignedStaffId], references: [id])
+
+  priority                TransactionPriority @default(NORMAL)
+  startDate               DateTime?
+  estimatedCompletionDate DateTime?
+  completionDate          DateTime?
+
+  totalPrice Decimal @db.Decimal(12, 2)
+  discount   Decimal @default(0) @db.Decimal(12, 2)
+  tax        Decimal @default(0) @db.Decimal(12, 2)
+  grandTotal Decimal @db.Decimal(12, 2)
+
+  paymentStatus PaymentStatus     @default(UNPAID)
+  status        TransactionStatus @default(DRAFT)
+
+  internalNotes String? @db.Text
+  customerNotes String? @db.Text
+
+  deletedAt   DateTime?
+  createdById String?
+  createdBy   User?     @relation("ServiceTransactionCreatedBy", fields: [createdById], references: [id])
+  updatedById String?
+  updatedBy   User?     @relation("ServiceTransactionUpdatedBy", fields: [updatedById], references: [id])
+  deletedById String?
+  deletedBy   User?     @relation("ServiceTransactionDeletedBy", fields: [deletedById], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  workflowSteps   TransactionWorkflowStep[]
+  payments        Payment[]
+  attachments     TransactionAttachment[]
+  activityLogs    TransactionActivityLog[]
+  trackingLookups TrackingLookupLog[]
+
+  @@index([status])
+  @@index([paymentStatus])
+  @@map("service_transactions")
+}
+
+/**
+ * Instance workflow MILIK SATU transaksi — disalin dari
+ * WorkflowTemplateStep pas transaksi dibuat (name/description ikut
+ * disalin, bukan direferensikan, biar histori transaksi yg udah jalan gak
+ * berubah kalau template-nya diedit belakangan).
+ */
+model TransactionWorkflowStep {
+  id              String                @id @default(cuid())
+  transactionId   String
+  transaction     ServiceTransaction    @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  templateStepId  String?
+  templateStep    WorkflowTemplateStep? @relation(fields: [templateStepId], references: [id], onDelete: SetNull)
+  name            String
+  description     String?               @db.Text
+  order           Int
+  status          WorkflowStepStatus    @default(PENDING)
+  startedAt       DateTime?
+  completedAt     DateTime?
+  updatedById     String?
+  updatedBy       User?                 @relation("TransactionWorkflowStepUpdatedBy", fields: [updatedById], references: [id])
+  notes           String?               @db.Text
+  progressPercent Int                   @default(0)
+  estimatedDays   Int?
+  updatedAt       DateTime              @updatedAt
+
+  attachments TransactionAttachment[]
+
+  @@index([transactionId])
+  @@map("service_transaction_workflows")
+}
+
+model Payment {
+  id            String             @id @default(cuid())
+  transactionId String
+  transaction   ServiceTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  amount        Decimal            @db.Decimal(12, 2)
+  method        String?
+  paidAt        DateTime
+  note          String?            @db.Text
+  recordedById  String?
+  recordedBy    User?              @relation("PaymentRecordedBy", fields: [recordedById], references: [id])
+  createdAt     DateTime           @default(now())
+
+  @@index([transactionId])
+  @@map("payments")
+}
+
+/**
+ * Lampiran dokumen transaksi — file generik (PDF/DOC/XLS/gambar), TIDAK
+ * lewat pipeline Media (yg cuma buat gambar & selalu di-reencode ke WebP).
+ * visibleToCustomer nentuin apakah lampiran ini muncul di /tracking publik.
+ */
+model TransactionAttachment {
+  id                String                   @id @default(cuid())
+  transactionId     String
+  transaction       ServiceTransaction       @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  workflowStepId    String?
+  workflowStep      TransactionWorkflowStep? @relation(fields: [workflowStepId], references: [id], onDelete: SetNull)
+  fileName          String
+  url               String
+  mimeType          String
+  sizeBytes         Int
+  visibleToCustomer Boolean                  @default(false)
+  uploadedById      String?
+  uploadedBy        User?                    @relation("TransactionAttachmentUploadedBy", fields: [uploadedById], references: [id])
+  createdAt         DateTime                 @default(now())
+
+  @@index([transactionId])
+  @@map("service_transaction_attachments")
+}
+
+/**
+ * Activity + audit trail 1 transaksi — dipakai sekaligus utk section
+ * "Activity Timeline", "Revision History" (filter action terkait revisi),
+ * dan "Audit Log" (tampilkan kolom ipAddress/device tambahan) di halaman
+ * detail transaksi admin.
+ */
+model TransactionActivityLog {
+  id            String             @id @default(cuid())
+  transactionId String
+  transaction   ServiceTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  userId        String? // null = aksi sistem (mis. auto-complete)
+  user          User?              @relation("TransactionActivityLogUser", fields: [userId], references: [id])
+  action        String
+  description   String?            @db.Text
+  previousValue Json?
+  newValue      Json?
+  ipAddress     String?
+  device        String? // Desktop/Mobile/Tablet, lihat lib/article-stats.ts parseDeviceType
+  userAgent     String?            @db.Text
+  createdAt     DateTime           @default(now())
+
+  @@index([transactionId])
+  @@map("service_transaction_logs")
+}
+
+/**
+ * Log tiap kali pengunjung publik berhasil lacak transaksi via kode — sama
+ * pola dgn ArticleView (lib/article-stats.ts), dipakai laporan/analitik
+ * modul Transaksi belakangan.
+ */
+model TrackingLookupLog {
+  id            String             @id @default(cuid())
+  transactionId String
+  transaction   ServiceTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  device        String?
+  country       String?
+  city          String?
+  createdAt     DateTime           @default(now())
+
+  @@index([transactionId])
+  @@map("service_tracking_histories")
 }
 
 // ====================================================
@@ -887,6 +1151,27 @@ model KontakPageContent {
   @@map("kontak_page_content")
 }
 
+// Singleton konten Hero/banner /blog — sama pola dgn KontakPageContent/
+// TestimoniPageContent (single row id="1", gambar nullable dgn fallback
+// gradient placeholder bawaan). Daftar artikelnya sendiri TETAP di model
+// BlogPost (sudah ada), ini cuma teks & gambar banner di atas katalog.
+model BlogPageContent {
+  id String @id @default("1")
+
+  heroKicker         String?
+  heroTitle          String
+  heroTitleHighlight String
+  heroDescription    String  @db.Text
+  heroImageUrl       String? // null -> kartu gradient placeholder bawaan (lihat PageHero.tsx)
+
+  // Singleton, gak pernah "dibuat" lewat admin (selalu ada dari seed) -> gak ada createdBy
+  updatedById String?
+  updatedBy   User?    @relation("BlogPageContentUpdatedBy", fields: [updatedById], references: [id])
+  updatedAt   DateTime @updatedAt
+
+  @@map("blog_page_content")
+}
+
 // ====================================================
 // Domain 7 & 8 — Sistem & Analytics
 // ====================================================
@@ -915,6 +1200,45 @@ model PageView {
   @@index([path])
   @@index([createdAt])
   @@map("page_views")
+}
+
+enum CommentStatus {
+  PENDING
+  APPROVED
+}
+
+// Komentar pengunjung di halaman detail artikel blog — pengunjung anonim
+// (tanpa akun), sama pola dgn Inquiry (gak ada createdBy). Wajib disetujui
+// admin (status PENDING) sebelum tampil publik, biar gak langsung ke-spam.
+model Comment {
+  id        String        @id @default(cuid())
+  postId    String
+  post      BlogPost      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  name      String
+  email     String
+  content   String        @db.Text
+  status    CommentStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+
+  @@index([postId])
+  @@map("comments")
+}
+
+// Log tiap kunjungan halaman detail artikel — dipakai buat breakdown
+// device & lokasi di panel Statistik /admin/blog (beda dari PageView di
+// atas yg generic & belum kepakai; ArticleView spesifik ke BlogPost lewat
+// FK spy gampang di-groupBy per artikel).
+model ArticleView {
+  id        String   @id @default(cuid())
+  postId    String
+  post      BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  device    String // "Desktop" | "Mobile" | "Tablet"
+  country   String? // dari header geolocation Vercel — null kalau gak terdeteksi (mis. dev lokal)
+  city      String?
+  createdAt DateTime @default(now())
+
+  @@index([postId])
+  @@map("article_views")
 }
 
 model DailyStat {

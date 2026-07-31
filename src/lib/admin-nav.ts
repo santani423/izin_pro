@@ -1,13 +1,18 @@
 import {
   LayoutDashboard, FileText, Newspaper, Image as ImageIcon, Users, Settings,
   Star, Megaphone, Package, HelpCircle, BarChart3, Inbox, Headset, UserCog,
-  Building2, Menu as MenuIcon, UserCircle, Sparkles, Info, Phone, type LucideIcon,
+  Building2, Menu as MenuIcon, UserCircle, Sparkles, Info, Phone, Receipt,
+  Workflow, ClipboardList, type LucideIcon,
 } from "lucide-react";
 
 export interface AdminNavItem {
   label: string;
   href: string;
   icon: LucideIcon;
+  /** Sub-menu — kalau diisi, item ini dirender expandable (chevron) di
+   * AdminSidebar. href milik parent tetap bisa diklik langsung (dashboard
+   * ringkas modulnya). Cuma didukung 1 level nesting. */
+  children?: AdminNavItem[];
 }
 
 export interface AdminNavGroup {
@@ -50,6 +55,21 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       { label: "Kontak", href: "/kontak", icon: Phone },
       { label: "CTA Banner", href: "/cta-banner", icon: Headset },
       { label: "FAQ", href: "/faq", icon: HelpCircle },
+    ],
+  },
+  {
+    label: "Transaksi",
+    items: [
+      {
+        label: "Transaksi Layanan",
+        href: "/transaksi",
+        icon: Receipt,
+        children: [
+          { label: "Dashboard", href: "/transaksi", icon: LayoutDashboard },
+          { label: "Workflow Template", href: "/transaksi/workflow", icon: Workflow },
+          { label: "Daftar Transaksi", href: "/transaksi/daftar", icon: ClipboardList },
+        ],
+      },
     ],
   },
   {

@@ -3,12 +3,20 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import Image from "next/image";
+import {
+  Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight, Eye,
+  BarChart3, ImagePlus, Save,
+} from "lucide-react";
 import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
-import type { BlogPost, Category, Tag, PostTag } from "@prisma/client";
+import type { BlogPost, BlogPageContent, Category, Role, Tag, PostTag } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -18,6 +26,8 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { deleteBlogPostAction, toggleBlogPostStatusAction } from "@/lib/actions/blog";
+import { saveBlogPageContentAction, saveBlogPageImageAction } from "@/lib/actions/blog-page";
+import ArticleStatsPanel from "./ArticleStatsPanel";
 
 type BlogPostRow = BlogPost & {
   category: Category;
@@ -149,15 +159,89 @@ function Pagination({
 export default function BlogPageClient({
   initialPosts,
   panel,
+  role,
+  bannerContent,
+  pendingCommentCounts,
 }: {
   initialPosts: BlogPostRow[];
   panel: string;
+  role: Role;
+  bannerContent: BlogPageContent;
+  pendingCommentCounts: Record<string, number>;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
+  const [statsPostId, setStatsPostId] = useState<string | null>(null);
+  const canEditBanner = role !== "AUTHOR";
+
+  /* ─── Banner (Hero) — hanya dipakai kalau canEditBanner ─── */
+  const [heroKicker, setHeroKicker] = useState(bannerContent.heroKicker ?? "");
+  const [heroTitle, setHeroTitle] = useState(bannerContent.heroTitle);
+  const [heroTitleHighlight, setHeroTitleHighlight] = useState(bannerContent.heroTitleHighlight);
+  const [heroDescription, setHeroDescription] = useState(bannerContent.heroDescription);
+  const [heroImageUrl, setHeroImageUrl] = useState(bannerContent.heroImageUrl);
+  const [uploadingHeroImage, setUploadingHeroImage] = useState(false);
+  const [isSavingBanner, startSaveBanner] = useTransition();
+
+  const uploadHeroImage = async (file: File) => {
+    setUploadingHeroImage(true);
+    try {
+      const fd = new FormData();
+      fd.append("image", file);
+      const res = await saveBlogPageImageAction(fd);
+      if (res.ok) {
+        setHeroImageUrl(res.imageUrl);
+        swalSuccess("Gambar banner berhasil disimpan");
+        router.refresh();
+      } else {
+        swalError(res.message);
+      }
+    } catch {
+      swalError("Gagal mengunggah gambar. Cek koneksi lalu coba lagi.");
+    } finally {
+      setUploadingHeroImage(false);
+    }
+  };
+
+  const removeHeroImage = async () => {
+    setUploadingHeroImage(true);
+    try {
+      const fd = new FormData();
+      fd.append("reset", "true");
+      const res = await saveBlogPageImageAction(fd);
+      if (res.ok) {
+        setHeroImageUrl(null);
+        swalSuccess("Gambar banner dihapus");
+        router.refresh();
+      } else {
+        swalError(res.message);
+      }
+    } catch {
+      swalError("Gagal menghapus gambar. Cek koneksi lalu coba lagi.");
+    } finally {
+      setUploadingHeroImage(false);
+    }
+  };
+
+  const saveBanner = () => {
+    startSaveBanner(async () => {
+      const res = await saveBlogPageContentAction({
+        heroKicker,
+        heroTitle,
+        heroTitleHighlight,
+        heroDescription,
+      });
+      if (res.ok) {
+        swalSuccess("Banner berhasil disimpan");
+        router.refresh();
+      } else {
+        swalError(res.message);
+      }
+    });
+  };
 
   const filtered = initialPosts.filter((p) => {
     const q = search.trim().toLowerCase();
@@ -202,6 +286,18 @@ export default function BlogPageClient({
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
+      <Tabs defaultValue="artikel">
+        {canEditBanner && (
+          <TabsList className="rounded-xl bg-gray-200">
+            <TabsTrigger value="artikel" className="rounded-lg">Daftar Artikel</TabsTrigger>
+            <TabsTrigger value="banner" className="rounded-lg gap-1.5">
+              <ImagePlus size={14} />
+              Banner Halaman
+            </TabsTrigger>
+          </TabsList>
+        )}
+
+        <TabsContent value="artikel" className="space-y-6 mt-4">
       <div className="flex flex-col sm:flex-row justify-between gap-3">
         <div className="flex gap-2 sm:w-96">
           <div className="relative flex-1">
@@ -324,6 +420,16 @@ export default function BlogPageClient({
                           <Eye size={14} />
                         </span>
                       )}
+                      <button
+                        onClick={() => setStatsPostId(post.id)}
+                        className="relative p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/5 transition-colors"
+                        aria-label="Statistik artikel"
+                      >
+                        <BarChart3 size={14} />
+                        {(pendingCommentCounts[post.id] ?? 0) > 0 && (
+                          <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-red-500" />
+                        )}
+                      </button>
                       <Link
                         href={`/${panel}/blog/${post.slug}/edit`}
                         className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/5 transition-colors"
@@ -369,6 +475,109 @@ export default function BlogPageClient({
           setPage(1);
         }}
       />
+        </TabsContent>
+
+        {canEditBanner && (
+          <TabsContent value="banner" className="space-y-4 mt-4">
+            <div className="bg-white rounded-2xl border border-admin-line p-5 space-y-4">
+              <div>
+                <h3 className="font-bold text-gray-900">Gambar Banner</h3>
+                <p className="mt-1 text-sm text-gray-500">Kosongkan untuk pakai kartu gradient bawaan.</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex h-20 w-32 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
+                  {heroImageUrl ? (
+                    <Image src={heroImageUrl} alt="" width={128} height={80} unoptimized className="h-full w-full object-cover" />
+                  ) : (
+                    <ImagePlus size={20} className="text-gray-300" />
+                  )}
+                </div>
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                  <ImagePlus size={15} />
+                  {uploadingHeroImage ? "Mengunggah..." : "Pilih Gambar"}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="hidden"
+                    disabled={uploadingHeroImage}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) uploadHeroImage(file);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+                {heroImageUrl && (
+                  <Button type="button" variant="outline" size="sm" className="gap-1.5 rounded-lg text-red-500 hover:bg-red-50" onClick={removeHeroImage} disabled={uploadingHeroImage}>
+                    <Trash2 size={13} /> Hapus
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-admin-line p-5 space-y-4">
+              <h3 className="font-bold text-gray-900">Judul & Deskripsi</h3>
+              <div>
+                <Label htmlFor="blog-banner-kicker" className="text-sm font-semibold text-gray-700">Kicker (label kecil di atas judul, opsional)</Label>
+                <Input
+                  id="blog-banner-kicker"
+                  className="mt-1.5 rounded-lg"
+                  value={heroKicker}
+                  onChange={(e) => setHeroKicker(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="blog-banner-title" className="text-sm font-semibold text-gray-700">Judul</Label>
+                  <Input
+                    id="blog-banner-title"
+                    className="mt-1.5 rounded-lg"
+                    placeholder="Blog"
+                    value={heroTitle}
+                    onChange={(e) => setHeroTitle(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="blog-banner-title-highlight" className="text-sm font-semibold text-gray-700">Judul (bagian hijau)</Label>
+                  <Input
+                    id="blog-banner-title-highlight"
+                    className="mt-1.5 rounded-lg"
+                    placeholder="dan Artikel"
+                    value={heroTitleHighlight}
+                    onChange={(e) => setHeroTitleHighlight(e.target.value)}
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-gray-400">Tampil sebagai: &quot;{heroTitle} {heroTitleHighlight}&quot;</p>
+              <div>
+                <Label htmlFor="blog-banner-description" className="text-sm font-semibold text-gray-700">Deskripsi</Label>
+                <Textarea
+                  id="blog-banner-description"
+                  rows={3}
+                  className="mt-1.5 rounded-lg resize-none"
+                  value={heroDescription}
+                  onChange={(e) => setHeroDescription(e.target.value)}
+                />
+              </div>
+              <Button onClick={saveBanner} disabled={isSavingBanner} className="gap-2 rounded-xl">
+                <Save size={15} />
+                {isSavingBanner ? "Menyimpan..." : "Simpan Banner"}
+              </Button>
+            </div>
+          </TabsContent>
+        )}
+      </Tabs>
+
+      <Sheet open={!!statsPostId} onOpenChange={(open) => !open && setStatsPostId(null)}>
+        <SheetContent className="w-full overflow-y-auto sm:max-w-md">
+          {statsPostId && (
+            <ArticleStatsPanel
+              postId={statsPostId}
+              postTitle={initialPosts.find((p) => p.id === statsPostId)?.title ?? ""}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

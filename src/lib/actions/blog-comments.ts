@@ -1,0 +1,102 @@
+"use server";
+
+import { headers } from "next/headers";
+import { revalidatePath } from "next/cache";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { revalidateAdminPaths } from "@/lib/admin-guard";
+import type { Role } from "@prisma/client";
+
+export type ActionResult = { ok: true } | { ok: false; message: string };
+
+function errorMessage(e: unknown, fallback: string) {
+  return e instanceof Error ? e.message : fallback;
+}
+
+/* Sama role dgn pengelola artikel (lihat BLOG_EDITOR_ROLES di actions/blog.ts)
+ * — AUTHOR boleh moderasi komentar, tapi cuma di artikel miliknya sendiri. */
+const BLOG_EDITOR_ROLES: Role[] = ["SUPER_ADMIN", "ADMIN", "EDITOR", "AUTHOR"];
+
+async function requireCommentModerator() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session || !BLOG_EDITOR_ROLES.includes(session.user.role as Role)) {
+    throw new Error("Anda tidak punya akses ke halaman ini.");
+  }
+  return session;
+}
+
+/* AUTHOR cuma boleh moderasi komentar di artikel miliknya sendiri — sama
+ * pola dgn assertOwnsPost di actions/blog.ts. */
+async function assertOwnsComment(
+  session: Awaited<ReturnType<typeof requireCommentModerator>>,
+  commentId: string,
+) {
+  const comment = await prisma.comment.findUniqueOrThrow({
+    where: { id: commentId },
+    include: { post: { select: { authorId: true, slug: true } } },
+  });
+  if (session.user.role === "AUTHOR" && comment.post.authorId !== session.user.id) {
+    throw new Error("Anda hanya bisa mengelola komentar di artikel milik sendiri.");
+  }
+  return comment;
+}
+
+/* ─── Kirim komentar (form publik di halaman artikel) ───
+ * TANPA auth — diisi pengunjung anonim, bukan admin. Status default
+ * PENDING, baru tampil publik setelah admin approve (approveCommentAction). */
+export async function submitCommentAction(data: {
+  postId: string;
+  name: string;
+  email: string;
+  content: string;
+}): Promise<ActionResult> {
+  try {
+    const name = data.name.trim();
+    const email = data.email.trim();
+    const content = data.content.trim();
+
+    if (name.length < 3) return { ok: false, message: "Nama minimal 3 karakter." };
+    if (!/^\S+@\S+\.\S+$/.test(email)) return { ok: false, message: "Format email tidak valid." };
+    if (content.length < 5) return { ok: false, message: "Komentar minimal 5 karakter." };
+
+    const post = await prisma.blogPost.findFirst({
+      where: { id: data.postId, deletedAt: null, status: "PUBLISHED" },
+      select: { id: true },
+    });
+    if (!post) return { ok: false, message: "Artikel tidak ditemukan." };
+
+    await prisma.comment.create({ data: { postId: post.id, name, email, content } });
+
+    revalidateAdminPaths("/blog");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: errorMessage(e, "Gagal mengirim komentar. Coba lagi sebentar lagi.") };
+  }
+}
+
+/* ─── Admin: setujui / hapus komentar (dari panel Statistik per artikel) ─── */
+export async function approveCommentAction(commentId: string): Promise<ActionResult> {
+  try {
+    const session = await requireCommentModerator();
+    const comment = await assertOwnsComment(session, commentId);
+    await prisma.comment.update({ where: { id: commentId }, data: { status: "APPROVED" } });
+    revalidateAdminPaths("/blog");
+    revalidatePath(`/blog/${comment.post.slug}`);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: errorMessage(e, "Gagal menyetujui komentar.") };
+  }
+}
+
+export async function deleteCommentAction(commentId: string): Promise<ActionResult> {
+  try {
+    const session = await requireCommentModerator();
+    const comment = await assertOwnsComment(session, commentId);
+    await prisma.comment.delete({ where: { id: commentId } });
+    revalidateAdminPaths("/blog");
+    revalidatePath(`/blog/${comment.post.slug}`);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: errorMessage(e, "Gagal menghapus komentar.") };
+  }
+}

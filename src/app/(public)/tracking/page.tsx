@@ -19,8 +19,16 @@ export const metadata: Metadata = {
   },
 };
 
-/* ─── Halaman Tracking Perizinan ─── */
-export default function TrackingPage() {
+/* ─── Halaman Tracking Perizinan ───
+ * ?code=TRX-... (dari section tracking homepage / link WhatsApp) langsung
+ * dilacak otomatis begitu halaman dimuat. */
+export default async function TrackingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ code?: string }>;
+}) {
+  const { code } = await searchParams;
+
   return (
     <>
       {/* 1. Hero + breadcrumb */}
@@ -31,13 +39,13 @@ export default function TrackingPage() {
             Tracking <span className="text-primary">Perizinan</span>
           </>
         }
-        description="Pantau status pengurusan perizinan Anda secara transparan. Masukkan nomor order untuk melihat prosesnya sudah sampai tahap mana."
+        description="Pantau status pengurusan perizinan Anda secara transparan. Masukkan kode transaksi untuk melihat prosesnya sudah sampai tahap mana."
         imageLabel="Ilustrasi pemantauan status perizinan"
         overlap
       />
 
       {/* 2. Form lacak + hasil timeline */}
-      <TrackingFormSection />
+      <TrackingFormSection initialCode={code} />
 
       {/* 3. Cara kerja */}
       <TrackingInfoSection />

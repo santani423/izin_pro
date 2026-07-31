@@ -62,7 +62,11 @@ export default function AdminHeader({ title, subtitle }: AdminHeaderProps) {
     const q = query.trim().toLowerCase();
     return ADMIN_NAV_GROUPS.map((group) => ({
       ...group,
+      // Item dgn children (submenu) di-flatten jadi entry pencarian
+      // tersendiri — biar halaman nested (mis. "Workflow Template") tetap
+      // ketemu lewat command palette, bukan cuma parent-nya.
       items: group.items
+        .flatMap((item) => (item.children && item.children.length > 0 ? item.children : [item]))
         .filter((item) => (role ? canAccessAdminRoute(role, item.href) : true))
         .filter((item) => item.label.toLowerCase().includes(q)),
     })).filter((group) => group.items.length > 0);
