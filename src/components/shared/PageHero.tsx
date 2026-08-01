@@ -18,6 +18,10 @@ interface PageHeroProps {
   imageLabel: string;
   /** Foto asli — kosong/null = pakai kartu gradient placeholder bawaan */
   imageUrl?: string | null;
+  /** Ilustrasi custom (opsional) — override total kolom foto, dipakai
+   * halaman yang butuh visual khusus (mis. mockup tracking). Prioritas
+   * di atas imageUrl/gradient placeholder. */
+  imageContent?: ReactNode;
   /** Label kecil uppercase di atas judul (opsional) */
   kicker?: string;
   /** Konten tambahan kolom kiri: chip, tombol, dsb. (opsional) */
@@ -35,6 +39,7 @@ export default function PageHero({
   description,
   imageLabel,
   imageUrl,
+  imageContent,
   kicker,
   children,
   overlap = false,
@@ -100,7 +105,9 @@ export default function PageHero({
           <>
             {breadcrumbNav}
             <div className="order-last lg:order-none">{textContent}</div>
-            {imageUrl ? (
+            {imageContent ? (
+              <div aria-hidden="true">{imageContent}</div>
+            ) : imageUrl ? (
               <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl">
                 <Image src={imageUrl} alt={imageLabel} fill sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover" priority />
               </div>
@@ -115,7 +122,9 @@ export default function PageHero({
         ) : (
           <>
             <div>{textContent}</div>
-            {imageUrl ? (
+            {imageContent ? (
+              <div className="hidden lg:block" aria-hidden="true">{imageContent}</div>
+            ) : imageUrl ? (
               <div className="relative hidden aspect-[16/9] w-full overflow-hidden rounded-2xl lg:block">
                 <Image src={imageUrl} alt={imageLabel} fill sizes="50vw" className="object-cover" priority />
               </div>

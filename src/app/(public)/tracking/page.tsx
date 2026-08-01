@@ -3,6 +3,7 @@ import dynamic from "next/dynamic";
 
 import PageHero from "@/components/shared/PageHero";
 import TrackingFormSection from "@/components/sections/TrackingFormSection";
+import TrackingHeroVisual from "@/components/sections/TrackingHeroVisual";
 
 /* ─── Lazy load sections below the fold ─── */
 const TrackingInfoSection = dynamic(
@@ -41,6 +42,7 @@ export default async function TrackingPage({
         }
         description="Pantau status pengurusan perizinan Anda secara transparan. Masukkan kode transaksi untuk melihat prosesnya sudah sampai tahap mana."
         imageLabel="Ilustrasi pemantauan status perizinan"
+        imageContent={<TrackingHeroVisual />}
         overlap
       />
 
