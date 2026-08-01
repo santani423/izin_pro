@@ -4,28 +4,20 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Eye, EyeOff, Lock, Mail, ArrowRight, ChevronDown, Wand2 } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, ArrowRight, Wand2 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { getRolePanel } from "@/lib/permissions";
 import { DEFAULT_LOGO_URL } from "@/lib/branding-constants";
 import type { Role } from "@prisma/client";
 
 /* ─── Akun demo hasil `npx prisma db seed` (dev lokal) — buat mempermudah
- * demo tiap level akses tanpa perlu bikin akun manual. JANGAN dipakai di
- * production sungguhan (ganti/hapus akun-akun ini sebelum go-live beneran). */
-interface DemoAccount {
-  role: Role;
-  label: string;
-  email: string;
-  password: string;
-}
-
-const DEMO_ACCOUNTS: DemoAccount[] = [
-  { role: "SUPER_ADMIN", label: "Super Admin", email: "admin@izinpro.co.id", password: "admin123" },
-  { role: "ADMIN", label: "Admin", email: "demo-admin@izinpro.co.id", password: "demo1234" },
-  { role: "EDITOR", label: "Editor", email: "demo-editor@izinpro.co.id", password: "demo1234" },
-  { role: "AUTHOR", label: "Author", email: "demo-author@izinpro.co.id", password: "demo1234" },
-];
+ * demo akses admin tanpa perlu bikin akun manual. JANGAN dipakai di
+ * production sungguhan (ganti/hapus akun ini sebelum go-live beneran). */
+const DEMO_ADMIN_ACCOUNT = {
+  role: "ADMIN" as Role,
+  email: "demo-admin@izinpro.co.id",
+  password: "demo1234",
+};
 
 export default function LoginFormClient() {
   const router = useRouter();
@@ -35,7 +27,6 @@ export default function LoginFormClient() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [logoUrl, setLogoUrl] = useState(DEFAULT_LOGO_URL);
-  const [showDemoAccounts, setShowDemoAccounts] = useState(false);
 
   useEffect(() => {
     fetch("/api/branding")
@@ -72,11 +63,10 @@ export default function LoginFormClient() {
     performLogin(email, password);
   };
 
-  const handleDemoLogin = (account: DemoAccount) => {
-    setEmail(account.email);
-    setPassword(account.password);
-    setShowDemoAccounts(false);
-    performLogin(account.email, account.password);
+  const handleDemoLogin = () => {
+    setEmail(DEMO_ADMIN_ACCOUNT.email);
+    setPassword(DEMO_ADMIN_ACCOUNT.password);
+    performLogin(DEMO_ADMIN_ACCOUNT.email, DEMO_ADMIN_ACCOUNT.password);
   };
 
   return (
@@ -190,43 +180,17 @@ export default function LoginFormClient() {
             </button>
           </form>
 
-          {/* Akun demo (dev/staging) — satu klik login & auto-isi form, biar
-              gampang tunjukin tiap level akses pas demo tanpa hafal kredensial. */}
+          {/* Akun demo admin (dev/staging) — satu klik login & auto-isi form. */}
           <div className="mt-6">
             <button
               type="button"
-              onClick={() => setShowDemoAccounts((v) => !v)}
-              className="w-full flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl border border-dashed border-primary/30 bg-primary/5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
+              onClick={handleDemoLogin}
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl border border-dashed border-primary/30 bg-primary/5 text-xs font-semibold text-primary hover:bg-primary/10 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
             >
               <Wand2 size={13} />
-              Lihat Akun Demo
-              <ChevronDown
-                size={13}
-                className={`transition-transform ${showDemoAccounts ? "rotate-180" : ""}`}
-              />
+              Masuk sebagai Demo Admin
             </button>
-
-            {showDemoAccounts && (
-              <div className="mt-2 rounded-2xl border border-primary/10 bg-primary/5 p-2 space-y-1">
-                {DEMO_ACCOUNTS.map((account) => (
-                  <button
-                    key={account.email}
-                    type="button"
-                    onClick={() => handleDemoLogin(account)}
-                    disabled={loading}
-                    className="w-full flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-white disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <span>
-                      <span className="block text-xs font-semibold text-gray-800">{account.label}</span>
-                      <span className="block text-[11px] text-gray-500">
-                        {account.email} &nbsp;/&nbsp; {account.password}
-                      </span>
-                    </span>
-                    <span className="flex-shrink-0 text-[11px] font-semibold text-primary">Masuk</span>
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 
