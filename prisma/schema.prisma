@@ -11,9 +11,15 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql" // MariaDB (Rumahweb), compatible dgn protocol mysql
-  url      = env("DATABASE_URL")
+  provider = "mysql"
+  url      = "mysql://u858331583_izinpro:Sandibaru%4023@localhost:3306/u858331583_izinpro"
 }
+
+
+//datasource db {
+//  provider = "mysql" // MariaDB (Rumahweb), compatible dgn protocol mysql
+//  url      = env("DATABASE_URL")
+//}
 
 // ====================================================
 // Domain 1 — Auth & User (Better Auth)
