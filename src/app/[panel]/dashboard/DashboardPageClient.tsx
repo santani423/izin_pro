@@ -1,12 +1,26 @@
 "use client";
 
-import { Users, MessageSquare, FileText, Clock, ArrowRight, SlidersHorizontal } from "lucide-react";
+import {
+  Users, MessageSquare, FileText, Clock, ArrowRight, SlidersHorizontal,
+  Receipt, Activity, CheckCircle2, XCircle, Wallet, ShoppingCart, Timer,
+} from "lucide-react";
 import MetricCard from "@/components/admin/MetricCard";
 import MonthlyVisitsChart from "@/components/admin/MonthlyVisitsChart";
 import TargetGauge from "@/components/admin/TargetGauge";
 import StatisticsChart from "@/components/admin/StatisticsChart";
 import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
+
+export interface TransactionStats {
+  total: number;
+  active: number;
+  completed: number;
+  pending: number;
+  cancelled: number;
+  monthlyTransactions: number;
+  monthlyRevenue: number;
+  avgCompletionDays: number | null;
+}
 
 /* ─── Data statis mock dashboard ─── */
 const recentInquiries = [
@@ -32,12 +46,64 @@ const statusColor: Record<string, string> = {
   Selesai: "bg-emerald-50 text-emerald-600",
 };
 
-/* ─── Halaman Dashboard — layout gaya TailAdmin ─── */
-export default function DashboardPageClient({ panel }: { panel: string }) {
+/* ─── Halaman Dashboard — layout gaya TailAdmin ───
+ * Ringkasan Transaksi (real, dari Prisma) digabung ke sini — sebelumnya
+ * dashboard terpisah di /transaksi, sekarang satu pintu di Dashboard utama.
+ * Kelola Workflow Template & Daftar Transaksi tetap di menu Transaksi
+ * Layanan (sidebar), cuma ringkasan angkanya yg dipindah ke sini. */
+export default function DashboardPageClient({
+  panel,
+  transactionStats,
+}: {
+  panel: string;
+  transactionStats: TransactionStats;
+}) {
+  const transactionCards = [
+    { label: "Total Transaksi", value: transactionStats.total.toLocaleString("id-ID"), icon: Receipt, color: "#5ba12b", bg: "#f3fae8" },
+    { label: "Transaksi Aktif", value: transactionStats.active.toLocaleString("id-ID"), icon: Activity, color: "#3b82f6", bg: "#eff6ff" },
+    { label: "Selesai", value: transactionStats.completed.toLocaleString("id-ID"), icon: CheckCircle2, color: "#059669", bg: "#ecfdf5" },
+    { label: "Menunggu", value: transactionStats.pending.toLocaleString("id-ID"), icon: Clock, color: "#d97706", bg: "#fffbeb" },
+    { label: "Dibatalkan", value: transactionStats.cancelled.toLocaleString("id-ID"), icon: XCircle, color: "#dc2626", bg: "#fef2f2" },
+    { label: "Pendapatan Bulan Ini", value: `Rp${transactionStats.monthlyRevenue.toLocaleString("id-ID")}`, icon: Wallet, color: "#5ba12b", bg: "#f3fae8" },
+    { label: "Order Bulan Ini", value: transactionStats.monthlyTransactions.toLocaleString("id-ID"), icon: ShoppingCart, color: "#8b5cf6", bg: "#f5f3ff" },
+    { label: "Rata-rata Waktu Selesai", value: transactionStats.avgCompletionDays != null ? `${transactionStats.avgCompletionDays} hari` : "-", icon: Timer, color: "#0891b2", bg: "#ecfeff" },
+  ];
+
   return (
     <>
 
       <div className="p-4 sm:p-6 space-y-5">
+
+        {/* ─── Ringkasan Transaksi (real) ─── */}
+        <div className="bg-white rounded-2xl border border-admin-line p-5 sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-bold text-base text-gray-900">Ringkasan Transaksi</h2>
+              <p className="text-sm text-gray-400 mt-0.5">Modul Transaksi Layanan</p>
+            </div>
+            <Link
+              href={`/${panel}/transaksi/daftar`}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Lihat Semua Transaksi
+              <ArrowRight size={13} />
+            </Link>
+          </div>
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+            {transactionCards.map((c) => {
+              const Icon = c.icon;
+              return (
+                <div key={c.label} className="rounded-xl border border-admin-line p-4">
+                  <div className="mb-3 p-2 rounded-lg w-fit" style={{ backgroundColor: c.bg }}>
+                    <Icon size={16} style={{ color: c.color }} />
+                  </div>
+                  <div className="text-xl font-extrabold text-gray-900">{c.value}</div>
+                  <div className="mt-0.5 text-xs text-gray-500">{c.label}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
         {/* ─── Baris 1: 4 kartu metrik satu baris ─── */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5 xl:grid-cols-4">

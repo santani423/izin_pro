@@ -8,6 +8,7 @@ import { generateTransactionCode, generateInvoiceNumber } from "@/lib/transactio
 import { parseDeviceType } from "@/lib/article-stats";
 import { saveTransactionAttachmentFile } from "@/lib/attachments";
 import { deleteUploadedFile } from "@/lib/media";
+import { sendWhatsappMessage, buildQrCodeUrl } from "@/lib/whacenter";
 import type { Role, TransactionStatus, TransactionPriority, WorkflowStepStatus } from "@prisma/client";
 
 export type ActionResult = { ok: true } | { ok: false; message: string };
@@ -29,10 +30,11 @@ function errorMessage(e: unknown, fallback: string) {
 
 // Halaman detail transaksi selalu di-refresh via router.refresh() di client
 // setelah tiap action (sama pola dgn seluruh admin panel) — revalidatePath
-// di sini cukup buat list & dashboard-nya, gak perlu tau prefix panel aktif.
+// di sini cukup buat list & Dashboard utama (ringkasan transaksi digabung
+// ke sana), gak perlu tau prefix panel aktif.
 function revalidateTransactions() {
   revalidateAdminPaths("/transaksi/daftar");
-  revalidateAdminPaths("/transaksi");
+  revalidateAdminPaths("/dashboard");
 }
 
 async function requestMeta() {
@@ -447,5 +449,80 @@ export async function toggleAttachmentVisibilityAction(id: string, visibleToCust
     return { ok: true };
   } catch (e) {
     return { ok: false, message: errorMessage(e, "Gagal mengubah visibilitas lampiran.") };
+  }
+}
+
+/* ─── Kirim invoice + link tracking + QR code via WhatsApp (WhaCenter) ───
+ * Satu pesan: teks ringkasan invoice + link /tracking, dgn QR code (encode
+ * link yg sama) sbg lampiran gambar — customer tinggal scan atau klik link.
+ * Device ID diambil dari Settings (dikelola admin di /admin/settings tab
+ * Integrasi) — kosong = fitur ini dinonaktifkan. */
+export async function sendTransactionWhatsappAction(transactionId: string): Promise<ActionResult> {
+  try {
+    const session = await requireTransactionEditor();
+
+    const [transaction, settings] = await Promise.all([
+      prisma.serviceTransaction.findUniqueOrThrow({
+        where: { id: transactionId },
+        include: { service: { select: { title: true } }, package: { select: { name: true } } },
+      }),
+      prisma.settings.findUnique({ where: { id: "1" } }),
+    ]);
+
+    const deviceId = settings?.whacenterDeviceId?.trim();
+    if (!deviceId) {
+      return { ok: false, message: "Device ID WhaCenter belum diatur. Isi dulu di Pengaturan > Integrasi." };
+    }
+    if (!transaction.customerPhone.trim()) {
+      return { ok: false, message: "Nomor WhatsApp customer belum diisi di transaksi ini." };
+    }
+
+    // Ambil origin dari request yg lagi jalan (host header), BUKAN dari env
+    // var — biar link tracking yg dikirim ke customer selalu domain yg
+    // BENERAN lagi diakses admin (kepakai on-the-fly kalau env belum diisi
+    // benar di production, dan tetap logis kalau ditest di localhost/dev).
+    const h = await headers();
+    const host = h.get("host") ?? "localhost:3000";
+    const protocol = host.startsWith("localhost") || host.startsWith("127.0.0.1") ? "http" : "https";
+    const siteUrl = `${protocol}://${host}`;
+    const trackingUrl = `${siteUrl}/tracking?code=${encodeURIComponent(transaction.code)}`;
+    const qrUrl = buildQrCodeUrl(trackingUrl);
+
+    const serviceLabel = transaction.package ? `${transaction.service.title} — ${transaction.package.name}` : transaction.service.title;
+    const message = [
+      `Halo ${transaction.customerName},`,
+      "",
+      `Berikut invoice untuk layanan *${serviceLabel}* dari IzinPro:`,
+      `Kode Transaksi: *${transaction.code}*`,
+      transaction.invoiceNumber ? `No. Invoice: ${transaction.invoiceNumber}` : null,
+      `Total Tagihan: Rp${Number(transaction.grandTotal).toLocaleString("id-ID")}`,
+      "",
+      "Anda bisa memantau progres layanan Anda kapan saja lewat link atau QR code di bawah ini:",
+      trackingUrl,
+    ]
+      .filter((line) => line !== null)
+      .join("\n");
+
+    const result = await sendWhatsappMessage({
+      deviceId,
+      number: transaction.customerPhone,
+      message,
+      fileUrl: qrUrl,
+    });
+
+    if (!result.ok) {
+      return { ok: false, message: result.message };
+    }
+
+    await logActivity({
+      transactionId,
+      userId: session.user.id,
+      action: "WHATSAPP_SENT",
+      description: `Invoice & link tracking dikirim via WhatsApp ke ${transaction.customerPhone}`,
+    });
+
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: errorMessage(e, "Gagal mengirim WhatsApp.") };
   }
 }

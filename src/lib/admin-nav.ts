@@ -61,11 +61,13 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: "Transaksi",
     items: [
       {
+        // Ringkasan/dashboard modul ini digabung ke Dashboard utama — href
+        // parent langsung ke Daftar Transaksi (bukan halaman dashboard
+        // sendiri), children cuma sisa 2 sub-menu operasionalnya.
         label: "Transaksi Layanan",
-        href: "/transaksi",
+        href: "/transaksi/daftar",
         icon: Receipt,
         children: [
-          { label: "Dashboard", href: "/transaksi", icon: LayoutDashboard },
           { label: "Workflow Template", href: "/transaksi/workflow", icon: Workflow },
           { label: "Daftar Transaksi", href: "/transaksi/daftar", icon: ClipboardList },
         ],

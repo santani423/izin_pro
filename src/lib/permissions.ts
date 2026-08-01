@@ -45,7 +45,6 @@ export const ADMIN_ROUTE_ROLES: Record<string, Role[]> = {
   "/kontak": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
   "/cta-banner": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
   "/faq": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
-  "/transaksi": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
   "/transaksi/workflow": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
   "/transaksi/daftar": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
   "/menu": ["SUPER_ADMIN", "ADMIN", "EDITOR"],

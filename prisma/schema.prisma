@@ -939,6 +939,12 @@ model Settings {
   maintenanceMode    Boolean @default(false)
   maintenanceMessage String? @db.Text // kosong = pakai pesan default di halaman maintenance
 
+  // Tab Integrasi — device_id akun WhaCenter (gateway WhatsApp pihak
+  // ketiga, order.whacenter.com) dipakai modul Transaksi buat kirim
+  // invoice + link tracking + QR code ke customer (lib/whacenter.ts).
+  // Kosong = fitur "Kirim WhatsApp" di detail transaksi dinonaktifkan.
+  whacenterDeviceId String?
+
   // Singleton, gak pernah "dibuat" lewat admin (selalu ada dari seed) -> gak ada createdBy
   updatedById String?
   updatedBy   User?    @relation("SettingsUpdatedBy", fields: [updatedById], references: [id])

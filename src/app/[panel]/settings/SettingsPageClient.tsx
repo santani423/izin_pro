@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Save, Globe, Phone, Share2, Eye, Construction, AlertTriangle, ImagePlus, RefreshCcw } from "lucide-react";
+import { Save, Globe, Phone, Share2, Eye, Construction, AlertTriangle, ImagePlus, RefreshCcw, MessageCircle } from "lucide-react";
 import { swalSuccess, swalError } from "@/lib/swal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { COMPANY_INFO } from "@/lib/constants";
-import { saveBrandingSettingsAction, updateMaintenanceModeAction } from "@/lib/actions/settings";
+import {
+  saveBrandingSettingsAction, updateMaintenanceModeAction, updateWhacenterSettingsAction,
+} from "@/lib/actions/settings";
 import { DEFAULT_LOGO_URL, DEFAULT_FAVICON_URL } from "@/lib/branding-constants";
 
 /* ─── Halaman Pengaturan Admin ───
@@ -25,18 +27,21 @@ export default function SettingsPageClient({
   maintenanceMessage: initialMaintenanceMessage,
   appLogoUrl: initialAppLogoUrl,
   faviconUrl: initialFaviconUrl,
+  whacenterDeviceId: initialWhacenterDeviceId,
 }: {
   readOnly?: boolean;
   maintenanceMode: boolean;
   maintenanceMessage: string;
   appLogoUrl: string | null;
   faviconUrl: string | null;
+  whacenterDeviceId: string;
 }) {
   const router = useRouter();
   const [saved, setSaved] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [maintenanceMode, setMaintenanceMode] = useState(initialMaintenanceMode);
   const [maintenanceMessage, setMaintenanceMessage] = useState(initialMaintenanceMessage);
+  const [whacenterDeviceId, setWhacenterDeviceId] = useState(initialWhacenterDeviceId);
   const [appLogoUrl, setAppLogoUrl] = useState(initialAppLogoUrl);
   const [faviconUrl, setFaviconUrl] = useState(initialFaviconUrl);
   const [appLogoFile, setAppLogoFile] = useState<File | null>(null);
@@ -84,6 +89,22 @@ export default function SettingsPageClient({
         // Request ke server gak sampai selesai (mis. koneksi kepotong) — tanpa
         // catch ini React nelen error-nya diem-diem & user gak liat apa-apa.
         swalError("Gagal menyimpan pengaturan. Cek koneksi lalu coba lagi.");
+      }
+    });
+  };
+
+  const saveWhacenter = () => {
+    startTransition(async () => {
+      try {
+        const res = await updateWhacenterSettingsAction(whacenterDeviceId);
+        if (res.ok) {
+          swalSuccess("Device ID WhaCenter disimpan");
+          router.refresh();
+        } else {
+          swalError(res.message);
+        }
+      } catch {
+        swalError("Gagal menyimpan Device ID. Cek koneksi lalu coba lagi.");
       }
     });
   };
@@ -136,6 +157,7 @@ export default function SettingsPageClient({
             <TabsTrigger value="sosmed" className="rounded-lg">Sosial Media</TabsTrigger>
             <TabsTrigger value="seo" className="rounded-lg">SEO</TabsTrigger>
             <TabsTrigger value="maintenance" className="rounded-lg">Maintenance</TabsTrigger>
+            <TabsTrigger value="integrasi" className="rounded-lg">Integrasi</TabsTrigger>
           </TabsList>
 
           {/* ─── Tab Umum ─── */}
@@ -397,6 +419,41 @@ export default function SettingsPageClient({
                 <Button onClick={saveMaintenance} disabled={isPending} className="gap-2 rounded-xl">
                   <Save size={15} />
                   {isPending ? "Menyimpan..." : "Simpan Perubahan"}
+                </Button>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* ─── Tab Integrasi ─── */}
+          <TabsContent value="integrasi">
+            <div className="bg-white rounded-2xl border border-admin-line p-6 space-y-5 max-w-2xl">
+              <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                <MessageCircle size={16} className="text-primary" />
+                Integrasi WhatsApp (WhaCenter)
+              </h3>
+              <p className="text-sm text-gray-500">
+                Device ID akun{" "}
+                <a href="https://order.whacenter.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-primary hover:underline">
+                  WhaCenter
+                </a>{" "}
+                yang sudah terhubung dengan nomor WhatsApp pengirim. Dipakai fitur &quot;Kirim WhatsApp&quot; di halaman
+                detail transaksi (modul Transaksi) untuk mengirim invoice, link tracking, dan QR code ke customer.
+              </p>
+              <div className="space-y-1.5">
+                <Label>Device ID</Label>
+                <Input
+                  value={whacenterDeviceId}
+                  onChange={(e) => setWhacenterDeviceId(e.target.value)}
+                  placeholder="mis. c9c947a55d92639ba2c475c9806dfbe5"
+                  className="rounded-xl font-mono"
+                  disabled={readOnly || isPending}
+                />
+                <p className="text-xs text-gray-400">Kosongkan untuk menonaktifkan fitur kirim WhatsApp otomatis.</p>
+              </div>
+              {!readOnly && (
+                <Button onClick={saveWhacenter} disabled={isPending} className="gap-2 rounded-xl">
+                  <Save size={15} />
+                  {isPending ? "Menyimpan..." : "Simpan Device ID"}
                 </Button>
               )}
             </div>

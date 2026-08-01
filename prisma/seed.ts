@@ -348,6 +348,9 @@ async function main() {
       seoDescription: COMPANY_INFO.description,
       seoKeywords:
         "perizinan usaha, pendirian pt, nib, izin usaha, konsultan perizinan, jasa perizinan indonesia",
+      // Device ID contoh dari klien — ganti sendiri lewat Pengaturan > Integrasi
+      // begitu device WhaCenter beneran udah connect.
+      whacenterDeviceId: "c9c947a55d92639ba2c475c9806dfbe5",
       updatedById: admin.id,
     },
   });

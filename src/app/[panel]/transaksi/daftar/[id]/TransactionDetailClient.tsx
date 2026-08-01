@@ -8,6 +8,7 @@ import {
   Eye, EyeOff, Download, ShieldCheck,
 } from "lucide-react";
 import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
+import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import type {
   ServiceTransaction, TransactionWorkflowStep, Payment, TransactionAttachment,
   TransactionActivityLog, TransactionStatus, PaymentStatus, TransactionPriority, WorkflowStepStatus,
@@ -33,6 +34,7 @@ import {
   updateTransactionAction, updateTransactionNotesAction, recordPaymentAction,
   updateWorkflowStepStatusAction, uploadTransactionAttachmentAction,
   deleteTransactionAttachmentAction, toggleAttachmentVisibilityAction,
+  sendTransactionWhatsappAction,
 } from "@/lib/actions/service-transactions";
 
 type TransactionDetail = Omit<ServiceTransaction, "totalPrice" | "discount" | "tax" | "grandTotal"> & {
@@ -100,6 +102,22 @@ export default function TransactionDetailClient({
     discount: String(transaction.discount),
     tax: String(transaction.tax),
   }));
+
+  /* ─── Kirim invoice + link tracking + QR code via WhatsApp ─── */
+  const [sendingWhatsapp, setSendingWhatsapp] = useState(false);
+  const sendWhatsapp = () => {
+    setSendingWhatsapp(true);
+    startTransition(async () => {
+      const res = await sendTransactionWhatsappAction(transaction.id);
+      setSendingWhatsapp(false);
+      if (res.ok) {
+        swalSuccess("Invoice & link tracking terkirim ke WhatsApp customer");
+        router.refresh();
+      } else {
+        swalError(res.message);
+      }
+    });
+  };
 
   const saveEdit = () => {
     startTransition(async () => {
@@ -283,6 +301,16 @@ export default function TransactionDetailClient({
             {PAYMENT_STATUS_LABELS[transaction.paymentStatus]}
           </span>
           <Badge variant="secondary" className="text-xs">{PRIORITY_LABELS[transaction.priority]}</Badge>
+          <Button
+            size="sm"
+            className="gap-1.5 rounded-lg bg-[#25D366] text-white hover:bg-[#25D366]/90"
+            onClick={sendWhatsapp}
+            disabled={sendingWhatsapp}
+            title="Kirim invoice, link tracking, dan QR code ke WhatsApp customer"
+          >
+            <WhatsAppIcon className="size-3.5" />
+            {sendingWhatsapp ? "Mengirim..." : "Kirim WhatsApp"}
+          </Button>
           <Button size="sm" variant="outline" className="gap-1.5 rounded-lg" onClick={() => setEditOpen(true)}>
             <Pencil size={13} /> Edit
           </Button>

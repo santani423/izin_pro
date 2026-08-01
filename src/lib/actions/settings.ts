@@ -26,6 +26,20 @@ async function requireSettingsEditor() {
   return session;
 }
 
+export async function updateWhacenterSettingsAction(deviceId: string): Promise<ActionResult> {
+  try {
+    await requireSettingsEditor();
+    await prisma.settings.update({
+      where: { id: "1" },
+      data: { whacenterDeviceId: deviceId.trim() || null },
+    });
+    revalidatePath("/admin/settings");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: errorMessage(e, "Gagal menyimpan Device ID WhaCenter.") };
+  }
+}
+
 export async function updateMaintenanceModeAction(
   maintenanceMode: boolean,
   maintenanceMessage: string,

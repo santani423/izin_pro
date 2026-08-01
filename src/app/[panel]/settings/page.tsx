@@ -25,6 +25,7 @@ export default async function AdminSettingsPage({
       maintenanceMessage={settings?.maintenanceMessage ?? ""}
       appLogoUrl={settings?.appLogoUrl ?? null}
       faviconUrl={settings?.faviconUrl ?? null}
+      whacenterDeviceId={settings?.whacenterDeviceId ?? ""}
     />
   );
 }
