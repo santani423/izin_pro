@@ -41,14 +41,6 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
-export async function generateStaticParams() {
-  const services = await prisma.service.findMany({
-    where: { deletedAt: null, status: "PUBLISHED" },
-    select: { slug: true },
-  });
-  return services.map((s) => ({ slug: s.slug }));
-}
-
 /* Dipakai generateMetadata & halaman itu sendiri — satu query, gak dobel
  * hit DB (Next.js dedup fetch requests dalam satu render, tapi Prisma call
  * biasa gak otomatis dedup, jadi baca sekali lalu pakai bareng). */
