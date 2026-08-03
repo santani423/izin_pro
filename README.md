@@ -64,8 +64,16 @@ Perintah `db seed` akan membuat akun admin awal untuk login ke panel admin.
 
 Akun default yang dibuat oleh seed:
 
-- Email: `admin@izinpro.co.id`
-- Password: `admin123`
+| Role | Email | Password |
+| --- | --- | --- |
+| SUPER_ADMIN | `admin@izinpro.co.id` | `admin123` |
+| ADMIN (demo) | `demo-admin@izinpro.co.id` | `demo1234` |
+| EDITOR (demo) | `demo-editor@izinpro.co.id` | `demo1234` |
+| AUTHOR (demo) | `demo-author@izinpro.co.id` | `demo1234` |
+
+Ketiga akun demo (ADMIN/EDITOR/AUTHOR) juga yang dipakai tombol "Masuk sebagai Demo Admin" di halaman login (`src/app/admin/login/LoginFormClient.tsx`).
+
+> **Peringatan:** akun-akun demo ini untuk kebutuhan dev/staging saja. Ganti password atau hapus akun-akun ini sebelum aplikasi go-live di production sungguhan.
 
 ## 4. Jalankan aplikasi di mode development
 
