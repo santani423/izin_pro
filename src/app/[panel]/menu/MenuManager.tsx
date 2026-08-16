@@ -26,6 +26,8 @@ type MenuWithItems = Menu & { items: (MenuItemWithUsers & { children: MenuItemWi
 interface FormState {
   id: string;
   label: string;
+  labelEn: string;
+  labelZh: string;
   href: string;
   /** Konteks tambah submenu — null berarti edit/tambah item level atas */
   parentId: string | null;
@@ -73,8 +75,17 @@ function MenuList({ menu }: { menu: MenuWithItems }) {
   const [isPending, startTransition] = useTransition();
   const [form, setForm] = useState<FormState | null>(null);
 
-  const openAdd = (parentId: string | null) => setForm({ id: "", label: "", href: "", parentId });
-  const openEdit = (item: MenuItem) => setForm({ id: item.id, label: item.label, href: item.href, parentId: item.parentId });
+  const openAdd = (parentId: string | null) =>
+    setForm({ id: "", label: "", labelEn: "", labelZh: "", href: "", parentId });
+  const openEdit = (item: MenuItem) =>
+    setForm({
+      id: item.id,
+      label: item.label,
+      labelEn: item.labelEn ?? "",
+      labelZh: item.labelZh ?? "",
+      href: item.href,
+      parentId: item.parentId,
+    });
 
   const move = (id: string, direction: "up" | "down") => {
     startTransition(async () => {
@@ -92,10 +103,17 @@ function MenuList({ menu }: { menu: MenuWithItems }) {
     }
     startTransition(async () => {
       const res = form.id
-        ? await updateMenuItemAction(form.id, { label: form.label, href: form.href })
+        ? await updateMenuItemAction(form.id, {
+            label: form.label,
+            href: form.href,
+            labelEn: form.labelEn,
+            labelZh: form.labelZh,
+          })
         : await createMenuItemAction(menu.key as "header" | "footer", {
             label: form.label,
             href: form.href,
+            labelEn: form.labelEn,
+            labelZh: form.labelZh,
             parentId: form.parentId,
           });
 
@@ -186,7 +204,7 @@ function MenuList({ menu }: { menu: MenuWithItems }) {
               </DialogTitle>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="m-label" className="text-sm font-semibold text-gray-700">Label</Label>
+                  <Label htmlFor="m-label" className="text-sm font-semibold text-gray-700">Label (Bahasa Indonesia)</Label>
                   <Input
                     id="m-label"
                     className="mt-1.5 rounded-lg"
@@ -194,6 +212,32 @@ function MenuList({ menu }: { menu: MenuWithItems }) {
                     value={form.label}
                     onChange={(e) => setForm({ ...form, label: e.target.value })}
                   />
+                </div>
+                <div>
+                  <Label htmlFor="m-label-en" className="text-sm font-semibold text-gray-700">
+                    Label (English) <span className="font-normal text-gray-400">— opsional</span>
+                  </Label>
+                  <Input
+                    id="m-label-en"
+                    className="mt-1.5 rounded-lg"
+                    placeholder="mis. About Us"
+                    value={form.labelEn}
+                    onChange={(e) => setForm({ ...form, labelEn: e.target.value })}
+                  />
+                  <p className="mt-1 text-xs text-gray-400">Kosongkan untuk pakai Label Bahasa Indonesia di versi EN.</p>
+                </div>
+                <div>
+                  <Label htmlFor="m-label-zh" className="text-sm font-semibold text-gray-700">
+                    Label (中文) <span className="font-normal text-gray-400">— opsional</span>
+                  </Label>
+                  <Input
+                    id="m-label-zh"
+                    className="mt-1.5 rounded-lg"
+                    placeholder="mis. 关于我们"
+                    value={form.labelZh}
+                    onChange={(e) => setForm({ ...form, labelZh: e.target.value })}
+                  />
+                  <p className="mt-1 text-xs text-gray-400">Kosongkan untuk pakai Label Bahasa Indonesia di versi 中文.</p>
                 </div>
                 <div>
                   <Label htmlFor="m-href" className="text-sm font-semibold text-gray-700">URL</Label>
@@ -265,7 +309,15 @@ function MenuRow({
         </button>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 truncate">{item.label}</p>
+        <p className="flex items-center gap-1.5 text-sm font-medium text-gray-900 truncate">
+          {item.label}
+          {item.labelEn && (
+            <span className="rounded border border-gray-200 px-1 text-[10px] font-semibold text-gray-400">EN</span>
+          )}
+          {item.labelZh && (
+            <span className="rounded border border-gray-200 px-1 text-[10px] font-semibold text-gray-400">中</span>
+          )}
+        </p>
         <p className="text-xs text-gray-400 font-mono truncate">{item.href}</p>
         <p className="text-[11px] text-gray-300 truncate">
           Dibuat: {item.createdBy?.name ?? "—"} · Diubah: {item.updatedBy?.name ?? "—"}

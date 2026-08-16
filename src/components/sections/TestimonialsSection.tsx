@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SectionHeading } from "@/components/shared/SectionHeading";
+import { useDictionary } from "@/contexts/LocaleContext";
+import { format } from "@/i18n/format";
 import { cn } from "@/lib/utils";
 
 export interface TestimonialData {
@@ -36,6 +38,7 @@ export default function TestimonialsSection({
 }: {
   testimonials: TestimonialData[];
 }) {
+  const dict = useDictionary();
   const [page, setPage] = useState(0);
   const [paused, setPaused] = useState(false);
   const prefersReducedMotion = useReducedMotion();
@@ -57,8 +60,8 @@ export default function TestimonialsSection({
     <section id="testimoni" className="bg-brand-surface">
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
       <SectionHeading
-        title="Testimoni Klien"
-        subtitle="Kepercayaan dan kepuasan klien adalah prioritas kami."
+        title={dict.testimonials.heading}
+        subtitle={dict.testimonials.subtitle}
       />
 
       {/* Viewport carousel — py-1 (+px-1 di tiap halaman) agar border kartu tepi tidak terpotong overflow-hidden */}
@@ -85,7 +88,7 @@ export default function TestimonialsSection({
                   <CardContent className="flex h-full flex-col px-5 py-5">
                     <div
                       className="flex gap-0.5"
-                      aria-label={`Rating ${testimonial.rating} dari 5 bintang`}
+                      aria-label={format(dict.testimonials.ariaRatingTemplate, { rating: testimonial.rating })}
                     >
                       {Array.from({ length: testimonial.rating }).map((_, i) => (
                         <Star
@@ -133,7 +136,7 @@ export default function TestimonialsSection({
           variant="outline"
           size="icon"
           onClick={prev}
-          aria-label="Testimoni sebelumnya"
+          aria-label={dict.testimonials.ariaPrev}
           className="rounded-full"
         >
           <ChevronLeft className="size-4" />
@@ -142,7 +145,7 @@ export default function TestimonialsSection({
         <div
           className="flex gap-2"
           role="tablist"
-          aria-label="Navigasi halaman testimoni"
+          aria-label={dict.testimonials.ariaPaginationNav}
         >
           {pages.map((_, i) => (
             <button
@@ -150,7 +153,7 @@ export default function TestimonialsSection({
               type="button"
               role="tab"
               aria-selected={page === i}
-              aria-label={`Halaman testimoni ${i + 1}`}
+              aria-label={format(dict.testimonials.ariaPageTemplate, { page: i + 1 })}
               onClick={() => setPage(i)}
               className={cn(
                 "size-2 rounded-full transition-colors",
@@ -164,7 +167,7 @@ export default function TestimonialsSection({
           variant="outline"
           size="icon"
           onClick={next}
-          aria-label="Testimoni berikutnya"
+          aria-label={dict.testimonials.ariaNext}
           className="rounded-full"
         >
           <ChevronRight className="size-4" />

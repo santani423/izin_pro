@@ -100,6 +100,8 @@ import { KONTAK_FAQS, KONTAK_INFO_CARDS, KONTAK_CHANNELS } from "../src/lib/kont
 import { PROMO_PACKAGES, PROMO_HIGHLIGHTS, PROMO_WHY, PROMO_STEPS } from "../src/lib/promo";
 import { getLayananDetail } from "../src/lib/layanan-detail";
 import { toServiceDetailContent, parsePriceToNumber } from "./service-detail-seed-helpers";
+import { CATALOG_CATEGORY_I18N, CATALOG_SERVICE_I18N } from "./service-catalog-i18n";
+import { getDetailContentLang } from "./service-detail-i18n-content";
 import { getArticleDetail } from "../src/lib/blog-detail";
 import { generateTransactionCode, generateInvoiceNumber } from "../src/lib/transaction-code";
 import {
@@ -326,6 +328,7 @@ async function main() {
   await prisma.settings.create({
     data: {
       id: "1",
+      defaultLocale: "id",
       companyName: COMPANY_INFO.name,
       tagline: COMPANY_INFO.tagline,
       description: COMPANY_INFO.description,
@@ -343,6 +346,11 @@ async function main() {
       socialYoutube: null,
       appLogoUrl: null,
       faviconUrl: null,
+      // Tab Font (default) — slug harus cocok sama value di FONT_OPTIONS,
+      // src/lib/fonts.ts. Diganti admin lewat /admin/settings > tab Font.
+      fontFamilyId: "plus-jakarta-sans",
+      fontFamilyEn: "inter",
+      fontFamilyZh: "noto-sans-sc",
       // Belum ada input SEO dari klien — placeholder pending revisi
       seoTitle: `${COMPANY_INFO.name} — ${COMPANY_INFO.tagline}`,
       seoDescription: COMPANY_INFO.description,
@@ -356,18 +364,43 @@ async function main() {
   });
   console.log("Settings di-seed.");
 
-  /* ═══ 3b. HeroContent (singleton) — teks hero beranda, copy asli dari HeroSection.tsx ═══ */
+  /* ═══ 3b. HeroContent (singleton) — teks hero beranda, copy asli dari HeroSection.tsx
+   * EN/ZH diisi sekalian biar install baru langsung punya 3 bahasa (bukan cuma
+   * fallback ke Bahasa Indonesia) — admin tetap bisa ubah/kosongkan lewat /beranda. ═══ */
   await prisma.heroContent.create({
     data: {
       id: "1",
       titleLine1: "Solusi Perizinan",
+      titleLine1En: "Business Licensing",
+      titleLine1Zh: "企业办证解决方案",
       titleHighlight: "Bisnis Anda,",
+      titleHighlightEn: "Solutions,",
+      titleHighlightZh: "值得信赖",
       titleLine3: "Aman & Terpercaya",
+      titleLine3En: "Secure & Trusted",
+      titleLine3Zh: "安全可靠",
       subtitle:
         "IzinPro hadir untuk membantu bisnis Anda mengurus perizinan dengan mudah, cepat, dan sesuai regulasi.",
+      subtitleEn:
+        "IzinPro is here to help your business handle licensing easily, quickly, and in compliance with regulations.",
+      subtitleZh: "IzinPro 致力于帮助您的企业轻松、快速、合规地办理各类许可证。",
       highlights: HERO_HIGHLIGHTS.map(({ title, subtitle }) => ({ title, subtitle })),
+      highlightsEn: [
+        { title: "Fast Process", subtitle: "& Efficient" },
+        { title: "Legal & Official", subtitle: "100%" },
+        { title: "Professional Team", subtitle: "Experienced" },
+      ],
+      highlightsZh: [
+        { title: "流程快速", subtitle: "高效" },
+        { title: "合法合规", subtitle: "100%" },
+        { title: "专业团队", subtitle: "经验丰富" },
+      ],
       ctaPrimaryLabel: "Konsultasikan Gratis",
+      ctaPrimaryLabelEn: "Get a Free Consultation",
+      ctaPrimaryLabelZh: "免费咨询",
       ctaSecondaryLabel: "Lihat Semua Layanan",
+      ctaSecondaryLabelEn: "View All Services",
+      ctaSecondaryLabelZh: "查看全部服务",
       ctaSecondaryHref: "/layanan",
       updatedById: admin.id,
     },
@@ -382,47 +415,123 @@ async function main() {
       id: "1",
       heroKicker: null,
       heroTitle: "Tentang",
+      heroTitleEn: "About",
+      heroTitleZh: "关于",
       heroTitleHighlight: "IzinPro",
       heroSubtitleBold:
         "Solusi Perizinan Terpercaya untuk Mendukung Pertumbuhan Bisnis Anda",
+      heroSubtitleBoldEn: "A Trusted Licensing Solution to Support Your Business Growth",
+      heroSubtitleBoldZh: "值得信赖的办证解决方案，助力您的企业成长",
       heroSubtitleBody:
         "IzinPro hadir untuk memberikan layanan perizinan usaha yang mudah, cepat, transparan, dan legal. Kami berkomitmen menjadi partner terbaik bagi setiap pelaku bisnis dalam mewujudkan legalitas usaha yang aman dan berkelanjutan.",
+      heroSubtitleBodyEn:
+        "IzinPro is here to provide business licensing services that are easy, fast, transparent, and legal. We are committed to being the best partner for every business in achieving safe and sustainable legality.",
+      heroSubtitleBodyZh: "IzinPro 致力于提供轻松、快速、透明、合法的企业办证服务。我们承诺成为每一家企业实现安全、可持续合法经营的最佳合作伙伴。",
       heroImageUrl: null,
 
       aboutKicker: "Tentang Kami",
+      aboutKickerEn: "About Us",
+      aboutKickerZh: "关于我们",
       aboutTitle: "IzinPro, Partner Tepat untuk",
+      aboutTitleEn: "IzinPro, the Right Partner for",
+      aboutTitleZh: "IzinPro，您企业合规的",
       aboutTitleHighlight: "Legalitas Bisnis Anda",
+      aboutTitleHighlightEn: "Your Business Legality",
+      aboutTitleHighlightZh: "理想合作伙伴",
       aboutParagraphs: [
         "IzinPro adalah penyedia jasa perizinan usaha terpercaya di Indonesia yang berfokus pada kemudahan, kecepatan, dan kepastian hukum dalam setiap proses perizinan.",
         "Kami memahami bahwa setiap bisnis membutuhkan legalitas yang kuat sebagai fondasi untuk berkembang. Karena itu, kami hadir dengan layanan terlengkap dan pendampingan dari tim ahli berpengalaman.",
       ],
+      aboutParagraphsEn: [
+        "IzinPro is a trusted business licensing service provider in Indonesia focused on convenience, speed, and legal certainty in every licensing process.",
+        "We understand that every business needs strong legality as a foundation for growth. That's why we offer the most complete services with guidance from an experienced team of experts.",
+      ],
+      aboutParagraphsZh: [
+        "IzinPro 是印度尼西亚值得信赖的企业办证服务提供商，专注于为每一个办证流程提供便捷性、高效性与法律确定性。",
+        "我们深知每家企业都需要坚实的合法基础才能持续发展。因此，我们提供最完善的服务，并配备经验丰富的专家团队全程指导。",
+      ],
       aboutImageUrl: null,
       stats: TENTANG_STATS.map((s) => ({ icon: iconKey(s.icon), value: s.value, label: s.label })),
+      statsEn: [
+        { value: "5,000+", label: "Licenses Completed" },
+        { value: "99%", label: "Client Satisfaction" },
+        { value: "10+", label: "Years of Experience" },
+      ],
+      statsZh: [
+        { value: "5,000+", label: "已完成办证" },
+        { value: "99%", label: "客户满意度" },
+        { value: "10+", label: "年从业经验" },
+      ],
 
       valuesEnabled: true,
       // Tampil "{highlight} {title}" di komponen (beda urutan dari About/Team,
       // krn desain aslinya kata primary-nya di depan) — lihat TentangValuesSection.
       valuesTitle: "yang Kami Junjung",
+      valuesTitleEn: "We Uphold",
+      valuesTitleZh: "，我们始终坚持的经营理念",
       valuesTitleHighlight: "Nilai-Nilai",
+      valuesTitleHighlightEn: "Values",
+      valuesTitleHighlightZh: "价值观",
       valuesSubtitle:
         "Nilai-nilai ini menjadi komitmen kami dalam memberikan layanan terbaik bagi klien.",
+      valuesSubtitleEn: "These values are our commitment to providing the best service to our clients.",
+      valuesSubtitleZh: "这些价值观是我们为客户提供最优质服务的承诺。",
       values: TENTANG_VALUES.map((v) => ({ icon: iconKey(v.icon), title: v.title, description: v.description })),
+      valuesEn: [
+        { title: "Integrity", description: "We work honestly, responsibly, and with integrity in every service." },
+        { title: "Professional", description: "Supported by an experienced and competent team in the licensing field." },
+        { title: "Efficient", description: "Fast and timely processes to save your valuable time." },
+        { title: "Transparent", description: "Clear information, open costs, and well-monitored processes." },
+        { title: "Client-Focused", description: "Client satisfaction is our top priority in every service we provide." },
+      ],
+      valuesZh: [
+        { title: "诚信", description: "我们在每一项服务中都秉持诚实、可靠、负责任的态度。" },
+        { title: "专业", description: "由经验丰富、精通办证领域的专业团队提供支持。" },
+        { title: "高效", description: "快速且准时的办理流程，为您节省宝贵时间。" },
+        { title: "透明", description: "信息公开透明、费用清楚、流程可全程监督。" },
+        { title: "以客为本", description: "客户满意度是我们提供每一项服务的首要目标。" },
+      ],
 
       visiMisiEnabled: true,
       vision: TENTANG_VISION,
+      visionEn: "To become the leading and most trusted licensing services company in Indonesia.",
+      visionZh: "成为印度尼西亚领先、最值得信赖的办证服务企业。",
       visionImageUrl: null,
       mission: TENTANG_MISSION,
+      missionEn: [
+        "Provide fast, easy, and accurate licensing services.",
+        "Provide the best solutions tailored to clients' business needs.",
+        "Maintain compliance with laws and regulations.",
+        "Build long-term relationships with clients based on trust.",
+      ],
+      missionZh: [
+        "提供快速、便捷、准确的办证服务。",
+        "根据客户的业务需求提供最佳解决方案。",
+        "严格遵守相关法律法规。",
+        "与客户建立基于信任的长期合作关系。",
+      ],
       missionImageUrl: null,
 
       teamEnabled: true,
       teamTitle: "Tim",
+      teamTitleEn: "Meet Our",
+      teamTitleZh: "我们的",
       teamTitleHighlight: "Profesional",
+      teamTitleHighlightEn: "Team",
+      teamTitleHighlightZh: "专业",
       teamSubtitle:
         "Didukung oleh tim ahli berpengalaman yang siap membantu kebutuhan perizinan bisnis Anda.",
+      teamSubtitleEn: "Supported by an experienced team of experts ready to help with your business licensing needs.",
+      teamSubtitleZh: "由经验丰富的专业团队提供支持，随时协助您处理企业办证需求。",
 
       metaTitle: "Tentang IzinPro — Solusi Perizinan Terpercaya",
+      metaTitleEn: "About IzinPro — A Trusted Licensing Partner",
+      metaTitleZh: "关于 IzinPro — 值得信赖的办证合作伙伴",
       metaDescription:
         "Kenali IzinPro — penyedia jasa perizinan usaha terpercaya di Indonesia dengan 10+ tahun pengalaman, 5.000+ perizinan selesai, dan tim profesional berpengalaman.",
+      metaDescriptionEn:
+        "Get to know IzinPro — a trusted business licensing service provider in Indonesia with 10+ years of experience, 5,000+ licenses completed, and a professional, experienced team.",
+      metaDescriptionZh: "了解 IzinPro — 印度尼西亚值得信赖的企业办证服务商，拥有 10+ 年从业经验、已完成 5,000+ 件办证案例及专业经验丰富的团队。",
 
       updatedById: admin.id,
     },
@@ -516,12 +625,23 @@ async function main() {
   }
   console.log("Menu header & footer di-seed.");
 
-  /* ═══ 5. ServiceCategory ═══ */
+  /* ═══ 5. ServiceCategory (EN/ZH dari service-catalog-i18n.ts, sinkron dgn
+   * backfill-layanan-catalog-i18n.ts biar install baru & DB lama konsisten) ═══ */
   const categoryIdBySlug: Record<string, string> = {};
   for (const cat of LAYANAN_CATEGORIES) {
     if (cat.id === "semua") continue; // filter UI "Semua Layanan", bukan kategori asli
+    const catI18n = CATALOG_CATEGORY_I18N[cat.label];
     const created = await prisma.serviceCategory.create({
-      data: { slug: cat.id, name: cat.label, createdById: admin.id, updatedById: admin.id },
+      data: {
+        slug: cat.id,
+        name: cat.label,
+        nameEn: catI18n?.name.en,
+        nameZh: catI18n?.name.zh,
+        descriptionEn: catI18n?.description?.en,
+        descriptionZh: catI18n?.description?.zh,
+        createdById: admin.id,
+        updatedById: admin.id,
+      },
     });
     categoryIdBySlug[cat.id] = created.id;
   }
@@ -540,19 +660,36 @@ async function main() {
     const categorySlug = SERVICE_CATEGORY_BY_SLUG[s.slug];
     const categoryId = categoryIdBySlug[categorySlug];
     const detail = getLayananDetail(s.slug)!; // selalu ada — fallback generator jamin ini
+    const svcI18n = CATALOG_SERVICE_I18N[s.slug];
+    const titleEn = svcI18n?.title.en;
+    const titleZh = svcI18n?.title.zh;
+    const detailEn = getDetailContentLang(s.slug, "en", titleEn ?? s.title, svcI18n?.features.map((f) => f.en) ?? s.features);
+    const detailZh = getDetailContentLang(s.slug, "zh", titleZh ?? s.title, svcI18n?.features.map((f) => f.zh) ?? s.features);
     const created = await prisma.service.create({
       data: {
         slug: s.slug,
         title: s.title,
+        titleEn,
+        titleZh,
         description: s.description,
+        descriptionEn: svcI18n?.description.en,
+        descriptionZh: svcI18n?.description.zh,
         icon: s.icon,
         color: s.color,
         bgColor: s.bgColor,
         categoryId,
         features: s.features,
+        featuresEn: svcI18n?.features.map((f) => f.en),
+        featuresZh: svcI18n?.features.map((f) => f.zh),
         detailContent: toServiceDetailContent(detail) as object,
+        detailContentEn: detailEn as object,
+        detailContentZh: detailZh as object,
         metaTitle: `${detail.title} — ${detail.tagline}`,
         metaDescription: detail.description,
+        metaTitleEn: titleEn ? `${titleEn} — ${detailEn.tagline}` : undefined,
+        metaTitleZh: titleZh ? `${titleZh} — ${detailZh.tagline}` : undefined,
+        metaDescriptionEn: detailEn.heroDescription ?? svcI18n?.description.en,
+        metaDescriptionZh: detailZh.heroDescription ?? svcI18n?.description.zh,
         status: "PUBLISHED",
         sortOrder: i,
         createdById: admin.id,
@@ -563,13 +700,18 @@ async function main() {
 
     if (detail.packages) {
       for (const [pkgIndex, pkg] of detail.packages.items.entries()) {
+        const pkgI18n = svcI18n?.packages[pkgIndex];
         await prisma.servicePackage.create({
           data: {
             serviceId: created.id,
             name: pkg.name,
+            nameEn: pkgI18n?.name.en,
+            nameZh: pkgI18n?.name.zh,
             price: parsePriceToNumber(pkg.price),
             isPopular: pkg.popular ?? false,
             features: pkg.features,
+            featuresEn: pkgI18n?.features.map((f) => f.en),
+            featuresZh: pkgI18n?.features.map((f) => f.zh),
             sortOrder: pkgIndex,
           },
         });
@@ -595,11 +737,29 @@ async function main() {
   }
   console.log(`${SERVICES.length} Service di-seed.`);
 
-  /* ═══ 7. TeamMember (6) ═══ */
+  /* ═══ 7. TeamMember (6) — roleEn/Zh diisi sekalian biar install baru
+   * langsung punya 3 bahasa (bukan cuma fallback ke Bahasa Indonesia) ═══ */
+  const TEAM_ROLE_I18N: Record<string, { en: string; zh: string }> = {
+    "CEO & Founder": { en: "CEO & Founder", zh: "首席执行官兼创始人" },
+    "Head of Legal": { en: "Head of Legal", zh: "法务负责人" },
+    "Senior Perizinan Consultant": { en: "Senior Licensing Consultant", zh: "高级许可顾问" },
+    "Operations Manager": { en: "Operations Manager", zh: "运营经理" },
+    "Business Development": { en: "Business Development", zh: "业务拓展" },
+    "Customer Relations": { en: "Customer Relations", zh: "客户关系" },
+  };
   for (let i = 0; i < TEAM_MEMBERS.length; i++) {
     const t = TEAM_MEMBERS[i];
+    const roleI18n = TEAM_ROLE_I18N[t.role];
     await prisma.teamMember.create({
-      data: { name: t.name, role: t.role, sortOrder: i, createdById: admin.id, updatedById: admin.id },
+      data: {
+        name: t.name,
+        role: t.role,
+        roleEn: roleI18n?.en,
+        roleZh: roleI18n?.zh,
+        sortOrder: i,
+        createdById: admin.id,
+        updatedById: admin.id,
+      },
     });
   }
   console.log(`${TEAM_MEMBERS.length} TeamMember di-seed.`);
@@ -844,13 +1004,20 @@ async function main() {
   });
   console.log("BlogPageContent di-seed.");
 
-  /* ═══ 13. Cta (default + 3 varian, dari mock admin/cta-banner) ═══ */
+  /* ═══ 13. Cta (default + 3 varian, dari mock admin/cta-banner) — EN/ZH
+   * diisi sekalian sama pola dgn HeroContent/AboutPageContent di atas ═══ */
   await prisma.cta.create({
     data: {
       location: null,
       title: "Siap Memulai Perizinan Bisnis Anda?",
+      titleEn: "Ready to Start Your Business Licensing?",
+      titleZh: "准备好开始您的企业办证了吗？",
       subtitle: "Konsultasikan kebutuhan perizinan Anda sekarang gratis bersama tim ahli kami.",
+      subtitleEn: "Consult your licensing needs now for free with our expert team.",
+      subtitleZh: "立即与我们的专家团队免费咨询您的办证需求。",
       buttonLabel: "Konsultasikan Gratis Sekarang",
+      buttonLabelEn: "Get a Free Consultation Now",
+      buttonLabelZh: "立即免费咨询",
       whatsapp: COMPANY_INFO.whatsapp,
       createdById: admin.id,
       updatedById: admin.id,
@@ -860,9 +1027,15 @@ async function main() {
     data: {
       location: "TENTANG_KAMI",
       title: "Siap Bekerja Sama dengan Kami?",
+      titleEn: "Ready to Work With Us?",
+      titleZh: "准备好与我们合作了吗？",
       subtitle:
         "Konsultasikan kebutuhan perizinan Anda sekarang juga secara gratis bersama tim ahli kami.",
+      subtitleEn: "Consult your licensing needs now for free with our expert team.",
+      subtitleZh: "立即与我们的专家团队免费咨询您的办证需求。",
       buttonLabel: "Konsultasikan Gratis Sekarang",
+      buttonLabelEn: "Get a Free Consultation Now",
+      buttonLabelZh: "立即免费咨询",
       whatsapp: COMPANY_INFO.whatsapp,
       createdById: admin.id,
       updatedById: admin.id,
@@ -872,9 +1045,15 @@ async function main() {
     data: {
       location: "BLOG",
       title: "Butuh Bantuan Mengurus Perizinan?",
+      titleEn: "Need Help With Your Business Licensing?",
+      titleZh: "需要办证方面的帮助吗？",
       subtitle:
         "Konsultasikan kebutuhan perizinan Anda sekarang juga secara gratis bersama tim ahli kami.",
+      subtitleEn: "Consult your licensing needs now for free with our expert team.",
+      subtitleZh: "立即与我们的专家团队免费咨询您的办证需求。",
       buttonLabel: "Konsultasikan Gratis Sekarang",
+      buttonLabelEn: "Get a Free Consultation Now",
+      buttonLabelZh: "立即免费咨询",
       whatsapp: COMPANY_INFO.whatsapp,
       createdById: admin.id,
       updatedById: admin.id,
@@ -884,8 +1063,14 @@ async function main() {
     data: {
       location: "DETAIL_LAYANAN",
       title: "Siap Memulai Perizinan Bisnis Anda?",
+      titleEn: "Ready to Start Your Business Licensing?",
+      titleZh: "准备好开始您的企业办证了吗？",
       subtitle: "Konsultasikan kebutuhan layanan Anda sekarang juga, GRATIS!",
+      subtitleEn: "Consult your service needs now, for FREE!",
+      subtitleZh: "立即免费咨询您的服务需求！",
       buttonLabel: "Konsultasikan Sekarang",
+      buttonLabelEn: "Consult Now",
+      buttonLabelZh: "立即咨询",
       whatsapp: COMPANY_INFO.whatsapp,
       createdById: admin.id,
       updatedById: admin.id,

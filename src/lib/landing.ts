@@ -21,17 +21,6 @@ export const HERO_HIGHLIGHTS: HeroHighlight[] = [
   { icon: Users, title: "Tim Profesional", subtitle: "Berpengalaman" },
 ];
 
-export interface HeroStat {
-  value: string;
-  label: string;
-  withStars?: boolean;
-}
-
-export const HERO_STATS: HeroStat[] = [
-  { value: "5.000+", label: "Perizinan Selesai" },
-  { value: "99%", label: "Kepuasan Klien", withStars: true },
-];
-
 /* ─── Promo ─── */
 export interface LandingPromo {
   id: string;

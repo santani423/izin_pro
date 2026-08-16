@@ -32,6 +32,9 @@ function revalidateTeam() {
 export interface TeamMemberFormData {
   name: string;
   role: string;
+  // Kosong = fallback ke `role` di publik (lihat TentangKamiPage).
+  roleEn: string;
+  roleZh: string;
   department: string | null;
   email: string | null;
   phone: string | null;
@@ -42,7 +45,7 @@ export interface TeamMemberFormData {
 
 function validate(data: TeamMemberFormData): string | null {
   if (!data.name.trim()) return "Nama wajib diisi.";
-  if (!data.role.trim()) return "Jabatan wajib diisi.";
+  if (!data.role.trim()) return "Jabatan (Bahasa Indonesia) wajib diisi.";
   return null;
 }
 
@@ -57,6 +60,8 @@ export async function createTeamMemberAction(data: TeamMemberFormData): Promise<
       data: {
         name: data.name.trim(),
         role: data.role.trim(),
+        roleEn: data.roleEn.trim() || null,
+        roleZh: data.roleZh.trim() || null,
         department: data.department?.trim() || null,
         email: data.email?.trim() || null,
         phone: data.phone?.trim() || null,
@@ -86,6 +91,8 @@ export async function updateTeamMemberAction(id: string, data: TeamMemberFormDat
       data: {
         name: data.name.trim(),
         role: data.role.trim(),
+        roleEn: data.roleEn.trim() || null,
+        roleZh: data.roleZh.trim() || null,
         department: data.department?.trim() || null,
         email: data.email?.trim() || null,
         phone: data.phone?.trim() || null,

@@ -7,6 +7,7 @@ import TestimoniGridSection from "@/components/sections/TestimoniGridSection";
 import { getPublicTestimonials } from "@/lib/testimonials-data";
 import { prisma } from "@/lib/db";
 import { resolveDetailIcon } from "@/lib/detail-icons";
+import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 
 interface RawTestimoniStat {
   icon: string;
@@ -23,17 +24,20 @@ const ClientsSection = dynamic(
 );
 const CtaSection = dynamic(() => import("@/components/sections/CtaSection"));
 
-export const metadata: Metadata = {
-  title: "Testimoni Klien IzinPro",
-  description:
-    "Kepercayaan dan kepuasan klien adalah prioritas kami. Simak pengalaman nyata klien yang telah menggunakan layanan perizinan IzinPro.",
-  alternates: {
-    canonical: "https://izinpro.co.id/testimoni",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const dict = getDictionary(await getLocale());
+  return {
+    title: dict.pages.testimoni.metaTitle,
+    description: dict.pages.testimoni.metaDescription,
+    alternates: {
+      canonical: "https://izinpro.co.id/testimoni",
+    },
+  };
+}
 
 /* ─── Halaman Testimoni Klien (desain baru) ─── */
 export default async function TestimoniPage() {
+  const dict = getDictionary(await getLocale());
   const [{ gridTestimonials, videoTestimonials }, banner] = await Promise.all([
     getPublicTestimonials(),
     prisma.testimoniPageContent.findUniqueOrThrow({ where: { id: "1" } }),
@@ -48,7 +52,8 @@ export default async function TestimoniPage() {
     <>
       {/* 1. Hero + breadcrumb — dikelola admin di /testimoni tab Banner */}
       <PageHero
-        crumbs={[{ label: "Beranda", href: "/" }, { label: "Testimoni" }]}
+        crumbs={[{ label: dict.common.breadcrumbHome, href: "/" }, { label: dict.pages.testimoni.breadcrumbTestimoni }]}
+        ariaBreadcrumb={dict.common.ariaBreadcrumb}
         kicker={banner.heroKicker ?? undefined}
         title={
           <>
@@ -57,7 +62,7 @@ export default async function TestimoniPage() {
         }
         description={banner.heroDescription}
         imageUrl={banner.heroImageUrl}
-        imageLabel="Foto klien IzinPro yang puas dengan layanan"
+        imageLabel={dict.pages.testimoni.imageLabel}
         overlap
       />
 

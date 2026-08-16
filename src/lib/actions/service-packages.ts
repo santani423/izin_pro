@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { revalidateAdminPaths } from "@/lib/admin-guard";
+import { Prisma } from "@prisma/client";
 import type { Role } from "@prisma/client";
 
 export type ActionResult = { ok: true } | { ok: false; message: string };
@@ -23,14 +24,25 @@ function errorMessage(e: unknown, fallback: string) {
   return e instanceof Error ? e.message : fallback;
 }
 
-export interface ServicePackageFormData {
+export interface ServicePackageLangData {
   name: string;
+  features: string[];
+}
+
+export interface ServicePackageFormData {
   price: number;
   originalPrice: number | null;
-  features: string[];
   isPopular: boolean;
   estimatedDurationLabel: string | null;
   isActive: boolean;
+  id: ServicePackageLangData;
+  en: ServicePackageLangData;
+  zh: ServicePackageLangData;
+}
+
+function stringArrayOrNull(arr: string[]): string[] | null {
+  const cleaned = arr.map((s) => s.trim()).filter(Boolean);
+  return cleaned.length === 0 ? null : cleaned;
 }
 
 async function revalidateForService(serviceId: string) {
@@ -45,17 +57,21 @@ export async function createServicePackageAction(
 ): Promise<ActionResult> {
   try {
     await requireContentEditor();
-    if (!data.name.trim()) return { ok: false, message: "Nama paket wajib diisi." };
+    if (!data.id.name.trim()) return { ok: false, message: "Nama paket (Bahasa Indonesia) wajib diisi." };
     if (data.price <= 0) return { ok: false, message: "Harga paket harus lebih dari 0." };
 
     const count = await prisma.servicePackage.count({ where: { serviceId } });
     await prisma.servicePackage.create({
       data: {
         serviceId,
-        name: data.name.trim(),
+        name: data.id.name.trim(),
+        features: data.id.features.filter(Boolean),
+        nameEn: data.en.name.trim() || null,
+        featuresEn: stringArrayOrNull(data.en.features) ?? Prisma.DbNull,
+        nameZh: data.zh.name.trim() || null,
+        featuresZh: stringArrayOrNull(data.zh.features) ?? Prisma.DbNull,
         price: data.price,
         originalPrice: data.originalPrice,
-        features: data.features.filter(Boolean),
         isPopular: data.isPopular,
         estimatedDurationLabel: data.estimatedDurationLabel,
         isActive: data.isActive,
@@ -75,16 +91,20 @@ export async function updateServicePackageAction(
 ): Promise<ActionResult> {
   try {
     await requireContentEditor();
-    if (!data.name.trim()) return { ok: false, message: "Nama paket wajib diisi." };
+    if (!data.id.name.trim()) return { ok: false, message: "Nama paket (Bahasa Indonesia) wajib diisi." };
     if (data.price <= 0) return { ok: false, message: "Harga paket harus lebih dari 0." };
 
     const pkg = await prisma.servicePackage.update({
       where: { id },
       data: {
-        name: data.name.trim(),
+        name: data.id.name.trim(),
+        features: data.id.features.filter(Boolean),
+        nameEn: data.en.name.trim() || null,
+        featuresEn: stringArrayOrNull(data.en.features) ?? Prisma.DbNull,
+        nameZh: data.zh.name.trim() || null,
+        featuresZh: stringArrayOrNull(data.zh.features) ?? Prisma.DbNull,
         price: data.price,
         originalPrice: data.originalPrice,
-        features: data.features.filter(Boolean),
         isPopular: data.isPopular,
         estimatedDurationLabel: data.estimatedDurationLabel,
         isActive: data.isActive,

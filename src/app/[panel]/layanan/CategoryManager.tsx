@@ -13,21 +13,34 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { IconPicker } from "@/components/admin/IconPicker";
 import { DEFAULT_DETAIL_ICON_KEY, DETAIL_ICONS, DEFAULT_DETAIL_ICON } from "@/lib/detail-icons";
+import { cn } from "@/lib/utils";
 import {
   createServiceCategoryAction,
   updateServiceCategoryAction,
   deleteServiceCategoryAction,
   toggleServiceCategoryActiveAction,
+  type ServiceCategoryLangData,
 } from "@/lib/actions/service-categories";
 
+const LANGS = [
+  { key: "id", label: "ID" },
+  { key: "en", label: "EN" },
+  { key: "zh", label: "中文" },
+] as const;
+type Lang = (typeof LANGS)[number]["key"];
+
 interface FormState {
-  id: string;
-  name: string;
+  dbId: string;
   icon: string;
-  description: string;
+  lang: Record<Lang, ServiceCategoryLangData>;
 }
 
-const emptyForm = (): FormState => ({ id: "", name: "", icon: DEFAULT_DETAIL_ICON_KEY, description: "" });
+const emptyLang = (): ServiceCategoryLangData => ({ name: "", description: "" });
+const emptyForm = (): FormState => ({
+  dbId: "",
+  icon: DEFAULT_DETAIL_ICON_KEY,
+  lang: { id: emptyLang(), en: emptyLang(), zh: emptyLang() },
+});
 
 /* ─── Dialog kelola kategori layanan — dibuka dari tombol "Kelola Kategori"
  * di LayananManager. List + form 1 dialog (toggle internal), sama gaya
@@ -44,28 +57,43 @@ export default function CategoryManager({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [form, setForm] = useState<FormState | null>(null);
+  const [lang, setLang] = useState<Lang>("id");
 
   const openForm = (cat: ServiceCategory | null) => {
+    setLang("id");
     setForm(
       cat
-        ? { id: cat.id, name: cat.name, icon: cat.icon ?? DEFAULT_DETAIL_ICON_KEY, description: cat.description ?? "" }
+        ? {
+            dbId: cat.id,
+            icon: cat.icon ?? DEFAULT_DETAIL_ICON_KEY,
+            lang: {
+              id: { name: cat.name, description: cat.description ?? "" },
+              en: { name: cat.nameEn ?? "", description: cat.descriptionEn ?? "" },
+              zh: { name: cat.nameZh ?? "", description: cat.descriptionZh ?? "" },
+            },
+          }
         : emptyForm(),
     );
   };
 
   const save = () => {
     if (!form) return;
-    if (!form.name.trim()) {
-      swalError("Nama kategori wajib diisi");
+    if (!form.lang.id.name.trim()) {
+      swalError("Nama kategori (Bahasa Indonesia) wajib diisi");
       return;
     }
-    const payload = { name: form.name, icon: form.icon || null, description: form.description.trim() || null };
+    const payload = {
+      icon: form.icon || null,
+      id: { name: form.lang.id.name, description: form.lang.id.description?.trim() || null },
+      en: { name: form.lang.en.name, description: form.lang.en.description?.trim() || null },
+      zh: { name: form.lang.zh.name, description: form.lang.zh.description?.trim() || null },
+    };
     startTransition(async () => {
-      const res = form.id
-        ? await updateServiceCategoryAction(form.id, payload)
+      const res = form.dbId
+        ? await updateServiceCategoryAction(form.dbId, payload)
         : await createServiceCategoryAction(payload);
       if (res.ok) {
-        swalSuccess(form.id ? "Kategori diperbarui" : "Kategori baru ditambahkan");
+        swalSuccess(form.dbId ? "Kategori diperbarui" : "Kategori baru ditambahkan");
         setForm(null);
         router.refresh();
       } else {
@@ -108,7 +136,7 @@ export default function CategoryManager({
         {form ? (
           <>
             <DialogTitle className="text-base font-bold text-gray-900">
-              {form.id ? "Edit Kategori" : "Tambah Kategori"}
+              {form.dbId ? "Edit Kategori" : "Tambah Kategori"}
             </DialogTitle>
             <div className="space-y-4">
               <div>
@@ -117,14 +145,33 @@ export default function CategoryManager({
                   <IconPicker value={form.icon} onChange={(icon) => setForm({ ...form, icon })} />
                 </div>
               </div>
+
+              <div className="flex w-fit gap-1 rounded-lg bg-gray-100 p-1">
+                {LANGS.map(({ key, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setLang(key)}
+                    className={cn(
+                      "rounded-md px-2.5 py-1 text-xs font-semibold transition-colors",
+                      lang === key ? "bg-white text-primary shadow-sm" : "text-gray-500 hover:text-gray-700",
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
               <div>
-                <Label htmlFor="cat-name" className="text-sm font-semibold text-gray-700">Nama Kategori</Label>
+                <Label htmlFor="cat-name" className="text-sm font-semibold text-gray-700">
+                  Nama Kategori{lang !== "id" && <span className="font-normal text-gray-400"> — opsional</span>}
+                </Label>
                 <Input
                   id="cat-name"
                   className="mt-1.5 rounded-lg"
                   placeholder="mis. Perizinan Usaha"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  value={form.lang[lang].name}
+                  onChange={(e) => setForm({ ...form, lang: { ...form.lang, [lang]: { ...form.lang[lang], name: e.target.value } } })}
                 />
               </div>
               <div>
@@ -135,8 +182,8 @@ export default function CategoryManager({
                   id="cat-desc"
                   rows={2}
                   className="mt-1.5 rounded-lg resize-none"
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  value={form.lang[lang].description ?? ""}
+                  onChange={(e) => setForm({ ...form, lang: { ...form.lang, [lang]: { ...form.lang[lang], description: e.target.value } } })}
                 />
               </div>
             </div>

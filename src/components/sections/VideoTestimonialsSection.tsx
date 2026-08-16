@@ -13,6 +13,8 @@ import {
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Reveal } from "@/components/shared/Reveal";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDictionary } from "@/contexts/LocaleContext";
+import { format } from "@/i18n/format";
 import { cn } from "@/lib/utils";
 
 export interface VideoTestimonialData {
@@ -72,6 +74,7 @@ export default function VideoTestimonialsSection({
 }: {
   videos: VideoTestimonialData[];
 }) {
+  const dict = useDictionary();
   const [selected, setSelected] = useState<
     (VideoTestimonialData & { gradient: string }) | null
   >(null);
@@ -82,8 +85,8 @@ export default function VideoTestimonialsSection({
   return (
     <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
       <SectionHeading
-        title="Video Testimoni Klien"
-        subtitle="Simak pengalaman langsung dari klien yang telah menggunakan layanan IzinPro."
+        title={dict.videoTestimonials.heading}
+        subtitle={dict.videoTestimonials.subtitle}
       />
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -98,7 +101,7 @@ export default function VideoTestimonialsSection({
             <article className="group">
               <button
                 type="button"
-                aria-label={`Putar video: ${video.title}`}
+                aria-label={format(dict.videoTestimonials.ariaPlayTemplate, { title: video.title })}
                 onClick={() => {
                   setIsLoading(true);
                   setSelected({ ...video, gradient });
@@ -172,7 +175,7 @@ export default function VideoTestimonialsSection({
                     className="size-full"
                   />
                   <DialogClose
-                    aria-label="Tutup video"
+                    aria-label={dict.videoTestimonials.ariaClose}
                     className="absolute right-4 top-4 grid size-10 place-items-center rounded-full bg-black/45 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
                   >
                     <X className="size-5" aria-hidden="true" />
@@ -193,7 +196,7 @@ export default function VideoTestimonialsSection({
 
                   {/* Tombol tutup — lingkaran gelap di pojok kanan atas */}
                   <DialogClose
-                    aria-label="Tutup video"
+                    aria-label={dict.videoTestimonials.ariaClose}
                     className="absolute right-4 top-4 grid size-10 place-items-center rounded-full bg-black/45 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
                   >
                     <X className="size-5" aria-hidden="true" />

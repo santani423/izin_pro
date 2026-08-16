@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { LocalizedLink as Link } from "@/components/shared/LocalizedLink";
 import Image from "next/image";
 import { ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";
@@ -30,6 +30,9 @@ interface PageHeroProps {
   overlap?: boolean;
   /** Mobile: breadcrumb lalu foto dulu, baru judul (pola halaman artikel) */
   mobileImageFirst?: boolean;
+  /** aria-label nav breadcrumb — diteruskan per-locale dari page.tsx (Server
+   * Component, gak bisa pakai useDictionary()) */
+  ariaBreadcrumb?: string;
 }
 
 /* ─── Hero halaman dalam — breadcrumb, judul & foto (pola seragam) ─── */
@@ -44,10 +47,11 @@ export default function PageHero({
   children,
   overlap = false,
   mobileImageFirst = false,
+  ariaBreadcrumb = "Breadcrumb",
 }: PageHeroProps) {
   const breadcrumbNav = (
     <nav
-      aria-label="Breadcrumb"
+      aria-label={ariaBreadcrumb}
       className={cn(
         "flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground",
         mobileImageFirst && "lg:col-span-2",

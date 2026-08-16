@@ -1,20 +1,23 @@
-import Link from "next/link";
+import { LocalizedLink as Link } from "@/components/shared/LocalizedLink";
 import Image from "next/image";
 import { ChevronRight, Star } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { COMPANY_INFO } from "@/lib/constants";
+import { getDictionary, getLocale } from "@/i18n/get-dictionary";
+import { format } from "@/i18n/format";
 import type { LayananDetail } from "@/lib/hydrate-layanan-detail";
 
 /* ─── Hero detail layanan — breadcrumb, judul, highlight & kartu statistik ─── */
-export default function LayananDetailHeroSection({
+export default async function LayananDetailHeroSection({
   detail,
 }: {
   detail: LayananDetail;
 }) {
+  const dict = getDictionary(await getLocale());
   const waMessage = encodeURIComponent(
-    `Halo IzinPro, saya ingin konsultasi tentang layanan ${detail.title}.`,
+    format(dict.layananDetailHero.waMessageTemplate, { title: detail.title }),
   );
 
   return (
@@ -23,18 +26,18 @@ export default function LayananDetailHeroSection({
         <div>
           {/* Breadcrumb */}
           <nav
-            aria-label="Breadcrumb"
+            aria-label={dict.common.ariaBreadcrumb}
             className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground"
           >
             <Link href="/" className="transition-colors hover:text-primary">
-              Beranda
+              {dict.common.breadcrumbHome}
             </Link>
             <ChevronRight className="size-3.5" aria-hidden="true" />
             <Link
               href="/layanan"
               className="transition-colors hover:text-primary"
             >
-              Layanan
+              {dict.layananDetailHero.breadcrumbLayanan}
             </Link>
             <ChevronRight className="size-3.5" aria-hidden="true" />
             <span className="font-medium text-foreground">{detail.title}</span>
@@ -76,7 +79,7 @@ export default function LayananDetailHeroSection({
               target="_blank"
               rel="noopener noreferrer"
             >
-              Konsultasikan Sekarang
+              {dict.layananDetailHero.button}
               <WhatsAppIcon className="size-3.5 sm:size-4" />
             </a>
           </Button>
@@ -88,7 +91,7 @@ export default function LayananDetailHeroSection({
             <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl">
               <Image
                 src={detail.imageUrl}
-                alt={`Ilustrasi layanan ${detail.title}`}
+                alt={format(dict.layananDetailHero.ariaIllustrationTemplate, { title: detail.title })}
                 fill
                 sizes="(min-width: 1024px) 50vw, 100vw"
                 className="object-cover"
@@ -98,7 +101,7 @@ export default function LayananDetailHeroSection({
           ) : (
             <div
               role="img"
-              aria-label={`Ilustrasi layanan ${detail.title}`}
+              aria-label={format(dict.layananDetailHero.ariaIllustrationTemplate, { title: detail.title })}
               className="aspect-[16/10] w-full rounded-2xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark"
             />
           )}
@@ -117,7 +120,7 @@ export default function LayananDetailHeroSection({
                   <p
                     className="mt-1 flex gap-0.5"
                     role="img"
-                    aria-label="Rating 5 dari 5 bintang"
+                    aria-label={dict.layananDetailHero.ariaRating}
                   >
                     {Array.from({ length: 5 }).map((_, i) => (
                       <Star

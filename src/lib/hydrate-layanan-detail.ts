@@ -12,6 +12,16 @@ import type { LucideIcon } from "lucide-react";
 import type { Service, ServicePackage, Faq, Testimonial, Cta, Media } from "@prisma/client";
 import { resolveDetailIcon } from "@/lib/detail-icons";
 import type { ServiceDetailContent } from "@/lib/types/service-detail-content";
+import type { ServiceDetailContentLang } from "@/lib/service-detail-locale";
+import { pickServiceDetailContent } from "@/lib/service-detail-locale";
+import { pickLocalizedText } from "@/lib/locale-field";
+import type { Locale } from "@/i18n/config";
+
+function pickTextArray(base: string[], en: string[] | null | undefined, zh: string[] | null | undefined, locale: Locale): string[] {
+  const variant = locale === "en" ? en : locale === "zh" ? zh : null;
+  if (!variant) return base;
+  return base.map((b, i) => (variant[i]?.trim() ? variant[i] : b));
+}
 
 export interface DetailHighlight {
   icon: LucideIcon;
@@ -176,15 +186,32 @@ export function hydrateLayananDetail(
   faqs: Faq[],
   testimonials: Testimonial[],
   ctaDefault: Cta | null,
+  locale: Locale,
 ): LayananDetail {
-  const content = (service.detailContent as ServiceDetailContent | null) ?? fallbackContent(service);
+  const baseContent = (service.detailContent as ServiceDetailContent | null) ?? fallbackContent(service);
+  const content = service.detailContent
+    ? pickServiceDetailContent(
+        baseContent,
+        service.detailContentEn as ServiceDetailContentLang | null,
+        service.detailContentZh as ServiceDetailContentLang | null,
+        locale,
+      )
+    : baseContent;
+  const title = pickLocalizedText(service.title, service.titleEn, service.titleZh, locale);
 
-  const cta = content.cta ?? (ctaDefault ? { title: ctaDefault.title, subtitle: ctaDefault.subtitle ?? "" } : undefined);
+  const cta =
+    content.cta ??
+    (ctaDefault
+      ? {
+          title: pickLocalizedText(ctaDefault.title, ctaDefault.titleEn, ctaDefault.titleZh, locale),
+          subtitle: ctaDefault.subtitle ? pickLocalizedText(ctaDefault.subtitle, ctaDefault.subtitleEn, ctaDefault.subtitleZh, locale) : "",
+        }
+      : undefined);
 
   return {
     slug: service.slug,
     kicker: content.kicker,
-    title: service.title,
+    title,
     tagline: content.tagline,
     description: content.heroDescription,
     imageUrl: service.featuredMedia?.url ?? null,
@@ -229,12 +256,12 @@ export function hydrateLayananDetail(
     packages:
       packages.length > 0 || (content.documents?.items.length ?? 0) > 0 || content.duration?.value
         ? {
-            title: content.packagesTitle ?? `Pilih Paket ${service.title}`,
+            title: content.packagesTitle ?? `Pilih Paket ${title}`,
             items: packages.map((p) => ({
-              name: p.name,
+              name: pickLocalizedText(p.name, p.nameEn, p.nameZh, locale),
               price: formatRupiah(Number(p.price)),
               originalPrice: p.originalPrice ? formatRupiah(Number(p.originalPrice)) : undefined,
-              features: p.features as string[],
+              features: pickTextArray(p.features as string[], p.featuresEn as string[] | null, p.featuresZh as string[] | null, locale),
               popular: p.isPopular,
             })),
             documents: content.documents ?? { title: "Dokumen yang Diperlukan", items: [] },

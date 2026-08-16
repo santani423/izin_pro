@@ -5,16 +5,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/Reveal";
 import { cn } from "@/lib/utils";
 import { COMPANY_INFO } from "@/lib/constants";
+import { getDictionary, getLocale } from "@/i18n/get-dictionary";
+import { format } from "@/i18n/format";
 import type { LayananDetail } from "@/lib/hydrate-layanan-detail";
 
 /* ─── Paket harga + dokumen yang diperlukan + waktu pengerjaan ─── */
-export default function LayananDetailPricingSection({
+export default async function LayananDetailPricingSection({
   title,
   packages,
 }: {
   title: string;
   packages: NonNullable<LayananDetail["packages"]>;
 }) {
+  const dict = getDictionary(await getLocale());
   const hasPackages = packages.items.length > 0;
   const hasDocuments = packages.documents.items.length > 0;
   const hasDuration =
@@ -37,7 +40,7 @@ export default function LayananDetailPricingSection({
           <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-3">
             {packages.items.map((pkg, index) => {
               const waMessage = encodeURIComponent(
-                `Halo IzinPro, saya tertarik dengan ${pkg.name} (${pkg.price}) untuk layanan ${title}.`,
+                format(dict.layananDetailPricing.waMessageTemplate, { name: pkg.name, price: pkg.price, title }),
               );
               return (
                 <Reveal
@@ -48,7 +51,7 @@ export default function LayananDetailPricingSection({
                   {/* Badge di luar Card agar tidak terpotong overflow-hidden */}
                   {pkg.popular && (
                     <span className="absolute -top-3 right-4 z-10 rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-amber-950 shadow-sm">
-                      Paling Populer
+                      {dict.layananDetailPricing.popularBadge}
                     </span>
                   )}
                   <Card
@@ -130,7 +133,7 @@ export default function LayananDetailPricingSection({
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          Pilih Paket
+                          {dict.layananDetailPricing.choosePackage}
                         </a>
                       </Button>
                     </CardContent>
@@ -176,7 +179,7 @@ export default function LayananDetailPricingSection({
                 </span>
                 <div>
                   <h3 className="text-sm font-semibold text-primary">
-                    Waktu Pengerjaan
+                    {dict.layananDetailPricing.durationHeading}
                   </h3>
                   <p className="mt-0.5 text-base font-extrabold text-foreground">
                     {packages.duration.value}

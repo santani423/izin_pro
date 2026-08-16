@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/Reveal";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { COMPANY_INFO } from "@/lib/constants";
+import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 import type { LayananDetail } from "@/lib/hydrate-layanan-detail";
 
 /* Inisial nama untuk avatar, mis. "Budi Santoso" → "BS" */
@@ -18,16 +19,17 @@ function getInitials(name: string) {
 }
 
 /* ─── Testimoni klien + kartu "Butuh Bantuan?" ─── */
-export default function LayananDetailTestimonialsSection({
+export default async function LayananDetailTestimonialsSection({
   testimonials,
 }: {
   testimonials: LayananDetail["testimonials"];
 }) {
+  const dict = getDictionary(await getLocale());
   return (
     <section className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 pb-14 sm:px-6 lg:grid-cols-[1fr_320px] lg:px-8">
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          Testimoni Klien
+          {dict.layananDetailTestimonials.heading}
         </h2>
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {testimonials.items.map(({ name, role, content }, index) => (
@@ -37,7 +39,7 @@ export default function LayananDetailTestimonialsSection({
                   <p
                     className="flex gap-0.5"
                     role="img"
-                    aria-label="Rating 5 dari 5 bintang"
+                    aria-label={dict.layananDetailTestimonials.ariaRating}
                   >
                     {Array.from({ length: 5 }).map((_, i) => (
                       <Star
@@ -89,7 +91,7 @@ export default function LayananDetailTestimonialsSection({
             target="_blank"
             rel="noopener noreferrer"
           >
-            Konsultasikan Gratis
+            {dict.layananDetailTestimonials.button}
             <WhatsAppIcon className="size-3.5 sm:size-4" />
           </a>
         </Button>

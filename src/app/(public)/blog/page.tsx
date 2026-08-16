@@ -4,21 +4,25 @@ import dynamic from "next/dynamic";
 import PageHero from "@/components/shared/PageHero";
 import BlogCatalogSection from "@/components/sections/BlogCatalogSection";
 import { getPublicBlogPosts, getBlogCategories, getBlogPageContent } from "@/lib/blog-data";
+import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 
 /* ─── Lazy load section below the fold ─── */
 const CtaSection = dynamic(() => import("@/components/sections/CtaSection"));
 
-export const metadata: Metadata = {
-  title: "Blog dan Artikel Seputar Perizinan Usaha",
-  description:
-    "Informasi terbaru seputar perizinan usaha, regulasi, dan tips untuk mendukung pertumbuhan bisnis Anda — dari tim IzinPro.",
-  alternates: {
-    canonical: "https://izinpro.co.id/blog",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const dict = getDictionary(await getLocale());
+  return {
+    title: dict.pages.blog.metaTitle,
+    description: dict.pages.blog.metaDescription,
+    alternates: {
+      canonical: "https://izinpro.co.id/blog",
+    },
+  };
+}
 
 /* ─── Halaman Artikel / Blog (desain baru) ─── */
 export default async function BlogPage() {
+  const dict = getDictionary(await getLocale());
   const [posts, categories, banner] = await Promise.all([
     getPublicBlogPosts(),
     getBlogCategories(),
@@ -29,7 +33,8 @@ export default async function BlogPage() {
     <>
       {/* 1. Hero + breadcrumb (banner dikelola dari admin /blog tab "Banner Halaman") */}
       <PageHero
-        crumbs={[{ label: "Beranda", href: "/" }, { label: "Artikel" }]}
+        crumbs={[{ label: dict.common.breadcrumbHome, href: "/" }, { label: dict.pages.blog.breadcrumbArtikel }]}
+        ariaBreadcrumb={dict.common.ariaBreadcrumb}
         kicker={banner.heroKicker ?? undefined}
         title={
           <>
@@ -37,7 +42,7 @@ export default async function BlogPage() {
           </>
         }
         description={banner.heroDescription}
-        imageLabel="Ilustrasi laptop menampilkan artikel IzinPro"
+        imageLabel={dict.pages.blog.imageLabel}
         imageUrl={banner.heroImageUrl}
         overlap
       />
@@ -47,8 +52,8 @@ export default async function BlogPage() {
 
       {/* 3. CTA Banner */}
       <CtaSection
-        title="Butuh Bantuan Perizinan untuk Bisnis Anda?"
-        subtitle="Konsultasikan kebutuhan perizinan Anda sekarang juga secara gratis bersama tim ahli kami."
+        title={dict.pages.blog.ctaTitle}
+        subtitle={dict.pages.blog.ctaSubtitle}
       />
     </>
   );

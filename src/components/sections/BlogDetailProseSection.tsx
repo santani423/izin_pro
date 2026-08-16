@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { LocalizedLink as Link } from "@/components/shared/LocalizedLink";
 import { ListOrdered, Tag as TagIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { COMPANY_INFO } from "@/lib/constants";
+import { getDictionary, getLocale } from "@/i18n/get-dictionary";
+import { format } from "@/i18n/format";
 import type { PublicBlogPost, PublicBlogPostDetail } from "@/lib/blog-data";
 
 /** Sisipkan id ke tiap <h2>/<h3> di HTML hasil Tiptap, sekalian kumpulin
@@ -35,17 +37,16 @@ function extractHeadingsAndInjectIds(html: string) {
 
 /* ─── Badan artikel — render HTML Tiptap + sidebar (daftar isi, bantuan,
  * artikel terkait) ─── */
-export default function BlogDetailProseSection({
+export default async function BlogDetailProseSection({
   post,
   related,
 }: {
   post: PublicBlogPostDetail;
   related: PublicBlogPost[];
 }) {
+  const dict = getDictionary(await getLocale());
   const { headings, html } = extractHeadingsAndInjectIds(post.content);
-  const waMessage = encodeURIComponent(
-    "Halo IzinPro, saya membaca artikel di website dan ingin konsultasi lebih lanjut.",
-  );
+  const waMessage = encodeURIComponent(dict.blogDetailProse.waMessage);
 
   return (
     <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_300px] lg:px-8">
@@ -73,7 +74,7 @@ export default function BlogDetailProseSection({
             <CardContent className="px-5 py-5">
               <h2 className="flex items-center gap-2 text-sm font-bold text-foreground">
                 <ListOrdered className="size-4 text-primary" aria-hidden="true" />
-                Daftar Isi
+                {dict.blogDetailProse.tocHeading}
               </h2>
               <ol className="mt-3 space-y-2 border-l border-border pl-4">
                 {headings.map((h) => (
@@ -93,9 +94,9 @@ export default function BlogDetailProseSection({
 
         {/* Kartu bantuan */}
         <div className="rounded-2xl bg-brand-surface p-6">
-          <h2 className="text-base font-bold text-foreground">Butuh Bantuan?</h2>
+          <h2 className="text-base font-bold text-foreground">{dict.blogDetailProse.helpHeading}</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Konsultasikan kebutuhan perizinan bisnis Anda gratis bersama tim ahli kami.
+            {dict.blogDetailProse.helpCopy}
           </p>
           <Button
             asChild
@@ -106,7 +107,7 @@ export default function BlogDetailProseSection({
               target="_blank"
               rel="noopener noreferrer"
             >
-              Konsultasikan Gratis
+              {dict.blogDetailProse.helpButton}
               <WhatsAppIcon className="size-3.5 sm:size-4" />
             </a>
           </Button>
@@ -116,7 +117,7 @@ export default function BlogDetailProseSection({
         {related.length > 0 && (
           <Card className="gap-0 rounded-xl border-border/60 py-0">
             <CardContent className="px-5 py-5">
-              <h2 className="text-sm font-bold text-foreground">Artikel Terkait</h2>
+              <h2 className="text-sm font-bold text-foreground">{dict.blogDetailProse.relatedHeading}</h2>
               <ul className="mt-3 space-y-4">
                 {related.map((r) => (
                   <li key={r.id} className="flex items-start gap-3">
@@ -124,13 +125,13 @@ export default function BlogDetailProseSection({
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={r.imageUrl}
-                        alt={`Thumbnail artikel ${r.title}`}
+                        alt={format(dict.blogDetailProse.ariaThumbnailTemplate, { title: r.title })}
                         className="block size-14 shrink-0 rounded-lg object-cover"
                       />
                     ) : (
                       <span
                         role="img"
-                        aria-label={`Thumbnail artikel ${r.title}`}
+                        aria-label={format(dict.blogDetailProse.ariaThumbnailTemplate, { title: r.title })}
                         className={`block size-14 shrink-0 rounded-lg bg-gradient-to-br ${r.gradient}`}
                       />
                     )}

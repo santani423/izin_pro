@@ -1,5 +1,6 @@
 import Image from "next/image";
 
+import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 import { prisma } from "@/lib/db";
 
 /* ─── Klien Kami — marquee logo auto-slide, jeda saat di-hover ───
@@ -8,6 +9,7 @@ import { prisma } from "@/lib/db";
  * jadi toggle Aktif/Nonaktif di admin/klien langsung berefek di sini.
  */
 export default async function ClientsSection() {
+  const dict = getDictionary(await getLocale());
   const partners = await prisma.partner.findMany({
     where: { isActive: true, deletedAt: null },
     include: { logoMedia: true },
@@ -19,7 +21,7 @@ export default async function ClientsSection() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-        Klien Kami
+        {dict.clients.heading}
       </h2>
 
       {/* Viewport marquee + fade tepi kiri/kanan */}

@@ -1,21 +1,26 @@
-import Link from "next/link";
+"use client";
+
+import { LocalizedLink as Link } from "@/components/shared/LocalizedLink";
 import { ArrowRight, Eye } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Reveal } from "@/components/shared/Reveal";
+import { useDictionary } from "@/contexts/LocaleContext";
+import { format } from "@/i18n/format";
 import type { PublicBlogPost } from "@/lib/blog-data";
 import { cn } from "@/lib/utils";
 
 /* ─── Artikel Terbaru ─── */
 export default function ArticlesSection({ posts }: { posts: PublicBlogPost[] }) {
+  const dict = useDictionary();
   return (
     <section id="artikel" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
       <SectionHeading
-        title="Artikel Terbaru"
-        subtitle="Informasi terbaru seputar perizinan usaha dan regulasi bisnis."
-        linkLabel="Lihat Semua Artikel"
+        title={dict.articles.heading}
+        subtitle={dict.articles.subtitle}
+        linkLabel={dict.articles.linkLabel}
         linkHref="/blog"
       />
 
@@ -30,13 +35,13 @@ export default function ArticlesSection({ posts }: { posts: PublicBlogPost[] }) 
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={post.imageUrl}
-                      alt={`Thumbnail artikel: ${post.title}`}
+                      alt={format(dict.articles.ariaThumbnailTemplate, { title: post.title })}
                       className="size-full object-cover"
                     />
                   ) : (
                     <div
                       role="img"
-                      aria-label={`Thumbnail artikel: ${post.title}`}
+                      aria-label={format(dict.articles.ariaThumbnailTemplate, { title: post.title })}
                       className={cn("size-full bg-gradient-to-br", post.gradient)}
                     />
                   )}
@@ -49,7 +54,7 @@ export default function ArticlesSection({ posts }: { posts: PublicBlogPost[] }) 
                   {/* Meta: views + tanggal */}
                   <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Eye className="size-3.5" aria-hidden="true" />
-                    {post.viewsLabel} views · {post.dateLabel}
+                    {post.viewsLabel} {dict.articles.viewsSuffix} · {post.dateLabel}
                   </p>
 
                   <h3 className="mt-2 line-clamp-2 text-base font-bold leading-snug text-foreground transition-colors group-hover:text-primary">
@@ -61,7 +66,7 @@ export default function ArticlesSection({ posts }: { posts: PublicBlogPost[] }) 
                   </p>
 
                   <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary">
-                    Baca selengkapnya
+                    {dict.articles.readMore}
                     <ArrowRight
                       className="size-4 transition-transform group-hover:translate-x-0.5"
                       aria-hidden="true"

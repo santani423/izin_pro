@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { revalidateAdminPaths } from "@/lib/admin-guard";
+import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 import type { Role } from "@prisma/client";
 
 export type ActionResult = { ok: true } | { ok: false; message: string };
@@ -50,27 +51,28 @@ export async function submitCommentAction(data: {
   email: string;
   content: string;
 }): Promise<ActionResult> {
+  const dict = getDictionary(await getLocale());
   try {
     const name = data.name.trim();
     const email = data.email.trim();
     const content = data.content.trim();
 
-    if (name.length < 3) return { ok: false, message: "Nama minimal 3 karakter." };
-    if (!/^\S+@\S+\.\S+$/.test(email)) return { ok: false, message: "Format email tidak valid." };
-    if (content.length < 5) return { ok: false, message: "Komentar minimal 5 karakter." };
+    if (name.length < 3) return { ok: false, message: dict.actions.commentNameMin };
+    if (!/^\S+@\S+\.\S+$/.test(email)) return { ok: false, message: dict.actions.commentEmailInvalid };
+    if (content.length < 5) return { ok: false, message: dict.actions.commentMin };
 
     const post = await prisma.blogPost.findFirst({
       where: { id: data.postId, deletedAt: null, status: "PUBLISHED" },
       select: { id: true },
     });
-    if (!post) return { ok: false, message: "Artikel tidak ditemukan." };
+    if (!post) return { ok: false, message: dict.actions.commentPostNotFound };
 
     await prisma.comment.create({ data: { postId: post.id, name, email, content } });
 
     revalidateAdminPaths("/blog");
     return { ok: true };
   } catch (e) {
-    return { ok: false, message: errorMessage(e, "Gagal mengirim komentar. Coba lagi sebentar lagi.") };
+    return { ok: false, message: errorMessage(e, dict.actions.commentGenericError) };
   }
 }
 

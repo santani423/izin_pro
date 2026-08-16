@@ -33,24 +33,34 @@ function revalidateCategories() {
   revalidatePath("/layanan");
 }
 
-export interface ServiceCategoryFormData {
+export interface ServiceCategoryLangData {
   name: string;
-  icon: string | null;
   description: string | null;
+}
+
+export interface ServiceCategoryFormData {
+  icon: string | null;
+  id: ServiceCategoryLangData;
+  en: ServiceCategoryLangData;
+  zh: ServiceCategoryLangData;
 }
 
 export async function createServiceCategoryAction(data: ServiceCategoryFormData): Promise<ActionResult> {
   try {
     const session = await requireContentEditor();
-    if (!data.name.trim()) return { ok: false, message: "Nama kategori wajib diisi." };
+    if (!data.id.name.trim()) return { ok: false, message: "Nama kategori (Bahasa Indonesia) wajib diisi." };
 
     const count = await prisma.serviceCategory.count();
     await prisma.serviceCategory.create({
       data: {
-        slug: slugify(data.name),
-        name: data.name.trim(),
+        slug: slugify(data.id.name),
+        name: data.id.name.trim(),
         icon: data.icon,
-        description: data.description,
+        description: data.id.description,
+        nameEn: data.en.name.trim() || null,
+        descriptionEn: data.en.description,
+        nameZh: data.zh.name.trim() || null,
+        descriptionZh: data.zh.description,
         sortOrder: count,
         createdById: session.user.id,
         updatedById: session.user.id,
@@ -69,15 +79,19 @@ export async function updateServiceCategoryAction(
 ): Promise<ActionResult> {
   try {
     const session = await requireContentEditor();
-    if (!data.name.trim()) return { ok: false, message: "Nama kategori wajib diisi." };
+    if (!data.id.name.trim()) return { ok: false, message: "Nama kategori (Bahasa Indonesia) wajib diisi." };
 
     await prisma.serviceCategory.update({
       where: { id },
       data: {
-        slug: slugify(data.name),
-        name: data.name.trim(),
+        slug: slugify(data.id.name),
+        name: data.id.name.trim(),
         icon: data.icon,
-        description: data.description,
+        description: data.id.description,
+        nameEn: data.en.name.trim() || null,
+        descriptionEn: data.en.description,
+        nameZh: data.zh.name.trim() || null,
+        descriptionZh: data.zh.description,
         updatedById: session.user.id,
       },
     });

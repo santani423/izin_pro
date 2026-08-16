@@ -1,0 +1,15 @@
+-- AlterTable
+ALTER TABLE `hero_content` ADD COLUMN `ctaPrimaryLabelEn` VARCHAR(191) NULL,
+    ADD COLUMN `ctaPrimaryLabelZh` VARCHAR(191) NULL,
+    ADD COLUMN `ctaSecondaryLabelEn` VARCHAR(191) NULL,
+    ADD COLUMN `ctaSecondaryLabelZh` VARCHAR(191) NULL,
+    ADD COLUMN `highlightsEn` JSON NULL,
+    ADD COLUMN `highlightsZh` JSON NULL,
+    ADD COLUMN `subtitleEn` TEXT NULL,
+    ADD COLUMN `subtitleZh` TEXT NULL,
+    ADD COLUMN `titleHighlightEn` VARCHAR(191) NULL,
+    ADD COLUMN `titleHighlightZh` VARCHAR(191) NULL,
+    ADD COLUMN `titleLine1En` VARCHAR(191) NULL,
+    ADD COLUMN `titleLine1Zh` VARCHAR(191) NULL,
+    ADD COLUMN `titleLine3En` VARCHAR(191) NULL,
+    ADD COLUMN `titleLine3Zh` VARCHAR(191) NULL;

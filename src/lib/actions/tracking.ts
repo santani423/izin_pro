@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getTrackingResult, findTransactionIdByCode, type PublicTrackingResult } from "@/lib/transaction-tracking";
 import { parseDeviceType, getRequestGeo } from "@/lib/article-stats";
 import { headers } from "next/headers";
+import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 
 export type TrackingLookupResult =
   | { ok: true; data: PublicTrackingResult }
@@ -13,12 +14,13 @@ export type TrackingLookupResult =
  * TANPA auth — dipakai pengunjung anonim. Sekalian nyatet TrackingLookupLog
  * (device + geolokasi) pakai helper yg sama dgn blog article-stats. ─── */
 export async function submitTrackingLookupAction(code: string): Promise<TrackingLookupResult> {
+  const dict = getDictionary(await getLocale());
   try {
-    if (!code.trim()) return { ok: false, message: "Masukkan kode transaksi Anda." };
+    if (!code.trim()) return { ok: false, message: dict.actions.trackingEmptyCode };
 
     const result = await getTrackingResult(code);
     if (!result) {
-      return { ok: false, message: "Kode transaksi tidak ditemukan. Periksa kembali penulisannya." };
+      return { ok: false, message: dict.actions.trackingNotFound };
     }
 
     const transactionId = await findTransactionIdByCode(code);
@@ -31,6 +33,6 @@ export async function submitTrackingLookupAction(code: string): Promise<Tracking
 
     return { ok: true, data: result };
   } catch {
-    return { ok: false, message: "Gagal melacak transaksi. Coba lagi sebentar lagi." };
+    return { ok: false, message: dict.actions.trackingGenericError };
   }
 }

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { LocalizedLink as Link } from "@/components/shared/LocalizedLink";
 import {
   CheckCircle2,
   ChevronRight,

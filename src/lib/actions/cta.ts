@@ -23,12 +23,18 @@ function errorMessage(e: unknown, fallback: string) {
   return e instanceof Error ? e.message : fallback;
 }
 
-export interface CtaFormData {
-  // null = CTA default (dipakai halaman yg gak punya varian sendiri)
-  location: CtaLocation | null;
+export interface CtaLangData {
   title: string;
   subtitle: string;
   buttonLabel: string;
+}
+
+export interface CtaFormData {
+  // null = CTA default (dipakai halaman yg gak punya varian sendiri)
+  location: CtaLocation | null;
+  id: CtaLangData;
+  en: CtaLangData;
+  zh: CtaLangData;
   whatsapp: string | null;
 }
 
@@ -40,13 +46,19 @@ export interface CtaFormData {
 export async function upsertCtaAction(data: CtaFormData): Promise<ActionResult> {
   try {
     const session = await requireCtaEditor();
-    if (!data.title.trim()) return { ok: false, message: "Judul CTA wajib diisi." };
-    if (!data.buttonLabel.trim()) return { ok: false, message: "Label tombol wajib diisi." };
+    if (!data.id.title.trim()) return { ok: false, message: "Judul CTA (Bahasa Indonesia) wajib diisi." };
+    if (!data.id.buttonLabel.trim()) return { ok: false, message: "Label tombol (Bahasa Indonesia) wajib diisi." };
 
     const values = {
-      title: data.title.trim(),
-      subtitle: data.subtitle.trim() || null,
-      buttonLabel: data.buttonLabel.trim(),
+      title: data.id.title.trim(),
+      subtitle: data.id.subtitle.trim() || null,
+      buttonLabel: data.id.buttonLabel.trim(),
+      titleEn: data.en.title.trim() || null,
+      subtitleEn: data.en.subtitle.trim() || null,
+      buttonLabelEn: data.en.buttonLabel.trim() || null,
+      titleZh: data.zh.title.trim() || null,
+      subtitleZh: data.zh.subtitle.trim() || null,
+      buttonLabelZh: data.zh.buttonLabel.trim() || null,
       whatsapp: data.whatsapp?.trim() || null,
       updatedById: session.user.id,
     };

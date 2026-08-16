@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { revalidateAdminPaths } from "@/lib/admin-guard";
 import { canAccessAdminRoute } from "@/lib/permissions";
+import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 import type { InquiryStatus, Role } from "@prisma/client";
 
 export type ActionResult = { ok: true } | { ok: false; message: string };
@@ -33,16 +34,17 @@ export async function submitInquiryAction(data: {
   serviceId: string | null;
   message: string;
 }): Promise<ActionResult> {
+  const dict = getDictionary(await getLocale());
   try {
     const name = data.name.trim();
     const email = data.email.trim();
     const whatsapp = data.whatsapp.trim();
     const message = data.message.trim();
 
-    if (name.length < 3) return { ok: false, message: "Nama minimal 3 karakter." };
-    if (!/^\S+@\S+\.\S+$/.test(email)) return { ok: false, message: "Format email tidak valid." };
-    if (whatsapp.length < 9) return { ok: false, message: "Nomor WhatsApp minimal 9 digit." };
-    if (message.length < 10) return { ok: false, message: "Pesan minimal 10 karakter." };
+    if (name.length < 3) return { ok: false, message: dict.actions.inquiryNameMin };
+    if (!/^\S+@\S+\.\S+$/.test(email)) return { ok: false, message: dict.actions.inquiryEmailInvalid };
+    if (whatsapp.length < 9) return { ok: false, message: dict.actions.inquiryWhatsappMin };
+    if (message.length < 10) return { ok: false, message: dict.actions.inquiryMessageMin };
 
     await prisma.inquiry.create({
       data: {
@@ -57,7 +59,7 @@ export async function submitInquiryAction(data: {
     revalidateAdminPaths("/inquiry");
     return { ok: true };
   } catch (e) {
-    return { ok: false, message: errorMessage(e, "Gagal mengirim pesan. Coba lagi sebentar lagi.") };
+    return { ok: false, message: errorMessage(e, dict.actions.inquiryGenericError) };
   }
 }
 

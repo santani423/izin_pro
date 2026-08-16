@@ -1,18 +1,19 @@
 import { Check, MapPin, Package, Search } from "lucide-react";
 
+import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 import { cn } from "@/lib/utils";
-
-const STEPS = [
-  { label: "Pendaftaran", done: true },
-  { label: "Verifikasi", done: true },
-  { label: "Diproses", done: false, current: true },
-  { label: "Selesai", done: false, current: false },
-];
 
 /* ─── Ilustrasi hero /tracking — mockup kartu pelacakan status layanan,
  * gantiin placeholder gradient polos bawaan PageHero. Murni dekoratif
  * (statis, tidak tersambung data asli). ─── */
-export default function TrackingHeroVisual() {
+export default async function TrackingHeroVisual() {
+  const dict = getDictionary(await getLocale());
+  const STEPS = [
+    { label: dict.trackingHeroVisual.steps.registration, done: true },
+    { label: dict.trackingHeroVisual.steps.verification, done: true },
+    { label: dict.trackingHeroVisual.steps.processing, done: false, current: true },
+    { label: dict.trackingHeroVisual.steps.done, done: false, current: false },
+  ];
   return (
     <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark">
       <div className="absolute -top-10 -right-10 size-40 rounded-full bg-white/10 blur-2xl" />

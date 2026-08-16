@@ -4,9 +4,11 @@ import { Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { COMPANY_INFO } from "@/lib/constants";
+import { getDictionary, getLocale } from "@/i18n/get-dictionary";
+import { getLocalizedGeneralSettings } from "@/lib/general-settings";
 
 /* ─── Banner ajakan klaim promo — foto kiri, CTA kanan ─── */
-export default function PromoConsultSection({
+export default async function PromoConsultSection({
   titlePrefix,
   titleHighlight,
   description,
@@ -17,9 +19,9 @@ export default function PromoConsultSection({
   description: string;
   imageUrl?: string | null;
 }) {
-  const waMessage = encodeURIComponent(
-    "Halo IzinPro, saya ingin menanyakan promo spesial yang sedang berjalan.",
-  );
+  const dict = getDictionary(await getLocale());
+  const { operatingHours } = await getLocalizedGeneralSettings();
+  const waMessage = encodeURIComponent(dict.promoConsult.waMessage);
 
   return (
     <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
@@ -28,7 +30,7 @@ export default function PromoConsultSection({
         <div className="relative -mb-8 hidden aspect-[3/2] w-80 self-end lg:block">
           <Image
             src={imageUrl || "/images/promo-konsultasi.png"}
-            alt="Tim IzinPro siap membantu Anda"
+            alt={dict.promoConsult.imageAlt}
             fill
             sizes="320px"
             className="object-contain object-bottom"
@@ -55,7 +57,7 @@ export default function PromoConsultSection({
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Konsultasikan Gratis Sekarang
+                {dict.promoConsult.button}
                 <WhatsAppIcon className="size-3.5 sm:size-4" />
               </a>
             </Button>
@@ -72,7 +74,7 @@ export default function PromoConsultSection({
                   {COMPANY_INFO.whatsappDisplay}
                 </a>
                 <p className="text-xs text-muted-foreground">
-                  {COMPANY_INFO.hours}
+                  {operatingHours || dict.common.officeHours}
                 </p>
               </div>
             </div>

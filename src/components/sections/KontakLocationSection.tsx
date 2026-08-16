@@ -2,20 +2,22 @@ import { ExternalLink } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { COMPANY_INFO } from "@/lib/constants";
+import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 
 /* ─── Lokasi kantor — peta lebar + kartu alamat mengambang di kiri ─── */
-export default function KontakLocationSection({
+export default async function KontakLocationSection({
   title,
   mapsEmbedUrl,
 }: {
   title: string;
   mapsEmbedUrl: string;
 }) {
+  const dict = getDictionary(await getLocale());
   return (
     <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
       <div className="relative overflow-hidden rounded-3xl border border-border/60 shadow-sm">
         <iframe
-          title="Peta lokasi kantor IzinPro"
+          title={dict.kontakLocation.mapTitle}
           src={mapsEmbedUrl}
           className="block h-72 w-full border-0 sm:h-96 lg:h-[34rem]"
           loading="lazy"
@@ -42,7 +44,7 @@ export default function KontakLocationSection({
               target="_blank"
               rel="noopener noreferrer"
             >
-              Lihat di Google Maps
+              {dict.kontakLocation.button}
               <ExternalLink className="size-4" aria-hidden="true" />
             </a>
           </Button>

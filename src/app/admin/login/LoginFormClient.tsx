@@ -10,14 +10,16 @@ import { getRolePanel } from "@/lib/permissions";
 import { DEFAULT_LOGO_URL } from "@/lib/branding-constants";
 import type { Role } from "@prisma/client";
 
-/* ─── Akun demo hasil `npx prisma db seed` (dev lokal) — buat mempermudah
- * demo akses admin tanpa perlu bikin akun manual. JANGAN dipakai di
- * production sungguhan (ganti/hapus akun ini sebelum go-live beneran). */
-const DEMO_ADMIN_ACCOUNT = {
-  role: "ADMIN" as Role,
-  email: "demo-admin@izinpro.co.id",
-  password: "demo1234",
-};
+/* ─── Akun demo hasil `npx prisma db seed` (dev lokal) — sinkron dengan
+ * DEMO_ACCOUNTS di prisma/seed.ts. Buat mempermudah demo akses tiap role
+ * tanpa perlu bikin akun manual. JANGAN dipakai di production sungguhan
+ * (ganti/hapus akun ini sebelum go-live beneran). */
+const DEMO_ACCOUNTS: { role: Role; label: string; email: string; password: string }[] = [
+  { role: "SUPER_ADMIN", label: "Super Admin", email: "admin@izinpro.co.id", password: "admin123" },
+  { role: "ADMIN", label: "Demo Admin", email: "demo-admin@izinpro.co.id", password: "demo1234" },
+  { role: "EDITOR", label: "Demo Editor", email: "demo-editor@izinpro.co.id", password: "demo1234" },
+  { role: "AUTHOR", label: "Demo Author", email: "demo-author@izinpro.co.id", password: "demo1234" },
+];
 
 export default function LoginFormClient() {
   const router = useRouter();
@@ -63,10 +65,10 @@ export default function LoginFormClient() {
     performLogin(email, password);
   };
 
-  const handleDemoLogin = () => {
-    setEmail(DEMO_ADMIN_ACCOUNT.email);
-    setPassword(DEMO_ADMIN_ACCOUNT.password);
-    performLogin(DEMO_ADMIN_ACCOUNT.email, DEMO_ADMIN_ACCOUNT.password);
+  const handleDemoLogin = (account: (typeof DEMO_ACCOUNTS)[number]) => {
+    setEmail(account.email);
+    setPassword(account.password);
+    performLogin(account.email, account.password);
   };
 
   return (
@@ -180,17 +182,25 @@ export default function LoginFormClient() {
             </button>
           </form>
 
-          {/* Akun demo admin (dev/staging) — satu klik login & auto-isi form. */}
+          {/* Akun demo per role (dev/staging) — satu klik login & auto-isi form. */}
           <div className="mt-6">
-            <button
-              type="button"
-              onClick={handleDemoLogin}
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl border border-dashed border-primary/30 bg-primary/5 text-xs font-semibold text-primary hover:bg-primary/10 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-            >
-              <Wand2 size={13} />
-              Masuk sebagai Demo Admin
-            </button>
+            <div className="flex items-center gap-1.5 mb-2.5">
+              <Wand2 size={12} className="text-gray-400" />
+              <span className="text-xs font-medium text-gray-500">Masuk cepat sebagai akun demo</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {DEMO_ACCOUNTS.map((account) => (
+                <button
+                  key={account.email}
+                  type="button"
+                  onClick={() => handleDemoLogin(account)}
+                  disabled={loading}
+                  className="py-2.5 px-2 rounded-xl border border-dashed border-primary/30 bg-primary/5 text-xs font-semibold text-primary hover:bg-primary/10 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                >
+                  {account.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

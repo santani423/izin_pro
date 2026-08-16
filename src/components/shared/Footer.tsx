@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { LocalizedLink as Link } from "@/components/shared/LocalizedLink";
 import Image from "next/image";
 import type { SVGProps } from "react";
 import { Mail, MapPin, Phone } from "lucide-react";
@@ -8,6 +8,11 @@ import { CONTACT_INFO } from "@/lib/landing";
 import { COMPANY_INFO } from "@/lib/constants";
 import { prisma } from "@/lib/db";
 import { getBrandingAssetUrls } from "@/lib/branding";
+import { getLocale } from "@/i18n/get-dictionary";
+import { format } from "@/i18n/format";
+import { getLocalizedGeneralSettings } from "@/lib/general-settings";
+import { localizeMenuTree } from "@/lib/menu-locale";
+import type { Dictionary } from "@/i18n/dictionaries/id";
 
 /* ─── Ikon sosial media (lucide-react tidak menyediakan brand icon) ─── */
 function BrandIcon({ d, ...props }: SVGProps<SVGSVGElement> & { d: string }) {
@@ -49,19 +54,23 @@ const SOCIALS = [
 /* ─── Footer ───
  * Server Component: fetch Menu "footer" langsung dari Prisma (gak butuh
  * "use client" krn gak ada state/interaktivitas di sini). */
-export default async function Footer() {
-  const footerMenu = await prisma.menu.findUnique({
-    where: { key: "footer", deletedAt: null },
-    include: {
-      items: {
-        where: { parentId: null, deletedAt: null },
-        include: { children: { where: { deletedAt: null }, orderBy: { sortOrder: "asc" } } },
-        orderBy: { sortOrder: "asc" },
+export default async function Footer({ dict }: { dict: Dictionary["footer"] }) {
+  const [footerMenu, { logoUrl }, locale, { companyName }] = await Promise.all([
+    prisma.menu.findUnique({
+      where: { key: "footer", deletedAt: null },
+      include: {
+        items: {
+          where: { parentId: null, deletedAt: null },
+          include: { children: { where: { deletedAt: null }, orderBy: { sortOrder: "asc" } } },
+          orderBy: { sortOrder: "asc" },
+        },
       },
-    },
-  });
-  const columns = footerMenu?.items ?? [];
-  const { logoUrl } = await getBrandingAssetUrls();
+    }),
+    getBrandingAssetUrls(),
+    getLocale(),
+    getLocalizedGeneralSettings(),
+  ]);
+  const columns = localizeMenuTree(footerMenu?.items ?? [], locale);
 
   return (
     <footer className="bg-footer text-footer-foreground">
@@ -72,15 +81,14 @@ export default async function Footer() {
             {/* Logo asli berteks gelap — dibalik jadi putih untuk footer gelap */}
             <Image
               src={logoUrl}
-              alt="IzinPro"
+              alt={dict.logoAlt}
               width={132}
               height={28}
               unoptimized
               className="h-7 w-auto brightness-0 invert"
             />
             <p className="mt-4 max-w-xs text-sm leading-relaxed">
-              Solusi perizinan terpercaya untuk mendukung legalitas dan
-              pertumbuhan bisnis Anda.
+              {dict.brandBlurb}
             </p>
             <ul className="mt-5 flex gap-3">
               {SOCIALS.map(({ label, href, d }) => (
@@ -102,7 +110,7 @@ export default async function Footer() {
             <nav key={column.id} aria-label={column.label}>
               <h3 className="text-sm font-bold text-white">{column.label}</h3>
               <ul className="mt-4 space-y-2.5">
-                {column.children.map((link) => (
+                {(column.children ?? []).map((link) => (
                   <li key={link.id}>
                     <Link
                       href={link.href}
@@ -118,7 +126,7 @@ export default async function Footer() {
 
           {/* Hubungi Kami */}
           <div>
-            <h3 className="text-sm font-bold text-white">Hubungi Kami</h3>
+            <h3 className="text-sm font-bold text-white">{dict.contactHeading}</h3>
             <address className="mt-4 space-y-3 text-sm not-italic">
               <p className="flex items-center gap-2.5">
                 <Phone className="size-4 shrink-0 text-primary" aria-hidden="true" />
@@ -142,7 +150,7 @@ export default async function Footer() {
         <Separator className="my-8 bg-white/10" />
 
         <p className="text-center text-xs">
-          © {new Date().getFullYear()} IzinPro. All Rights Reserved.
+          {format(dict.copyright, { year: new Date().getFullYear(), company: companyName })}
         </p>
       </div>
     </footer>

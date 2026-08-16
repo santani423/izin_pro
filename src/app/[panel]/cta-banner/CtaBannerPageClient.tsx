@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { upsertCtaAction, deleteCtaAction } from "@/lib/actions/cta";
+import { upsertCtaAction, deleteCtaAction, type CtaLangData } from "@/lib/actions/cta";
 
 /* Label Indonesia per CtaLocation — sesuai pemakaian CtaSection saat ini. */
 const LOCATION_LABELS: Record<CtaLocation, string> = {
@@ -40,25 +40,51 @@ const LOCATION_LABELS: Record<CtaLocation, string> = {
 };
 const ALL_LOCATIONS = Object.keys(LOCATION_LABELS) as CtaLocation[];
 
+const LANGS = [
+  { key: "id", label: "Bahasa Indonesia" },
+  { key: "en", label: "English" },
+  { key: "zh", label: "中文" },
+] as const;
+type Lang = (typeof LANGS)[number]["key"];
+
+function LangSwitcher({ lang, onChange }: { lang: Lang; onChange: (l: Lang) => void }) {
+  return (
+    <div className="flex w-fit gap-1 rounded-lg bg-gray-100 p-1">
+      {LANGS.map(({ key, label }) => (
+        <button
+          key={key}
+          type="button"
+          onClick={() => onChange(key)}
+          className={cn(
+            "rounded-md px-2.5 py-1 text-xs font-semibold transition-colors",
+            lang === key ? "bg-white text-primary shadow-sm" : "text-gray-500 hover:text-gray-700",
+          )}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 interface FormState {
   id: string | null;
   location: CtaLocation;
-  title: string;
-  subtitle: string;
-  buttonLabel: string;
+  lang: Record<Lang, CtaLangData>;
   whatsapp: string;
 }
 
-const DEFAULT_FORM_VALUES = {
+const DEFAULT_FORM_VALUES: CtaLangData = {
   title: "Siap Memulai Perizinan Bisnis Anda?",
   subtitle: "Konsultasikan kebutuhan perizinan Anda sekarang gratis bersama tim ahli kami.",
   buttonLabel: "Konsultasikan Gratis Sekarang",
 };
+const emptyLang = (): CtaLangData => ({ title: "", subtitle: "", buttonLabel: "" });
 
 const emptyForm = (location: CtaLocation): FormState => ({
   id: null,
   location,
-  ...DEFAULT_FORM_VALUES,
+  lang: { id: { ...DEFAULT_FORM_VALUES }, en: emptyLang(), zh: emptyLang() },
   whatsapp: "",
 });
 
@@ -175,14 +201,30 @@ export default function CtaBannerPageClient({ initialCtas }: { initialCtas: Cta[
   const defaultRow = initialCtas.find((c) => c.location === null) ?? null;
   const variantRows = initialCtas.filter((c): c is Cta & { location: CtaLocation } => c.location !== null);
 
-  const [defaults, setDefaults] = useState({
-    title: defaultRow?.title ?? DEFAULT_FORM_VALUES.title,
-    subtitle: defaultRow?.subtitle ?? DEFAULT_FORM_VALUES.subtitle,
-    buttonLabel: defaultRow?.buttonLabel ?? DEFAULT_FORM_VALUES.buttonLabel,
+  const [defaults, setDefaults] = useState<{ lang: Record<Lang, CtaLangData>; whatsapp: string }>({
+    lang: {
+      id: {
+        title: defaultRow?.title ?? DEFAULT_FORM_VALUES.title,
+        subtitle: defaultRow?.subtitle ?? DEFAULT_FORM_VALUES.subtitle,
+        buttonLabel: defaultRow?.buttonLabel ?? DEFAULT_FORM_VALUES.buttonLabel,
+      },
+      en: {
+        title: defaultRow?.titleEn ?? "",
+        subtitle: defaultRow?.subtitleEn ?? "",
+        buttonLabel: defaultRow?.buttonLabelEn ?? "",
+      },
+      zh: {
+        title: defaultRow?.titleZh ?? "",
+        subtitle: defaultRow?.subtitleZh ?? "",
+        buttonLabel: defaultRow?.buttonLabelZh ?? "",
+      },
+    },
     whatsapp: defaultRow?.whatsapp ?? "",
   });
+  const [defaultsLang, setDefaultsLang] = useState<Lang>("id");
 
   const [form, setForm] = useState<FormState | null>(null);
+  const [formLang, setFormLang] = useState<Lang>("id");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
@@ -192,17 +234,17 @@ export default function CtaBannerPageClient({ initialCtas }: { initialCtas: Cta[
   const formLocations = form && form.id ? [form.location, ...availableLocations] : availableLocations;
 
   const saveDefaults = () => {
-    if (!defaults.title.trim() || !defaults.buttonLabel.trim()) {
-      swalError("Judul dan label tombol wajib diisi");
+    if (!defaults.lang.id.title.trim() || !defaults.lang.id.buttonLabel.trim()) {
+      swalError("Judul dan label tombol (Bahasa Indonesia) wajib diisi");
       return;
     }
     startTransition(async () => {
       try {
         const res = await upsertCtaAction({
           location: null,
-          title: defaults.title,
-          subtitle: defaults.subtitle,
-          buttonLabel: defaults.buttonLabel,
+          id: defaults.lang.id,
+          en: defaults.lang.en,
+          zh: defaults.lang.zh,
           whatsapp: defaults.whatsapp || null,
         });
         if (res.ok) {
@@ -219,17 +261,17 @@ export default function CtaBannerPageClient({ initialCtas }: { initialCtas: Cta[
 
   const saveVariant = () => {
     if (!form) return;
-    if (!form.title.trim() || !form.buttonLabel.trim()) {
-      swalError("Judul dan label tombol wajib diisi");
+    if (!form.lang.id.title.trim() || !form.lang.id.buttonLabel.trim()) {
+      swalError("Judul dan label tombol (Bahasa Indonesia) wajib diisi");
       return;
     }
     startTransition(async () => {
       try {
         const res = await upsertCtaAction({
           location: form.location,
-          title: form.title,
-          subtitle: form.subtitle,
-          buttonLabel: form.buttonLabel,
+          id: form.lang.id,
+          en: form.lang.en,
+          zh: form.lang.zh,
           whatsapp: form.whatsapp || null,
         });
         if (res.ok) {
@@ -289,47 +331,59 @@ export default function CtaBannerPageClient({ initialCtas }: { initialCtas: Cta[
           </div>
         </div>
 
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <div className="mt-5">
+          <LangSwitcher lang={defaultsLang} onChange={setDefaultsLang} />
+        </div>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <Label htmlFor="d-title" className="text-sm font-semibold text-gray-700">Judul</Label>
+            <Label htmlFor="d-title" className="text-sm font-semibold text-gray-700">
+              Judul{defaultsLang !== "id" && <span className="font-normal text-gray-400"> — opsional</span>}
+            </Label>
             <Input
               id="d-title"
               className="mt-1.5 rounded-lg"
-              value={defaults.title}
-              onChange={(e) => setDefaults({ ...defaults, title: e.target.value })}
+              value={defaults.lang[defaultsLang].title}
+              onChange={(e) => setDefaults({ ...defaults, lang: { ...defaults.lang, [defaultsLang]: { ...defaults.lang[defaultsLang], title: e.target.value } } })}
             />
           </div>
           <div className="sm:col-span-2">
-            <Label htmlFor="d-subtitle" className="text-sm font-semibold text-gray-700">Subjudul</Label>
+            <Label htmlFor="d-subtitle" className="text-sm font-semibold text-gray-700">
+              Subjudul{defaultsLang !== "id" && <span className="font-normal text-gray-400"> — opsional</span>}
+            </Label>
             <Textarea
               id="d-subtitle"
               rows={2}
               className="mt-1.5 rounded-lg resize-none"
-              value={defaults.subtitle}
-              onChange={(e) => setDefaults({ ...defaults, subtitle: e.target.value })}
+              value={defaults.lang[defaultsLang].subtitle}
+              onChange={(e) => setDefaults({ ...defaults, lang: { ...defaults.lang, [defaultsLang]: { ...defaults.lang[defaultsLang], subtitle: e.target.value } } })}
             />
           </div>
           <div>
-            <Label htmlFor="d-button" className="text-sm font-semibold text-gray-700">Label Tombol</Label>
+            <Label htmlFor="d-button" className="text-sm font-semibold text-gray-700">
+              Label Tombol{defaultsLang !== "id" && <span className="font-normal text-gray-400"> — opsional</span>}
+            </Label>
             <Input
               id="d-button"
               className="mt-1.5 rounded-lg"
-              value={defaults.buttonLabel}
-              onChange={(e) => setDefaults({ ...defaults, buttonLabel: e.target.value })}
+              value={defaults.lang[defaultsLang].buttonLabel}
+              onChange={(e) => setDefaults({ ...defaults, lang: { ...defaults.lang, [defaultsLang]: { ...defaults.lang[defaultsLang], buttonLabel: e.target.value } } })}
             />
           </div>
-          <div>
-            <Label htmlFor="d-wa" className="text-sm font-semibold text-gray-700">
-              Nomor WhatsApp <span className="font-normal text-gray-400">(kosong = pakai Pengaturan)</span>
-            </Label>
-            <Input
-              id="d-wa"
-              className="mt-1.5 rounded-lg"
-              placeholder="628123456789"
-              value={defaults.whatsapp}
-              onChange={(e) => setDefaults({ ...defaults, whatsapp: e.target.value })}
-            />
-          </div>
+          {defaultsLang === "id" && (
+            <div>
+              <Label htmlFor="d-wa" className="text-sm font-semibold text-gray-700">
+                Nomor WhatsApp <span className="font-normal text-gray-400">(kosong = pakai Pengaturan)</span>
+              </Label>
+              <Input
+                id="d-wa"
+                className="mt-1.5 rounded-lg"
+                placeholder="628123456789"
+                value={defaults.whatsapp}
+                onChange={(e) => setDefaults({ ...defaults, whatsapp: e.target.value })}
+              />
+            </div>
+          )}
         </div>
 
         {/* Preview banner */}
@@ -340,12 +394,12 @@ export default function CtaBannerPageClient({ initialCtas }: { initialCtas: Cta[
                 <Headset size={17} aria-hidden="true" />
               </span>
               <div className="min-w-0">
-                <div className="font-bold text-sm truncate">{defaults.title}</div>
-                <div className="text-xs text-white/80 truncate">{defaults.subtitle}</div>
+                <div className="font-bold text-sm truncate">{defaults.lang[defaultsLang].title}</div>
+                <div className="text-xs text-white/80 truncate">{defaults.lang[defaultsLang].subtitle}</div>
               </div>
             </div>
             <span className="rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-brand-green-dark whitespace-nowrap">
-              {defaults.buttonLabel}
+              {defaults.lang[defaultsLang].buttonLabel}
             </span>
           </div>
         </div>
@@ -370,7 +424,7 @@ export default function CtaBannerPageClient({ initialCtas }: { initialCtas: Cta[
             size="sm"
             className="gap-1.5 rounded-xl"
             disabled={availableLocations.length === 0}
-            onClick={() => setForm(emptyForm(availableLocations[0]))}
+            onClick={() => { setFormLang("id"); setForm(emptyForm(availableLocations[0])); }}
           >
             <Plus size={14} />
             Tambah Varian
@@ -416,16 +470,19 @@ export default function CtaBannerPageClient({ initialCtas }: { initialCtas: Cta[
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-end gap-1">
                       <button
-                        onClick={() =>
+                        onClick={() => {
+                          setFormLang("id");
                           setForm({
                             id: v.id,
                             location: v.location as CtaLocation,
-                            title: v.title,
-                            subtitle: v.subtitle ?? "",
-                            buttonLabel: v.buttonLabel,
+                            lang: {
+                              id: { title: v.title, subtitle: v.subtitle ?? "", buttonLabel: v.buttonLabel },
+                              en: { title: v.titleEn ?? "", subtitle: v.subtitleEn ?? "", buttonLabel: v.buttonLabelEn ?? "" },
+                              zh: { title: v.titleZh ?? "", subtitle: v.subtitleZh ?? "", buttonLabel: v.buttonLabelZh ?? "" },
+                            },
                             whatsapp: v.whatsapp ?? "",
-                          })
-                        }
+                          });
+                        }}
                         className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/5 transition-colors"
                         aria-label="Edit varian"
                       >
@@ -498,45 +555,54 @@ export default function CtaBannerPageClient({ initialCtas }: { initialCtas: Cta[
                     </SelectContent>
                   </Select>
                 </div>
+                <LangSwitcher lang={formLang} onChange={setFormLang} />
                 <div>
-                  <Label htmlFor="v-title" className="text-sm font-semibold text-gray-700">Judul</Label>
+                  <Label htmlFor="v-title" className="text-sm font-semibold text-gray-700">
+                    Judul{formLang !== "id" && <span className="font-normal text-gray-400"> — opsional</span>}
+                  </Label>
                   <Input
                     id="v-title"
                     className="mt-1.5 rounded-lg"
-                    value={form.title}
-                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    value={form.lang[formLang].title}
+                    onChange={(e) => setForm({ ...form, lang: { ...form.lang, [formLang]: { ...form.lang[formLang], title: e.target.value } } })}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="v-subtitle" className="text-sm font-semibold text-gray-700">Subjudul</Label>
+                  <Label htmlFor="v-subtitle" className="text-sm font-semibold text-gray-700">
+                    Subjudul{formLang !== "id" && <span className="font-normal text-gray-400"> — opsional</span>}
+                  </Label>
                   <Textarea
                     id="v-subtitle"
                     rows={2}
                     className="mt-1.5 rounded-lg resize-none"
-                    value={form.subtitle}
-                    onChange={(e) => setForm({ ...form, subtitle: e.target.value })}
+                    value={form.lang[formLang].subtitle}
+                    onChange={(e) => setForm({ ...form, lang: { ...form.lang, [formLang]: { ...form.lang[formLang], subtitle: e.target.value } } })}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className={cn("grid gap-3", formLang === "id" ? "grid-cols-2" : "grid-cols-1")}>
                   <div>
-                    <Label htmlFor="v-button" className="text-sm font-semibold text-gray-700">Label Tombol</Label>
+                    <Label htmlFor="v-button" className="text-sm font-semibold text-gray-700">
+                      Label Tombol{formLang !== "id" && <span className="font-normal text-gray-400"> — opsional</span>}
+                    </Label>
                     <Input
                       id="v-button"
                       className="mt-1.5 rounded-lg"
-                      value={form.buttonLabel}
-                      onChange={(e) => setForm({ ...form, buttonLabel: e.target.value })}
+                      value={form.lang[formLang].buttonLabel}
+                      onChange={(e) => setForm({ ...form, lang: { ...form.lang, [formLang]: { ...form.lang[formLang], buttonLabel: e.target.value } } })}
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="v-wa" className="text-sm font-semibold text-gray-700">Nomor WhatsApp</Label>
-                    <Input
-                      id="v-wa"
-                      className="mt-1.5 rounded-lg"
-                      placeholder="628123456789"
-                      value={form.whatsapp}
-                      onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
-                    />
-                  </div>
+                  {formLang === "id" && (
+                    <div>
+                      <Label htmlFor="v-wa" className="text-sm font-semibold text-gray-700">Nomor WhatsApp</Label>
+                      <Input
+                        id="v-wa"
+                        className="mt-1.5 rounded-lg"
+                        placeholder="628123456789"
+                        value={form.whatsapp}
+                        onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="flex gap-2 pt-1">

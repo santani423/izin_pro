@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
+import { useDictionary } from "@/contexts/LocaleContext";
 import { cn } from "@/lib/utils";
 import { submitInquiryAction } from "@/lib/actions/inquiry";
 import { resolveDetailIcon } from "@/lib/detail-icons";
@@ -23,19 +24,13 @@ import type { KontakChannelRaw } from "@/lib/hydrate-kontak-content";
 
 const LAINNYA = "lainnya";
 
-/* ─── Skema validasi form kontak ─── */
-const kontakSchema = z.object({
-  nama: z.string().min(3, "Nama minimal 3 karakter"),
-  email: z.string().email("Format email tidak valid"),
-  whatsapp: z
-    .string()
-    .min(9, "Nomor WhatsApp minimal 9 digit")
-    .regex(/^[0-9+\-\s]+$/, "Nomor hanya boleh berisi angka"),
-  layanan: z.string().min(1, "Pilih layanan yang dibutuhkan"),
-  pesan: z.string().min(10, "Pesan minimal 10 karakter"),
-});
-
-type KontakFormValues = z.infer<typeof kontakSchema>;
+type KontakFormValues = {
+  nama: string;
+  email: string;
+  whatsapp: string;
+  layanan: string;
+  pesan: string;
+};
 
 const inputClass =
   "h-10 w-full rounded-lg border border-border/60 bg-background px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20";
@@ -56,6 +51,21 @@ export default function KontakFormSection({
   channels: KontakChannelRaw[];
   services: { id: string; title: string }[];
 }) {
+  const dict = useDictionary();
+  const kontakSchema = useMemo(
+    () =>
+      z.object({
+        nama: z.string().min(3, dict.kontakForm.validation.nameMin),
+        email: z.string().email(dict.kontakForm.validation.emailInvalid),
+        whatsapp: z
+          .string()
+          .min(9, dict.kontakForm.validation.whatsappMin)
+          .regex(/^[0-9+\-\s]+$/, dict.kontakForm.validation.whatsappDigitsOnly),
+        layanan: z.string().min(1, dict.kontakForm.validation.serviceRequired),
+        pesan: z.string().min(10, dict.kontakForm.validation.messageMin),
+      }),
+    [dict],
+  );
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const {
@@ -106,18 +116,17 @@ export default function KontakFormSection({
                 aria-hidden="true"
               />
               <p className="mt-3 text-base font-bold text-foreground">
-                Pesan Terkirim!
+                {dict.kontakForm.successTitle}
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Terima kasih, tim kami akan menghubungi Anda maksimal 1×24 jam
-                kerja.
+                {dict.kontakForm.successCopy}
               </p>
               <Button
                 variant="outline"
                 className="mt-4 rounded-lg"
                 onClick={() => setSubmitted(false)}
               >
-                Kirim Pesan Lagi
+                {dict.kontakForm.sendAgain}
               </Button>
             </div>
           ) : (
@@ -132,12 +141,12 @@ export default function KontakFormSection({
                     htmlFor="nama"
                     className="text-sm font-semibold text-foreground"
                   >
-                    Nama Lengkap <span className="text-destructive">*</span>
+                    {dict.kontakForm.nameLabel} <span className="text-destructive">*</span>
                   </label>
                   <input
                     id="nama"
                     type="text"
-                    placeholder="Masukkan nama lengkap Anda"
+                    placeholder={dict.kontakForm.namePlaceholder}
                     className={cn(inputClass, "mt-1.5")}
                     aria-invalid={!!errors.nama}
                     {...register("nama")}
@@ -153,12 +162,12 @@ export default function KontakFormSection({
                     htmlFor="email"
                     className="text-sm font-semibold text-foreground"
                   >
-                    Email <span className="text-destructive">*</span>
+                    {dict.kontakForm.emailLabel} <span className="text-destructive">*</span>
                   </label>
                   <input
                     id="email"
                     type="email"
-                    placeholder="Masukkan email Anda"
+                    placeholder={dict.kontakForm.emailPlaceholder}
                     className={cn(inputClass, "mt-1.5")}
                     aria-invalid={!!errors.email}
                     {...register("email")}
@@ -174,12 +183,12 @@ export default function KontakFormSection({
                     htmlFor="whatsapp"
                     className="text-sm font-semibold text-foreground"
                   >
-                    No. WhatsApp <span className="text-destructive">*</span>
+                    {dict.kontakForm.whatsappLabel} <span className="text-destructive">*</span>
                   </label>
                   <input
                     id="whatsapp"
                     type="tel"
-                    placeholder="Contoh: 0812-3456-7890"
+                    placeholder={dict.kontakForm.whatsappPlaceholder}
                     className={cn(inputClass, "mt-1.5")}
                     aria-invalid={!!errors.whatsapp}
                     {...register("whatsapp")}
@@ -195,7 +204,7 @@ export default function KontakFormSection({
                     htmlFor="layanan"
                     className="text-sm font-semibold text-foreground"
                   >
-                    Layanan yang Dibutuhkan{" "}
+                    {dict.kontakForm.serviceLabel}{" "}
                     <span className="text-destructive">*</span>
                   </label>
                   <Controller
@@ -205,7 +214,7 @@ export default function KontakFormSection({
                       <Select
                         items={Object.fromEntries([
                           ...services.map((s) => [s.id, s.title]),
-                          [LAINNYA, "Lainnya"],
+                          [LAINNYA, dict.kontakForm.otherOption],
                         ])}
                         value={field.value || null}
                         onValueChange={(value) => field.onChange(value ?? "")}
@@ -215,7 +224,7 @@ export default function KontakFormSection({
                           aria-invalid={!!errors.layanan}
                           className="mt-1.5 h-10 w-full rounded-lg border-border/60 bg-background pl-3 font-medium hover:border-primary/40 focus-visible:border-primary focus-visible:ring-primary/20"
                         >
-                          <SelectValue placeholder="Pilih layanan" />
+                          <SelectValue placeholder={dict.kontakForm.servicePlaceholder} />
                         </SelectTrigger>
                         <SelectContent
                           alignItemWithTrigger={false}
@@ -226,7 +235,7 @@ export default function KontakFormSection({
                               {service.title}
                             </SelectItem>
                           ))}
-                          <SelectItem value={LAINNYA}>Lainnya</SelectItem>
+                          <SelectItem value={LAINNYA}>{dict.kontakForm.otherOption}</SelectItem>
                         </SelectContent>
                       </Select>
                     )}
@@ -244,12 +253,12 @@ export default function KontakFormSection({
                   htmlFor="pesan"
                   className="text-sm font-semibold text-foreground"
                 >
-                  Pesan <span className="text-destructive">*</span>
+                  {dict.kontakForm.messageLabel} <span className="text-destructive">*</span>
                 </label>
                 <textarea
                   id="pesan"
                   rows={5}
-                  placeholder="Tuliskan kebutuhan atau pertanyaan Anda di sini..."
+                  placeholder={dict.kontakForm.messagePlaceholder}
                   className={cn(
                     inputClass,
                     "mt-1.5 h-auto resize-y py-2.5",
@@ -276,13 +285,13 @@ export default function KontakFormSection({
                 disabled={isSubmitting}
                 className="w-full justify-center gap-2 rounded-lg font-semibold"
               >
-                {isSubmitting ? "Mengirim..." : "Kirim Pesan"}
+                {isSubmitting ? dict.kontakForm.sending : dict.kontakForm.send}
                 <Send className="size-4" aria-hidden="true" />
               </Button>
 
               <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Lock className="size-3.5" aria-hidden="true" />
-                Data Anda aman dan tidak akan dibagikan kepada pihak ketiga.
+                {dict.kontakForm.privacyNote}
               </p>
             </form>
           )}

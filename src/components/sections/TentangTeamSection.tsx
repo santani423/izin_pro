@@ -1,6 +1,8 @@
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/Reveal";
+import { getDictionary, getLocale } from "@/i18n/get-dictionary";
+import { format } from "@/i18n/format";
 import type { AboutTeamSettings } from "@/lib/hydrate-about-content";
 
 /* Ikon LinkedIn inline — ikon brand tidak tersedia di lucide-react versi ini */
@@ -36,18 +38,19 @@ export interface TeamMemberCard {
 }
 
 /* ─── Tim profesional — grid 4 kartu anggota ─── */
-export default function TentangTeamSection({
+export default async function TentangTeamSection({
   settings,
   members,
 }: {
   settings: AboutTeamSettings;
   members: TeamMemberCard[];
 }) {
+  const dict = getDictionary(await getLocale());
   return (
     <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
       <div className="mx-auto mb-8 max-w-2xl text-center">
         <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          {settings.title} <span className="text-primary">{settings.titleHighlight}</span> Kami
+          {settings.title} <span className="text-primary">{settings.titleHighlight}</span>{dict.tentangTeam.headingSuffix}
         </h2>
         <p className="mt-2 text-sm text-muted-foreground sm:text-base">
           {settings.subtitle}
@@ -62,7 +65,7 @@ export default function TentangTeamSection({
                 <div className="relative aspect-[4/3] w-full overflow-hidden">
                   <Image
                     src={photoUrl}
-                    alt={`Foto ${name}, ${role} IzinPro`}
+                    alt={format(dict.tentangTeam.ariaPhotoTemplate, { name, role })}
                     fill
                     sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
                     className="object-cover"
@@ -71,7 +74,7 @@ export default function TentangTeamSection({
               ) : (
                 <div
                   role="img"
-                  aria-label={`Foto ${name}, ${role} IzinPro`}
+                  aria-label={format(dict.tentangTeam.ariaPhotoTemplate, { name, role })}
                   className="grid aspect-[4/3] w-full place-items-center bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark"
                 >
                   <span className="text-3xl font-extrabold text-white/85">
@@ -91,7 +94,7 @@ export default function TentangTeamSection({
                     href={linkedinUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={`LinkedIn ${name}`}
+                    aria-label={format(dict.tentangTeam.ariaLinkedinTemplate, { name })}
                     className="flex size-8 shrink-0 items-center justify-center rounded-md bg-[#0a9bff] text-white transition-colors hover:bg-[#0a66c2]"
                   >
                     <LinkedinIcon className="size-4" />

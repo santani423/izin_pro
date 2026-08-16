@@ -3,6 +3,7 @@ import dynamic from "next/dynamic";
 import LayananHeroSection from "@/components/sections/LayananHeroSection";
 import LayananHighlightsSection from "@/components/sections/LayananHighlightsSection";
 import LayananCatalogSection from "@/components/sections/LayananCatalogSection";
+import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 
 /* ─── Lazy load sections below the fold ─── */
 const LayananConsultSection = dynamic(
@@ -10,14 +11,16 @@ const LayananConsultSection = dynamic(
 );
 const CtaSection = dynamic(() => import("@/components/sections/CtaSection"));
 
-export const metadata: Metadata = {
-  title: "Daftar Layanan Perizinan Bisnis",
-  description:
-    "Berbagai layanan perizinan untuk mendukung legalitas dan kelancaran bisnis Anda — Pendirian PT, NIB, Izin Usaha, Sertifikasi, hingga Perizinan Impor. Cepat, legal, dan transparan.",
-  alternates: {
-    canonical: "https://izinpro.co.id/layanan",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const dict = getDictionary(await getLocale());
+  return {
+    title: dict.pages.layanan.metaTitle,
+    description: dict.pages.layanan.metaDescription,
+    alternates: {
+      canonical: "https://izinpro.co.id/layanan",
+    },
+  };
+}
 
 /* ─── Halaman Daftar Layanan (desain baru) ─── */
 export default function LayananPage() {

@@ -46,10 +46,22 @@ type ServiceWithCategory = Omit<Service, "basePrice"> & {
   updatedBy: { name: string } | null;
 };
 
-interface FormState {
-  id: string;
+const LANGS = [
+  { key: "id", label: "Bahasa Indonesia" },
+  { key: "en", label: "English" },
+  { key: "zh", label: "中文" },
+] as const;
+type Lang = (typeof LANGS)[number]["key"];
+
+interface CatalogLangState {
   title: string;
   description: string;
+  featuresText: string;
+}
+const emptyCatalogLang = (): CatalogLangState => ({ title: "", description: "", featuresText: "" });
+
+interface FormState {
+  dbId: string;
   icon: string;
   color: string;
   bgColor: string;
@@ -57,12 +69,11 @@ interface FormState {
   featuredMediaId: string | null;
   basePrice: string;
   estimatedDurationLabel: string;
+  lang: Record<Lang, CatalogLangState>;
 }
 
 const emptyForm = (defaultCategoryId: string): FormState => ({
-  id: "",
-  title: "",
-  description: "",
+  dbId: "",
   icon: "file-text",
   color: "#5ba12b",
   bgColor: "#f3fae8",
@@ -70,7 +81,12 @@ const emptyForm = (defaultCategoryId: string): FormState => ({
   featuredMediaId: null,
   basePrice: "",
   estimatedDurationLabel: "",
+  lang: { id: emptyCatalogLang(), en: emptyCatalogLang(), zh: emptyCatalogLang() },
 });
+
+function joinFeatures(raw: unknown): string {
+  return ((raw as string[] | null) ?? []).join("\n");
+}
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
 
@@ -193,7 +209,7 @@ export default function LayananManager({
   const [isPending, startTransition] = useTransition();
   const [isReordering, startReorderTransition] = useTransition();
   const [form, setForm] = useState<FormState | null>(null);
-  const [featuresText, setFeaturesText] = useState("");
+  const [lang, setLang] = useState<Lang>("id");
   const [requiredDocumentsText, setRequiredDocumentsText] = useState("");
   const [featuredImageUrl, setFeaturedImageUrl] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -213,11 +229,10 @@ export default function LayananManager({
   }
 
   const openForm = (svc: ServiceWithCategory | null) => {
+    setLang("id");
     const target: FormState = svc
       ? {
-          id: svc.id,
-          title: svc.title,
-          description: svc.description,
+          dbId: svc.id,
           icon: svc.icon ?? "file-text",
           color: svc.color ?? "#5ba12b",
           bgColor: svc.bgColor ?? "#f3fae8",
@@ -225,13 +240,19 @@ export default function LayananManager({
           featuredMediaId: svc.featuredMediaId,
           basePrice: svc.basePrice ? svc.basePrice.toString() : "",
           estimatedDurationLabel: svc.estimatedDurationLabel ?? "",
+          lang: {
+            id: { title: svc.title, description: svc.description, featuresText: joinFeatures(svc.features) },
+            en: { title: svc.titleEn ?? "", description: svc.descriptionEn ?? "", featuresText: joinFeatures(svc.featuresEn) },
+            zh: { title: svc.titleZh ?? "", description: svc.descriptionZh ?? "", featuresText: joinFeatures(svc.featuresZh) },
+          },
         }
       : emptyForm(categories[0]?.id ?? "");
     setForm(target);
-    setFeaturesText(svc ? (svc.features as string[]).join("\n") : "");
     setRequiredDocumentsText(svc?.requiredDocuments ? (svc.requiredDocuments as string[]).join("\n") : "");
     setFeaturedImageUrl(svc?.featuredMedia?.url ?? null);
   };
+  const setLangField = (l: Lang, patch: Partial<CatalogLangState>) =>
+    setForm((f) => (f ? { ...f, lang: { ...f.lang, [l]: { ...f.lang[l], ...patch } } } : f));
 
   const uploadFeaturedImage = async (file: File) => {
     setUploadingImage(true);
@@ -266,37 +287,37 @@ export default function LayananManager({
 
   const save = () => {
     if (!form) return;
-    if (!form.title.trim()) {
-      swalError("Nama layanan wajib diisi");
+    if (!form.lang.id.title.trim()) {
+      swalError("Nama layanan (Bahasa Indonesia) wajib diisi");
       return;
     }
     if (!form.categoryId) {
       swalError("Kategori wajib dipilih");
       return;
     }
-    const features = featuresText.split("\n").map((f) => f.trim()).filter(Boolean);
+    const toFeatures = (text: string) => text.split("\n").map((f) => f.trim()).filter(Boolean);
     const requiredDocuments = requiredDocumentsText.split("\n").map((f) => f.trim()).filter(Boolean);
     const payload = {
-      title: form.title,
-      description: form.description,
       icon: form.icon,
       color: form.color,
       bgColor: form.bgColor,
       categoryId: form.categoryId,
-      features,
       featuredMediaId: form.featuredMediaId,
       basePrice: form.basePrice.trim() ? Number(form.basePrice) : null,
       estimatedDurationLabel: form.estimatedDurationLabel.trim() || null,
       requiredDocuments,
+      id: { title: form.lang.id.title, description: form.lang.id.description, features: toFeatures(form.lang.id.featuresText) },
+      en: { title: form.lang.en.title, description: form.lang.en.description, features: toFeatures(form.lang.en.featuresText) },
+      zh: { title: form.lang.zh.title, description: form.lang.zh.description, features: toFeatures(form.lang.zh.featuresText) },
     };
 
     startTransition(async () => {
-      const res = form.id
-        ? await updateServiceAction(form.id, payload)
+      const res = form.dbId
+        ? await updateServiceAction(form.dbId, payload)
         : await createServiceAction(payload);
 
       if (res.ok) {
-        swalSuccess(form.id ? "Layanan diperbarui" : "Layanan baru ditambahkan");
+        swalSuccess(form.dbId ? "Layanan diperbarui" : "Layanan baru ditambahkan");
         setForm(null);
         router.refresh();
       } else {
@@ -522,9 +543,24 @@ export default function LayananManager({
           {form && (
             <>
               <DialogTitle className="text-base font-bold text-gray-900">
-                {form.id ? "Edit Layanan" : "Tambah Layanan"}
+                {form.dbId ? "Edit Layanan" : "Tambah Layanan"}
               </DialogTitle>
               <div className="space-y-4">
+                <div className="flex w-fit gap-1 rounded-lg bg-gray-100 p-1">
+                  {LANGS.map(({ key, label }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setLang(key)}
+                      className={cn(
+                        "rounded-md px-2.5 py-1 text-xs font-semibold transition-colors",
+                        lang === key ? "bg-white text-primary shadow-sm" : "text-gray-500 hover:text-gray-700",
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
                 <div>
                   <Label className="text-sm font-semibold text-gray-700">Gambar Titel</Label>
                   <div className="mt-1.5 flex items-center gap-3 rounded-xl border border-dashed border-admin-line bg-gray-50/50 p-3">
@@ -573,13 +609,15 @@ export default function LayananManager({
                   <p className="mt-1 text-[11px] text-gray-400">PNG/JPG/WebP, otomatis dikompres. Opsional.</p>
                 </div>
                 <div>
-                  <Label htmlFor="s-title" className="text-sm font-semibold text-gray-700">Nama Layanan</Label>
+                  <Label htmlFor="s-title" className="text-sm font-semibold text-gray-700">
+                    Nama Layanan{lang !== "id" && <span className="font-normal text-gray-400"> — opsional</span>}
+                  </Label>
                   <Input
                     id="s-title"
                     className="mt-1.5 rounded-lg"
                     placeholder="mis. Pendirian PT"
-                    value={form.title}
-                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    value={form.lang[lang].title}
+                    onChange={(e) => setLangField(lang, { title: e.target.value })}
                   />
                 </div>
                 <div>
@@ -600,27 +638,29 @@ export default function LayananManager({
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="s-desc" className="text-sm font-semibold text-gray-700">Deskripsi</Label>
+                  <Label htmlFor="s-desc" className="text-sm font-semibold text-gray-700">
+                    Deskripsi{lang !== "id" && <span className="font-normal text-gray-400"> — opsional</span>}
+                  </Label>
                   <Textarea
                     id="s-desc"
                     rows={2}
                     className="mt-1.5 rounded-lg resize-none"
                     placeholder="Deskripsi singkat layanan..."
-                    value={form.description}
-                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    value={form.lang[lang].description}
+                    onChange={(e) => setLangField(lang, { description: e.target.value })}
                   />
                 </div>
                 <div>
                   <Label htmlFor="s-features" className="text-sm font-semibold text-gray-700">
-                    Fitur <span className="font-normal text-gray-400">(satu per baris)</span>
+                    Fitur <span className="font-normal text-gray-400">(satu per baris{lang !== "id" ? ", opsional" : ""})</span>
                   </Label>
                   <Textarea
                     id="s-features"
                     rows={4}
                     className="mt-1.5 rounded-lg resize-none"
                     placeholder={"Akta pendirian\nSK Kemenkumham\nNPWP perusahaan"}
-                    value={featuresText}
-                    onChange={(e) => setFeaturesText(e.target.value)}
+                    value={form.lang[lang].featuresText}
+                    onChange={(e) => setLangField(lang, { featuresText: e.target.value })}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">

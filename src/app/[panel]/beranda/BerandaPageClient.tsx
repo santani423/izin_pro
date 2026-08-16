@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { saveHeroContentAction, saveHeroImageAction } from "@/lib/actions/hero";
+import { cn } from "@/lib/utils";
+import { saveHeroContentAction, saveHeroImageAction, type HeroContentLangInput } from "@/lib/actions/hero";
 
 type Highlight = { title: string; subtitle: string };
 
@@ -18,44 +19,48 @@ type Highlight = { title: string; subtitle: string };
  * konsisten sama tampilan asli di beranda. */
 const HIGHLIGHT_ICONS = [Zap, ShieldCheck, Users];
 
+const HERO_LANGS = [
+  { key: "id", label: "Bahasa Indonesia" },
+  { key: "en", label: "English" },
+  { key: "zh", label: "中文" },
+] as const;
+type HeroLang = (typeof HERO_LANGS)[number]["key"];
+
 export default function BerandaPageClient({
-  titleLine1: initialTitleLine1,
-  titleHighlight: initialTitleHighlight,
-  titleLine3: initialTitleLine3,
-  subtitle: initialSubtitle,
-  highlights: initialHighlights,
-  ctaPrimaryLabel: initialCtaPrimaryLabel,
-  ctaSecondaryLabel: initialCtaSecondaryLabel,
+  id: initialId,
+  en: initialEn,
+  zh: initialZh,
   ctaSecondaryHref: initialCtaSecondaryHref,
   heroImageUrl: initialHeroImageUrl,
 }: {
-  titleLine1: string;
-  titleHighlight: string;
-  titleLine3: string;
-  subtitle: string;
-  highlights: Highlight[];
-  ctaPrimaryLabel: string;
-  ctaSecondaryLabel: string;
+  id: HeroContentLangInput;
+  en: HeroContentLangInput;
+  zh: HeroContentLangInput;
   ctaSecondaryHref: string;
   heroImageUrl: string | null;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isImagePending, startImageTransition] = useTransition();
-  const [titleLine1, setTitleLine1] = useState(initialTitleLine1);
-  const [titleHighlight, setTitleHighlight] = useState(initialTitleHighlight);
-  const [titleLine3, setTitleLine3] = useState(initialTitleLine3);
-  const [subtitle, setSubtitle] = useState(initialSubtitle);
-  const [highlights, setHighlights] = useState<Highlight[]>(initialHighlights);
-  const [ctaPrimaryLabel, setCtaPrimaryLabel] = useState(initialCtaPrimaryLabel);
-  const [ctaSecondaryLabel, setCtaSecondaryLabel] = useState(initialCtaSecondaryLabel);
+  const [lang, setLang] = useState<HeroLang>("id");
+  const [content, setContent] = useState<Record<HeroLang, HeroContentLangInput>>({
+    id: initialId,
+    en: initialEn,
+    zh: initialZh,
+  });
   const [ctaSecondaryHref, setCtaSecondaryHref] = useState(initialCtaSecondaryHref);
   const [heroImageUrl, setHeroImageUrl] = useState(initialHeroImageUrl);
   const [heroImageFile, setHeroImageFile] = useState<File | null>(null);
   const [resetHeroImage, setResetHeroImage] = useState(false);
 
+  const current = content[lang];
+  const setCurrent = (patch: Partial<HeroContentLangInput>) =>
+    setContent((prev) => ({ ...prev, [lang]: { ...prev[lang], ...patch } }));
+
   const updateHighlight = (index: number, field: keyof Highlight, value: string) => {
-    setHighlights((prev) => prev.map((h, i) => (i === index ? { ...h, [field]: value } : h)));
+    setCurrent({
+      highlights: current.highlights.map((h, i) => (i === index ? { ...h, [field]: value } : h)),
+    });
   };
 
   const heroImagePreview = useMemo(() => {
@@ -91,13 +96,9 @@ export default function BerandaPageClient({
     startTransition(async () => {
       try {
         const res = await saveHeroContentAction({
-          titleLine1,
-          titleHighlight,
-          titleLine3,
-          subtitle,
-          highlights,
-          ctaPrimaryLabel,
-          ctaSecondaryLabel,
+          id: content.id,
+          en: content.en,
+          zh: content.zh,
           ctaSecondaryHref,
         });
         if (res.ok) {
@@ -179,6 +180,29 @@ export default function BerandaPageClient({
         </div>
       </div>
 
+      <div className="bg-white rounded-2xl border border-admin-line p-6 space-y-3 max-w-2xl">
+        <Label>Bahasa Konten</Label>
+        <p className="text-xs text-gray-400">
+          Judul, Subjudul, Badge, dan Label tombol di bawah tampil ke publik sesuai bahasa yang dipilih
+          pengunjung. English/中文 boleh dikosongkan — otomatis fallback ke Bahasa Indonesia.
+        </p>
+        <div className="flex w-fit gap-1 rounded-xl bg-gray-100 p-1">
+          {HERO_LANGS.map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setLang(key)}
+              className={cn(
+                "rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
+                lang === key ? "bg-white text-primary shadow-sm" : "text-gray-500 hover:text-gray-700",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="bg-white rounded-2xl border border-admin-line p-6 space-y-5 max-w-2xl">
         <h3 className="font-bold text-gray-900 flex items-center gap-2">
           <Sparkles size={16} className="text-primary" />
@@ -190,24 +214,24 @@ export default function BerandaPageClient({
 
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-1.5">
-            <Label>Judul — baris 1</Label>
-            <Input value={titleLine1} onChange={(e) => setTitleLine1(e.target.value)} className="rounded-xl" disabled={isPending} />
+            <Label>Judul — baris 1{lang !== "id" && <span className="font-normal text-gray-400"> — opsional</span>}</Label>
+            <Input value={current.titleLine1} onChange={(e) => setCurrent({ titleLine1: e.target.value })} className="rounded-xl" disabled={isPending} />
           </div>
           <div className="space-y-1.5">
-            <Label>Judul — baris 2 (highlight warna)</Label>
-            <Input value={titleHighlight} onChange={(e) => setTitleHighlight(e.target.value)} className="rounded-xl" disabled={isPending} />
+            <Label>Judul — baris 2 (highlight warna){lang !== "id" && <span className="font-normal text-gray-400"> — opsional</span>}</Label>
+            <Input value={current.titleHighlight} onChange={(e) => setCurrent({ titleHighlight: e.target.value })} className="rounded-xl" disabled={isPending} />
           </div>
           <div className="space-y-1.5">
-            <Label>Judul — baris 3</Label>
-            <Input value={titleLine3} onChange={(e) => setTitleLine3(e.target.value)} className="rounded-xl" disabled={isPending} />
+            <Label>Judul — baris 3{lang !== "id" && <span className="font-normal text-gray-400"> — opsional</span>}</Label>
+            <Input value={current.titleLine3} onChange={(e) => setCurrent({ titleLine3: e.target.value })} className="rounded-xl" disabled={isPending} />
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <Label>Subjudul</Label>
+          <Label>Subjudul{lang !== "id" && <span className="font-normal text-gray-400"> — opsional</span>}</Label>
           <Textarea
-            value={subtitle}
-            onChange={(e) => setSubtitle(e.target.value)}
+            value={current.subtitle}
+            onChange={(e) => setCurrent({ subtitle: e.target.value })}
             rows={2}
             className="rounded-xl resize-none"
             disabled={isPending}
@@ -218,7 +242,7 @@ export default function BerandaPageClient({
       <div className="bg-white rounded-2xl border border-admin-line p-6 space-y-5 max-w-2xl">
         <h3 className="font-bold text-gray-900">Badge Highlight (3 kartu kecil)</h3>
         <div className="grid gap-4 sm:grid-cols-3">
-          {highlights.map((h, i) => {
+          {current.highlights.map((h, i) => {
             const Icon = HIGHLIGHT_ICONS[i];
             return (
               <div key={i} className="space-y-2.5 rounded-xl border border-gray-200 p-3">
@@ -256,18 +280,19 @@ export default function BerandaPageClient({
           Tombol CTA
         </h3>
         <div className="space-y-1.5">
-          <Label>Label tombol utama (WhatsApp)</Label>
-          <Input value={ctaPrimaryLabel} onChange={(e) => setCtaPrimaryLabel(e.target.value)} className="rounded-xl" disabled={isPending} />
+          <Label>Label tombol utama (WhatsApp){lang !== "id" && <span className="font-normal text-gray-400"> — opsional</span>}</Label>
+          <Input value={current.ctaPrimaryLabel} onChange={(e) => setCurrent({ ctaPrimaryLabel: e.target.value })} className="rounded-xl" disabled={isPending} />
           <p className="text-xs text-gray-400">Link tombol ini tetap ikut nomor WhatsApp di Pengaturan, cuma labelnya yang diatur di sini.</p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label>Label tombol kedua</Label>
-            <Input value={ctaSecondaryLabel} onChange={(e) => setCtaSecondaryLabel(e.target.value)} className="rounded-xl" disabled={isPending} />
+            <Label>Label tombol kedua{lang !== "id" && <span className="font-normal text-gray-400"> — opsional</span>}</Label>
+            <Input value={current.ctaSecondaryLabel} onChange={(e) => setCurrent({ ctaSecondaryLabel: e.target.value })} className="rounded-xl" disabled={isPending} />
           </div>
           <div className="space-y-1.5">
             <Label>Link tombol kedua</Label>
             <Input value={ctaSecondaryHref} onChange={(e) => setCtaSecondaryHref(e.target.value)} className="rounded-xl" disabled={isPending} />
+            <p className="text-xs text-gray-400">Link internal — sama di semua bahasa, gak perlu diterjemahkan.</p>
           </div>
         </div>
       </div>

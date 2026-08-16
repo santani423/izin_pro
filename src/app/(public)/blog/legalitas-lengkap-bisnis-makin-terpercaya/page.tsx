@@ -3,21 +3,25 @@ import dynamic from "next/dynamic";
 
 import PanduanLegalitasHeroSection from "@/components/sections/PanduanLegalitasHeroSection";
 import PanduanLegalitasBodySection from "@/components/sections/PanduanLegalitasBodySection";
+import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 
 /* ─── Lazy load section below the fold ─── */
 const CtaSection = dynamic(() => import("@/components/sections/CtaSection"));
 
-export const metadata: Metadata = {
-  title: "Legalitas Lengkap, Bisnis Makin Terpercaya",
-  description:
-    "Miliki semua legalitas usaha yang dibutuhkan untuk menjalankan bisnis secara aman, profesional, dan dipercaya klien maupun mitra. Konsultasi gratis bersama IzinPro.",
-  alternates: {
-    canonical: "https://izinpro.co.id/blog/legalitas-lengkap-bisnis-makin-terpercaya",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const dict = getDictionary(await getLocale());
+  return {
+    title: dict.pages.blogLegalitas.metaTitle,
+    description: dict.pages.blogLegalitas.metaDescription,
+    alternates: {
+      canonical: "https://izinpro.co.id/blog/legalitas-lengkap-bisnis-makin-terpercaya",
+    },
+  };
+}
 
 /* ─── Halaman Legalitas Lengkap, Bisnis Makin Terpercaya (desain baru) ─── */
-export default function PanduanLegalitasPage() {
+export default async function PanduanLegalitasPage() {
+  const dict = getDictionary(await getLocale());
   return (
     <>
       {/* 1. Hero + breadcrumb + CTA */}
@@ -28,8 +32,8 @@ export default function PanduanLegalitasPage() {
 
       {/* 3. CTA Banner */}
       <CtaSection
-        title="Legalitas Lengkap, Bisnis Makin Terpercaya!"
-        subtitle="Percayakan semua urusan legalitas usaha Anda kepada tim profesional kami."
+        title={dict.pages.blogLegalitas.ctaTitle}
+        subtitle={dict.pages.blogLegalitas.ctaSubtitle}
       />
     </>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { LocalizedLink as Link } from "@/components/shared/LocalizedLink";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Menu, PackageSearch } from "lucide-react";
@@ -21,6 +21,9 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
+import { LocaleSwitcher } from "@/components/shared/LocaleSwitcher";
+import { useDictionary } from "@/contexts/LocaleContext";
+import { stripLocalePrefix } from "@/i18n/config";
 import { cn } from "@/lib/utils";
 
 interface NavChild {
@@ -41,6 +44,7 @@ interface NavItem extends NavChild {
  * langsung (Client Component gak boleh async). */
 export default function Navbar({ items, logoUrl }: { items: NavItem[]; logoUrl: string }) {
   const pathname = usePathname();
+  const dict = useDictionary();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileDropdown, setMobileDropdown] = useState<string | null>(null);
 
@@ -52,8 +56,12 @@ export default function Navbar({ items, logoUrl }: { items: NavItem[]; logoUrl: 
     setMobileDropdown(null);
   }
 
+  // pathname dari usePathname() itu URL browser asli (mis. "/en/tentang-kami"
+  // — rewrite proxy.ts gak keliatan di client), sementara href menu item dari
+  // Prisma selalu tanpa prefix locale -> harus dibandingin versi stripped.
+  const cleanPathname = stripLocalePrefix(pathname);
   const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname.startsWith(href);
+    href === "/" ? cleanPathname === "/" : cleanPathname.startsWith(href);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -62,7 +70,7 @@ export default function Navbar({ items, logoUrl }: { items: NavItem[]; logoUrl: 
         <Link href="/" className="flex shrink-0 items-center gap-2">
           <Image
             src={logoUrl}
-            alt="IzinPro"
+            alt={dict.navbar.logoAlt}
             width={132}
             height={28}
             priority
@@ -72,7 +80,7 @@ export default function Navbar({ items, logoUrl }: { items: NavItem[]; logoUrl: 
         </Link>
 
         {/* Menu desktop */}
-        <nav aria-label="Navigasi utama" className="hidden lg:block">
+        <nav aria-label={dict.navbar.ariaMainNav} className="hidden lg:block">
           <ul className="flex items-center gap-1">
             {items.map((link) =>
               link.children.length > 0 ? (
@@ -134,24 +142,26 @@ export default function Navbar({ items, logoUrl }: { items: NavItem[]; logoUrl: 
         </nav>
 
         {/* CTA desktop */}
-        <div className="hidden lg:block">
+        <div className="hidden items-center gap-2 lg:flex">
+          <LocaleSwitcher />
           <Button asChild className="rounded-full font-semibold">
             <Link href="/tracking">
-              Tracking Perizinan
+              {dict.navbar.trackingButton}
               <PackageSearch className="size-4" aria-hidden="true" />
             </Link>
           </Button>
         </div>
 
         {/* Menu mobile */}
+        <div className="flex items-center gap-1 lg:hidden">
+        <LocaleSwitcher />
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger
             render={
               <Button
                 variant="ghost"
                 size="icon"
-                className="lg:hidden"
-                aria-label="Buka menu navigasi"
+                aria-label={dict.navbar.ariaOpenMenu}
               />
             }
           >
@@ -159,9 +169,9 @@ export default function Navbar({ items, logoUrl }: { items: NavItem[]; logoUrl: 
           </SheetTrigger>
           <SheetContent side="right" className="w-80">
             <SheetHeader>
-              <SheetTitle className="text-left">Menu</SheetTitle>
+              <SheetTitle className="text-left">{dict.navbar.menuSheetTitle}</SheetTitle>
             </SheetHeader>
-            <nav aria-label="Navigasi mobile" className="px-4">
+            <nav aria-label={dict.navbar.ariaMobileNav} className="px-4">
               <ul className="flex flex-col gap-1.5">
                 {items.map((link) =>
                   link.children.length > 0 ? (
@@ -229,13 +239,14 @@ export default function Navbar({ items, logoUrl }: { items: NavItem[]; logoUrl: 
               <Separator className="my-4" />
               <Button asChild className="w-full rounded-full font-semibold">
                 <Link href="/tracking">
-                  Tracking Perizinan
+                  {dict.navbar.trackingButton}
                   <PackageSearch className="size-4" aria-hidden="true" />
                 </Link>
               </Button>
             </nav>
           </SheetContent>
         </Sheet>
+        </div>
       </div>
     </header>
   );

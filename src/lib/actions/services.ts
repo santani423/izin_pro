@@ -6,7 +6,9 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { revalidateAdminPaths } from "@/lib/admin-guard";
 import { saveUploadedImage } from "@/lib/media";
+import { Prisma } from "@prisma/client";
 import type { ServiceDetailContent } from "@/lib/types/service-detail-content";
+import type { ServiceDetailContentLang } from "@/lib/service-detail-locale";
 import type { Role, ContentStatus } from "@prisma/client";
 
 export type ActionResult = { ok: true } | { ok: false; message: string };
@@ -32,37 +34,60 @@ function slugify(title: string) {
     .replace(/(^-|-$)/g, "");
 }
 
-export interface ServiceFormData {
+export interface ServiceCatalogLangData {
   title: string;
   description: string;
+  features: string[];
+}
+
+export interface ServiceFormData {
   icon: string;
   color: string;
   bgColor: string;
   categoryId: string;
-  features: string[];
   featuredMediaId: string | null;
   // Dipakai modul Transaksi (harga dasar & estimasi durasi default saat bikin
   // transaksi baru, lihat createTransactionAction) — opsional, gak wajib
-  // diisi utk layanan yg cuma tampil di landing page.
+  // diisi utk layanan yg cuma tampil di landing page. Gak per-bahasa.
   basePrice: number | null;
   estimatedDurationLabel: string | null;
   requiredDocuments: string[];
+  id: ServiceCatalogLangData;
+  en: ServiceCatalogLangData;
+  zh: ServiceCatalogLangData;
+}
+
+/** null kalau SEMUA item kosong (belum diterjemahkan) — biar
+ * pickServiceDetailContent-style fallback bisa bedain "belum diisi" dari
+ * "diisi tapi salah satu barisnya kosong". */
+function stringArrayOrNull(arr: string[]): string[] | null {
+  const cleaned = arr.map((s) => s.trim()).filter(Boolean);
+  return cleaned.length === 0 ? null : cleaned;
 }
 
 export async function createServiceAction(data: ServiceFormData): Promise<ActionResult> {
   try {
     const session = await requireContentEditor();
+    if (!data.id.title.trim() || !data.id.description.trim()) {
+      return { ok: false, message: "Judul & deskripsi layanan (Bahasa Indonesia) wajib diisi." };
+    }
     const count = await prisma.service.count();
     await prisma.service.create({
       data: {
-        slug: slugify(data.title),
-        title: data.title,
-        description: data.description,
+        slug: slugify(data.id.title),
+        title: data.id.title,
+        description: data.id.description,
+        features: data.id.features,
+        titleEn: data.en.title.trim() || null,
+        descriptionEn: data.en.description.trim() || null,
+        featuresEn: stringArrayOrNull(data.en.features) ?? Prisma.DbNull,
+        titleZh: data.zh.title.trim() || null,
+        descriptionZh: data.zh.description.trim() || null,
+        featuresZh: stringArrayOrNull(data.zh.features) ?? Prisma.DbNull,
         icon: data.icon,
         color: data.color,
         bgColor: data.bgColor,
         categoryId: data.categoryId,
-        features: data.features,
         featuredMediaId: data.featuredMediaId,
         basePrice: data.basePrice,
         estimatedDurationLabel: data.estimatedDurationLabel,
@@ -82,17 +107,26 @@ export async function createServiceAction(data: ServiceFormData): Promise<Action
 export async function updateServiceAction(id: string, data: ServiceFormData): Promise<ActionResult> {
   try {
     const session = await requireContentEditor();
+    if (!data.id.title.trim() || !data.id.description.trim()) {
+      return { ok: false, message: "Judul & deskripsi layanan (Bahasa Indonesia) wajib diisi." };
+    }
     await prisma.service.update({
       where: { id },
       data: {
-        slug: slugify(data.title),
-        title: data.title,
-        description: data.description,
+        slug: slugify(data.id.title),
+        title: data.id.title,
+        description: data.id.description,
+        features: data.id.features,
+        titleEn: data.en.title.trim() || null,
+        descriptionEn: data.en.description.trim() || null,
+        featuresEn: stringArrayOrNull(data.en.features) ?? Prisma.DbNull,
+        titleZh: data.zh.title.trim() || null,
+        descriptionZh: data.zh.description.trim() || null,
+        featuresZh: stringArrayOrNull(data.zh.features) ?? Prisma.DbNull,
         icon: data.icon,
         color: data.color,
         bgColor: data.bgColor,
         categoryId: data.categoryId,
-        features: data.features,
         featuredMediaId: data.featuredMediaId,
         basePrice: data.basePrice,
         estimatedDurationLabel: data.estimatedDurationLabel,
@@ -237,35 +271,43 @@ function revalidateServiceDetailPaths(slug: string) {
 }
 
 /** Simpan konten section detail (Hero/About/Benefits/Types/Proses/Dokumen/
- * Durasi/Testimoni-help/CTA override) — satu blok Json, satu tombol simpan
- * per accordion section di admin (lihat LayananDetailEditor.tsx). */
+ * Durasi/Testimoni-help/CTA override) — satu blok Json per bahasa, satu
+ * tombol simpan di admin (lihat LayananDetailEditor.tsx). `en`/`zh` cuma
+ * divalidasi ringan (deep-partial, boleh kosong sebagian/semua -> fallback
+ * ke `id` per-field lewat pickServiceDetailContent()). */
 export async function updateServiceDetailContentAction(
   id: string,
-  data: ServiceDetailContent,
+  data: { id: ServiceDetailContent; en: ServiceDetailContentLang; zh: ServiceDetailContentLang },
 ): Promise<ActionResult> {
   try {
     const session = await requireContentEditor();
+    const base = data.id;
 
-    if (!data.kicker.trim() || !data.tagline.trim() || !data.heroDescription.trim()) {
-      return { ok: false, message: "Kicker, tagline, dan deskripsi hero wajib diisi." };
+    if (!base.kicker.trim() || !base.tagline.trim() || !base.heroDescription.trim()) {
+      return { ok: false, message: "Kicker, tagline, dan deskripsi hero (Bahasa Indonesia) wajib diisi." };
     }
-    if (!data.process.title.trim() || data.process.steps.length === 0) {
-      return { ok: false, message: "Judul & minimal 1 langkah proses wajib diisi." };
+    if (!base.process.title.trim() || base.process.steps.length === 0) {
+      return { ok: false, message: "Judul & minimal 1 langkah proses (Bahasa Indonesia) wajib diisi." };
     }
-    if (data.process.steps.some((s) => !s.title.trim() || !s.description.trim())) {
-      return { ok: false, message: "Setiap langkah proses wajib punya judul & deskripsi." };
+    if (base.process.steps.some((s) => !s.title.trim() || !s.description.trim())) {
+      return { ok: false, message: "Setiap langkah proses (Bahasa Indonesia) wajib punya judul & deskripsi." };
     }
-    if (data.benefits && data.benefits.items.some((b) => !b.title.trim() || !b.description.trim())) {
-      return { ok: false, message: "Setiap item manfaat wajib punya judul & deskripsi." };
+    if (base.benefits && base.benefits.items.some((b) => !b.title.trim() || !b.description.trim())) {
+      return { ok: false, message: "Setiap item manfaat (Bahasa Indonesia) wajib punya judul & deskripsi." };
     }
-    if (data.types && data.types.items.some((t) => !t.title.trim() || !t.description.trim())) {
-      return { ok: false, message: "Setiap item jenis layanan wajib punya judul & deskripsi." };
+    if (base.types && base.types.items.some((t) => !t.title.trim() || !t.description.trim())) {
+      return { ok: false, message: "Setiap item jenis layanan (Bahasa Indonesia) wajib punya judul & deskripsi." };
     }
 
     const service = await prisma.service.findUniqueOrThrow({ where: { id } });
     await prisma.service.update({
       where: { id },
-      data: { detailContent: data as object, updatedById: session.user.id },
+      data: {
+        detailContent: base as object,
+        detailContentEn: data.en as object,
+        detailContentZh: data.zh as object,
+        updatedById: session.user.id,
+      },
     });
     revalidateServiceDetailPaths(service.slug);
     return { ok: true };
@@ -274,19 +316,29 @@ export async function updateServiceDetailContentAction(
   }
 }
 
+export interface ServiceSeoLangData {
+  metaTitle: string;
+  metaDescription: string;
+}
+
 /** SEO + status publish/unpublish — terpisah dari detailContent biar admin
- * bisa nyimpen SEO tanpa harus validasi ulang semua section konten. */
+ * bisa nyimpen SEO tanpa harus validasi ulang semua section konten. Status
+ * gak per-bahasa (satu status publish utk semua locale). */
 export async function updateServiceMetaAction(
   id: string,
-  data: { metaTitle: string; metaDescription: string; status: ContentStatus },
+  data: { status: ContentStatus; id: ServiceSeoLangData; en: ServiceSeoLangData; zh: ServiceSeoLangData },
 ): Promise<ActionResult> {
   try {
     const session = await requireContentEditor();
     const service = await prisma.service.update({
       where: { id },
       data: {
-        metaTitle: data.metaTitle.trim() || null,
-        metaDescription: data.metaDescription.trim() || null,
+        metaTitle: data.id.metaTitle.trim() || null,
+        metaDescription: data.id.metaDescription.trim() || null,
+        metaTitleEn: data.en.metaTitle.trim() || null,
+        metaDescriptionEn: data.en.metaDescription.trim() || null,
+        metaTitleZh: data.zh.metaTitle.trim() || null,
+        metaDescriptionZh: data.zh.metaDescription.trim() || null,
         status: data.status,
         updatedById: session.user.id,
       },

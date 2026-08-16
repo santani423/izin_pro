@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import { revalidateAdminPaths } from "@/lib/admin-guard";
 import { canAccessAdminRoute } from "@/lib/permissions";
 import { saveUploadedImage, deleteUploadedFile } from "@/lib/media";
+import { Prisma } from "@prisma/client";
 import type { Role } from "@prisma/client";
 
 export type ActionResult = { ok: true } | { ok: false; message: string };
@@ -37,43 +38,83 @@ export interface AboutStatInput {
   value: string;
   label: string;
 }
+export interface AboutStatLangInput {
+  value: string;
+  label: string;
+}
 
 export interface AboutValueInput {
   icon: string;
   title: string;
   description: string;
 }
+export interface AboutValueLangInput {
+  title: string;
+  description: string;
+}
+
+/* ─── Helper fallback per-index (array EN/ZH kosong semua -> null, biar
+ * getLocalizedAboutContent() gampang bedain "belum diterjemahkan" dari
+ * "diterjemahkan tapi isinya string kosong"). Sama pola dgn hero.ts. ─── */
+function stringArrayOrNull(arr: string[]): string[] | null {
+  const cleaned = arr.map((s) => s.trim());
+  return cleaned.every((s) => !s) ? null : cleaned;
+}
+function statsLangOrNull(stats: AboutStatLangInput[]) {
+  const cleaned = stats.map((s) => ({ value: s.value.trim(), label: s.label.trim() }));
+  return cleaned.every((s) => !s.value && !s.label) ? null : cleaned;
+}
+function valuesLangOrNull(values: AboutValueLangInput[]) {
+  const cleaned = values.map((v) => ({ title: v.title.trim(), description: v.description.trim() }));
+  return cleaned.every((v) => !v.title && !v.description) ? null : cleaned;
+}
 
 /* ─── Hero ─── */
-export async function saveAboutHeroContentAction(data: {
+export interface AboutHeroLangInput {
   heroKicker: string;
   heroTitle: string;
   heroTitleHighlight: string;
   heroSubtitleBold: string;
   heroSubtitleBody: string;
+}
+
+export async function saveAboutHeroContentAction(data: {
+  id: AboutHeroLangInput;
+  en: AboutHeroLangInput;
+  zh: AboutHeroLangInput;
 }): Promise<ActionResult> {
   try {
     const session = await requireAboutEditor();
-    const heroTitle = data.heroTitle.trim();
-    const heroTitleHighlight = data.heroTitleHighlight.trim();
-    const heroSubtitleBold = data.heroSubtitleBold.trim();
-    const heroSubtitleBody = data.heroSubtitleBody.trim();
+    const heroTitle = data.id.heroTitle.trim();
+    const heroTitleHighlight = data.id.heroTitleHighlight.trim();
+    const heroSubtitleBold = data.id.heroSubtitleBold.trim();
+    const heroSubtitleBody = data.id.heroSubtitleBody.trim();
 
     if (!heroTitle || !heroTitleHighlight) {
-      return { ok: false, message: "Judul hero gak boleh kosong." };
+      return { ok: false, message: "Judul hero (Bahasa Indonesia) gak boleh kosong." };
     }
     if (!heroSubtitleBold || !heroSubtitleBody) {
-      return { ok: false, message: "Subjudul hero gak boleh kosong." };
+      return { ok: false, message: "Subjudul hero (Bahasa Indonesia) gak boleh kosong." };
     }
 
     await prisma.aboutPageContent.update({
       where: { id: "1" },
       data: {
-        heroKicker: data.heroKicker.trim() || null,
+        heroKicker: data.id.heroKicker.trim() || null,
         heroTitle,
         heroTitleHighlight,
         heroSubtitleBold,
         heroSubtitleBody,
+        heroKickerEn: data.en.heroKicker.trim() || null,
+        heroTitleEn: data.en.heroTitle.trim() || null,
+        heroTitleHighlightEn: data.en.heroTitleHighlight.trim() || null,
+        heroSubtitleBoldEn: data.en.heroSubtitleBold.trim() || null,
+        heroSubtitleBodyEn: data.en.heroSubtitleBody.trim() || null,
+        heroKickerZh: data.zh.heroKicker.trim() || null,
+        heroTitleZh: data.zh.heroTitle.trim() || null,
+        heroTitleHighlightZh: data.zh.heroTitleHighlight.trim() || null,
+        heroSubtitleBoldZh: data.zh.heroSubtitleBold.trim() || null,
+        heroSubtitleBodyZh: data.zh.heroSubtitleBody.trim() || null,
         updatedById: session.user.id,
       },
     });
@@ -129,29 +170,42 @@ export async function saveAboutHeroImageAction(formData: FormData): Promise<Abou
 }
 
 /* ─── Tentang Kami + Statistik ─── */
-export async function saveAboutSectionContentAction(data: {
+export interface AboutSectionIdInput {
   aboutKicker: string;
   aboutTitle: string;
   aboutTitleHighlight: string;
   aboutParagraphs: string[];
   stats: AboutStatInput[];
+}
+export interface AboutSectionLangInput {
+  aboutKicker: string;
+  aboutTitle: string;
+  aboutTitleHighlight: string;
+  aboutParagraphs: string[];
+  stats: AboutStatLangInput[];
+}
+
+export async function saveAboutSectionContentAction(data: {
+  id: AboutSectionIdInput;
+  en: AboutSectionLangInput;
+  zh: AboutSectionLangInput;
 }): Promise<ActionResult> {
   try {
     const session = await requireAboutEditor();
-    const aboutKicker = data.aboutKicker.trim();
-    const aboutTitle = data.aboutTitle.trim();
-    const aboutTitleHighlight = data.aboutTitleHighlight.trim();
-    const aboutParagraphs = data.aboutParagraphs.map((p) => p.trim()).filter(Boolean);
-    const stats = data.stats.map((s) => ({ icon: s.icon, value: s.value.trim(), label: s.label.trim() }));
+    const aboutKicker = data.id.aboutKicker.trim();
+    const aboutTitle = data.id.aboutTitle.trim();
+    const aboutTitleHighlight = data.id.aboutTitleHighlight.trim();
+    const aboutParagraphs = data.id.aboutParagraphs.map((p) => p.trim()).filter(Boolean);
+    const stats = data.id.stats.map((s) => ({ icon: s.icon, value: s.value.trim(), label: s.label.trim() }));
 
     if (!aboutKicker || !aboutTitle || !aboutTitleHighlight) {
-      return { ok: false, message: "Kicker & judul section Tentang Kami wajib diisi." };
+      return { ok: false, message: "Kicker & judul section Tentang Kami (Bahasa Indonesia) wajib diisi." };
     }
     if (aboutParagraphs.length === 0) {
-      return { ok: false, message: "Minimal 1 paragraf deskripsi wajib diisi." };
+      return { ok: false, message: "Minimal 1 paragraf deskripsi (Bahasa Indonesia) wajib diisi." };
     }
     if (stats.length === 0 || stats.some((s) => !s.value || !s.label)) {
-      return { ok: false, message: "Setiap statistik wajib punya nilai & label." };
+      return { ok: false, message: "Setiap statistik (Bahasa Indonesia) wajib punya nilai & label." };
     }
 
     await prisma.aboutPageContent.update({
@@ -162,6 +216,16 @@ export async function saveAboutSectionContentAction(data: {
         aboutTitleHighlight,
         aboutParagraphs,
         stats,
+        aboutKickerEn: data.en.aboutKicker.trim() || null,
+        aboutTitleEn: data.en.aboutTitle.trim() || null,
+        aboutTitleHighlightEn: data.en.aboutTitleHighlight.trim() || null,
+        aboutParagraphsEn: stringArrayOrNull(data.en.aboutParagraphs) ?? Prisma.DbNull,
+        statsEn: statsLangOrNull(data.en.stats) ?? Prisma.DbNull,
+        aboutKickerZh: data.zh.aboutKicker.trim() || null,
+        aboutTitleZh: data.zh.aboutTitle.trim() || null,
+        aboutTitleHighlightZh: data.zh.aboutTitleHighlight.trim() || null,
+        aboutParagraphsZh: stringArrayOrNull(data.zh.aboutParagraphs) ?? Prisma.DbNull,
+        statsZh: statsLangOrNull(data.zh.stats) ?? Prisma.DbNull,
         updatedById: session.user.id,
       },
     });
@@ -213,35 +277,55 @@ export async function saveAboutSectionImageAction(formData: FormData): Promise<A
 }
 
 /* ─── Nilai-Nilai ─── */
-export async function saveAboutValuesContentAction(data: {
+export interface AboutValuesIdInput {
   valuesEnabled: boolean;
   valuesTitle: string;
   valuesTitleHighlight: string;
   valuesSubtitle: string;
   values: AboutValueInput[];
+}
+export interface AboutValuesLangInput {
+  valuesTitle: string;
+  valuesTitleHighlight: string;
+  valuesSubtitle: string;
+  values: AboutValueLangInput[];
+}
+
+export async function saveAboutValuesContentAction(data: {
+  id: AboutValuesIdInput;
+  en: AboutValuesLangInput;
+  zh: AboutValuesLangInput;
 }): Promise<ActionResult> {
   try {
     const session = await requireAboutEditor();
-    const valuesTitle = data.valuesTitle.trim();
-    const valuesTitleHighlight = data.valuesTitleHighlight.trim();
-    const valuesSubtitle = data.valuesSubtitle.trim();
-    const values = data.values.map((v) => ({ icon: v.icon, title: v.title.trim(), description: v.description.trim() }));
+    const valuesTitle = data.id.valuesTitle.trim();
+    const valuesTitleHighlight = data.id.valuesTitleHighlight.trim();
+    const valuesSubtitle = data.id.valuesSubtitle.trim();
+    const values = data.id.values.map((v) => ({ icon: v.icon, title: v.title.trim(), description: v.description.trim() }));
 
     if (!valuesTitle || !valuesTitleHighlight || !valuesSubtitle) {
-      return { ok: false, message: "Judul & subjudul section Nilai-Nilai wajib diisi." };
+      return { ok: false, message: "Judul & subjudul section Nilai-Nilai (Bahasa Indonesia) wajib diisi." };
     }
-    if (data.valuesEnabled && (values.length === 0 || values.some((v) => !v.title || !v.description))) {
-      return { ok: false, message: "Setiap nilai wajib punya judul & deskripsi (minimal 1)." };
+    if (data.id.valuesEnabled && (values.length === 0 || values.some((v) => !v.title || !v.description))) {
+      return { ok: false, message: "Setiap nilai (Bahasa Indonesia) wajib punya judul & deskripsi (minimal 1)." };
     }
 
     await prisma.aboutPageContent.update({
       where: { id: "1" },
       data: {
-        valuesEnabled: data.valuesEnabled,
+        valuesEnabled: data.id.valuesEnabled,
         valuesTitle,
         valuesTitleHighlight,
         valuesSubtitle,
         values,
+        valuesTitleEn: data.en.valuesTitle.trim() || null,
+        valuesTitleHighlightEn: data.en.valuesTitleHighlight.trim() || null,
+        valuesSubtitleEn: data.en.valuesSubtitle.trim() || null,
+        valuesEn: valuesLangOrNull(data.en.values) ?? Prisma.DbNull,
+        valuesTitleZh: data.zh.valuesTitle.trim() || null,
+        valuesTitleHighlightZh: data.zh.valuesTitleHighlight.trim() || null,
+        valuesSubtitleZh: data.zh.valuesSubtitle.trim() || null,
+        valuesZh: valuesLangOrNull(data.zh.values) ?? Prisma.DbNull,
         updatedById: session.user.id,
       },
     });
@@ -253,22 +337,28 @@ export async function saveAboutValuesContentAction(data: {
 }
 
 /* ─── Visi & Misi ─── */
-export async function saveAboutVisiMisiContentAction(data: {
-  visiMisiEnabled: boolean;
+export interface AboutVisiMisiLangInput {
   vision: string;
   mission: string[];
+}
+
+export async function saveAboutVisiMisiContentAction(data: {
+  visiMisiEnabled: boolean;
+  id: AboutVisiMisiLangInput;
+  en: AboutVisiMisiLangInput;
+  zh: AboutVisiMisiLangInput;
 }): Promise<ActionResult> {
   try {
     const session = await requireAboutEditor();
-    const vision = data.vision.trim();
-    const mission = data.mission.map((m) => m.trim()).filter(Boolean);
+    const vision = data.id.vision.trim();
+    const mission = data.id.mission.map((m) => m.trim()).filter(Boolean);
 
     if (data.visiMisiEnabled) {
       if (!vision) {
-        return { ok: false, message: "Visi gak boleh kosong." };
+        return { ok: false, message: "Visi (Bahasa Indonesia) gak boleh kosong." };
       }
       if (mission.length === 0) {
-        return { ok: false, message: "Minimal 1 poin misi wajib diisi." };
+        return { ok: false, message: "Minimal 1 poin misi (Bahasa Indonesia) wajib diisi." };
       }
     }
 
@@ -278,6 +368,10 @@ export async function saveAboutVisiMisiContentAction(data: {
         visiMisiEnabled: data.visiMisiEnabled,
         vision,
         mission,
+        visionEn: data.en.vision.trim() || null,
+        missionEn: stringArrayOrNull(data.en.mission) ?? Prisma.DbNull,
+        visionZh: data.zh.vision.trim() || null,
+        missionZh: stringArrayOrNull(data.zh.mission) ?? Prisma.DbNull,
         updatedById: session.user.id,
       },
     });
@@ -376,20 +470,26 @@ export async function saveAboutMissionImageAction(formData: FormData): Promise<A
 }
 
 /* ─── Tim (cuma judul/subjudul & toggle — anggota dikelola /admin/tim) ─── */
-export async function saveAboutTeamSettingsAction(data: {
-  teamEnabled: boolean;
+export interface AboutTeamLangInput {
   teamTitle: string;
   teamTitleHighlight: string;
   teamSubtitle: string;
+}
+
+export async function saveAboutTeamSettingsAction(data: {
+  teamEnabled: boolean;
+  id: AboutTeamLangInput;
+  en: AboutTeamLangInput;
+  zh: AboutTeamLangInput;
 }): Promise<ActionResult> {
   try {
     const session = await requireAboutEditor();
-    const teamTitle = data.teamTitle.trim();
-    const teamTitleHighlight = data.teamTitleHighlight.trim();
-    const teamSubtitle = data.teamSubtitle.trim();
+    const teamTitle = data.id.teamTitle.trim();
+    const teamTitleHighlight = data.id.teamTitleHighlight.trim();
+    const teamSubtitle = data.id.teamSubtitle.trim();
 
     if (!teamTitle || !teamTitleHighlight || !teamSubtitle) {
-      return { ok: false, message: "Judul & subjudul section Tim wajib diisi." };
+      return { ok: false, message: "Judul & subjudul section Tim (Bahasa Indonesia) wajib diisi." };
     }
 
     await prisma.aboutPageContent.update({
@@ -399,6 +499,12 @@ export async function saveAboutTeamSettingsAction(data: {
         teamTitle,
         teamTitleHighlight,
         teamSubtitle,
+        teamTitleEn: data.en.teamTitle.trim() || null,
+        teamTitleHighlightEn: data.en.teamTitleHighlight.trim() || null,
+        teamSubtitleEn: data.en.teamSubtitle.trim() || null,
+        teamTitleZh: data.zh.teamTitle.trim() || null,
+        teamTitleHighlightZh: data.zh.teamTitleHighlight.trim() || null,
+        teamSubtitleZh: data.zh.teamSubtitle.trim() || null,
         updatedById: session.user.id,
       },
     });
@@ -410,17 +516,27 @@ export async function saveAboutTeamSettingsAction(data: {
 }
 
 /* ─── SEO ─── */
-export async function saveAboutSeoAction(data: {
+export interface AboutSeoLangInput {
   metaTitle: string;
   metaDescription: string;
+}
+
+export async function saveAboutSeoAction(data: {
+  id: AboutSeoLangInput;
+  en: AboutSeoLangInput;
+  zh: AboutSeoLangInput;
 }): Promise<ActionResult> {
   try {
     const session = await requireAboutEditor();
     await prisma.aboutPageContent.update({
       where: { id: "1" },
       data: {
-        metaTitle: data.metaTitle.trim() || null,
-        metaDescription: data.metaDescription.trim() || null,
+        metaTitle: data.id.metaTitle.trim() || null,
+        metaDescription: data.id.metaDescription.trim() || null,
+        metaTitleEn: data.en.metaTitle.trim() || null,
+        metaDescriptionEn: data.en.metaDescription.trim() || null,
+        metaTitleZh: data.zh.metaTitle.trim() || null,
+        metaDescriptionZh: data.zh.metaDescription.trim() || null,
         updatedById: session.user.id,
       },
     });

@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { clearBrandingCache, saveBrandAssetFile, deleteBrandAssetFile } from "@/lib/branding";
+import { LOCALES, type Locale } from "@/i18n/config";
+import { LATIN_FONT_OPTIONS, CJK_FONT_OPTIONS } from "@/lib/fonts";
 import type { Role } from "@prisma/client";
 
 export type ActionResult = { ok: true } | { ok: false; message: string };
@@ -24,6 +26,61 @@ async function requireSettingsEditor() {
     throw new Error("Anda tidak punya akses untuk mengubah Pengaturan.");
   }
   return session;
+}
+
+export interface GeneralSettingsInput {
+  defaultLocale: Locale;
+  companyName: string;
+  companyNameEn: string;
+  companyNameZh: string;
+  tagline: string;
+  taglineEn: string;
+  taglineZh: string;
+  description: string;
+  descriptionEn: string;
+  descriptionZh: string;
+  operatingHours: string;
+  operatingHoursEn: string;
+  operatingHoursZh: string;
+}
+
+/* Field2 tab Umum (Nama Perusahaan/Tagline/Deskripsi/Jam Operasional) ini
+ * ditampilkan lintas halaman publik (root layout metadata, Footer,
+ * MaintenancePage, LocationSection dkk — lihat getLocalizedGeneralSettings())
+ * jadi revalidate "/", "layout" sama kayak Menu, bukan cuma /admin/settings. */
+export async function updateGeneralSettingsAction(data: GeneralSettingsInput): Promise<ActionResult> {
+  try {
+    await requireSettingsEditor();
+    if (!data.companyName.trim() || !data.tagline.trim() || !data.description.trim() || !data.operatingHours.trim()) {
+      return { ok: false, message: "Nama Perusahaan, Tagline, Deskripsi, dan Jam Operasional (Bahasa Indonesia) wajib diisi." };
+    }
+    if (!(LOCALES as readonly string[]).includes(data.defaultLocale)) {
+      return { ok: false, message: "Bahasa default situs tidak valid." };
+    }
+    await prisma.settings.update({
+      where: { id: "1" },
+      data: {
+        defaultLocale: data.defaultLocale,
+        companyName: data.companyName.trim(),
+        companyNameEn: data.companyNameEn.trim() || null,
+        companyNameZh: data.companyNameZh.trim() || null,
+        tagline: data.tagline.trim(),
+        taglineEn: data.taglineEn.trim() || null,
+        taglineZh: data.taglineZh.trim() || null,
+        description: data.description.trim(),
+        descriptionEn: data.descriptionEn.trim() || null,
+        descriptionZh: data.descriptionZh.trim() || null,
+        operatingHours: data.operatingHours.trim(),
+        operatingHoursEn: data.operatingHoursEn.trim() || null,
+        operatingHoursZh: data.operatingHoursZh.trim() || null,
+      },
+    });
+    revalidatePath("/admin/settings");
+    revalidatePath("/", "layout");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: errorMessage(e, "Gagal menyimpan Informasi Website.") };
+  }
 }
 
 export async function updateWhacenterSettingsAction(deviceId: string): Promise<ActionResult> {
@@ -57,6 +114,46 @@ export async function updateMaintenanceModeAction(
     return { ok: true };
   } catch (e) {
     return { ok: false, message: errorMessage(e, "Gagal mengubah mode maintenance.") };
+  }
+}
+
+export interface FontSettingsInput {
+  fontFamilyId: string;
+  fontFamilyEn: string;
+  fontFamilyZh: string;
+}
+
+const LATIN_FONT_VALUES = new Set(LATIN_FONT_OPTIONS.map((o) => o.value));
+const CJK_FONT_VALUES = new Set(CJK_FONT_OPTIONS.map((o) => o.value));
+
+/* Font teks WEBSITE PUBLIK per bahasa (tab Font) — lihat FONT_OPTIONS di
+ * src/lib/fonts.ts. Revalidate "/", "layout" krn dipakai (public)/layout.tsx
+ * di semua halaman publik, bukan cuma /admin/settings. */
+export async function updateFontSettingsAction(data: FontSettingsInput): Promise<ActionResult> {
+  try {
+    await requireSettingsEditor();
+    if (!LATIN_FONT_VALUES.has(data.fontFamilyId)) {
+      return { ok: false, message: "Font Bahasa Indonesia tidak valid." };
+    }
+    if (!LATIN_FONT_VALUES.has(data.fontFamilyEn)) {
+      return { ok: false, message: "Font English tidak valid." };
+    }
+    if (!CJK_FONT_VALUES.has(data.fontFamilyZh)) {
+      return { ok: false, message: "Font 中文 tidak valid." };
+    }
+    await prisma.settings.update({
+      where: { id: "1" },
+      data: {
+        fontFamilyId: data.fontFamilyId,
+        fontFamilyEn: data.fontFamilyEn,
+        fontFamilyZh: data.fontFamilyZh,
+      },
+    });
+    revalidatePath("/admin/settings");
+    revalidatePath("/", "layout");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: errorMessage(e, "Gagal menyimpan pengaturan font.") };
   }
 }
 

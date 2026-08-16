@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { BadgePercent } from "lucide-react";
+import { useDictionary } from "@/contexts/LocaleContext";
 
 /* Sisa waktu menuju akhir bulan berjalan */
 function getRemaining() {
@@ -31,6 +32,7 @@ export interface PromoCountdownHeading {
 
 /* ─── Banner countdown diskon — hitung mundur ke akhir bulan ─── */
 export default function PromoCountdownSection({ heading }: { heading: PromoCountdownHeading }) {
+  const dict = useDictionary();
   /* null saat SSR/first paint agar tidak hydration mismatch */
   const [remaining, setRemaining] = useState<ReturnType<
     typeof getRemaining
@@ -49,10 +51,10 @@ export default function PromoCountdownSection({ heading }: { heading: PromoCount
   }, []);
 
   const units = [
-    { label: "Hari", value: remaining?.hari },
-    { label: "Jam", value: remaining?.jam },
-    { label: "Menit", value: remaining?.menit },
-    { label: "Detik", value: remaining?.detik },
+    { label: dict.promoCountdown.units.days, value: remaining?.hari },
+    { label: dict.promoCountdown.units.hours, value: remaining?.jam },
+    { label: dict.promoCountdown.units.minutes, value: remaining?.menit },
+    { label: dict.promoCountdown.units.seconds, value: remaining?.detik },
   ];
 
   return (
@@ -76,7 +78,7 @@ export default function PromoCountdownSection({ heading }: { heading: PromoCount
         {/* Countdown — container hijau tipis, label center, kotak angka putih */}
         <div className="rounded-xl bg-brand-surface p-3">
           <p className="rounded-lg bg-primary/10 py-1.5 text-center text-sm font-bold text-primary">
-            Berakhir dalam:
+            {dict.promoCountdown.endingIn}
           </p>
           <div className="mt-3 flex justify-center gap-2">
             {units.map(({ label, value }) => (

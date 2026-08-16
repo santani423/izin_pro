@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { LocalizedLink as Link } from "@/components/shared/LocalizedLink";
 import { ArrowRight } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/Reveal";
+import { useDictionary } from "@/contexts/LocaleContext";
+import { format } from "@/i18n/format";
 import { cn } from "@/lib/utils";
 import { LAYANAN_CATEGORIES, LAYANAN_SERVICES } from "@/lib/layanan";
 
@@ -14,6 +16,7 @@ import { LAYANAN_CATEGORIES, LAYANAN_SERVICES } from "@/lib/layanan";
  * ter-render di server (SSR) sehingga aman untuk SEO.
  */
 export default function LayananCatalogSection() {
+  const dict = useDictionary();
   const [activeCategory, setActiveCategory] = useState("semua");
 
   const filtered = LAYANAN_SERVICES.filter(
@@ -23,15 +26,15 @@ export default function LayananCatalogSection() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
       <h2 className="text-center text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-        Solusi Perizinan untuk
+        {dict.layananCatalog.headingPrefix}
         <br />
-        <span className="text-primary">Setiap Kebutuhan Bisnis Anda</span>
+        <span className="text-primary">{dict.layananCatalog.headingHighlight}</span>
       </h2>
 
       {/* Filter kategori — scroll horizontal di mobile, wrap di ≥sm */}
       <div
         role="tablist"
-        aria-label="Filter kategori layanan"
+        aria-label={dict.layananCatalog.ariaFilter}
         className="mt-8 flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:justify-center sm:overflow-visible"
       >
         {LAYANAN_CATEGORIES.map(({ id, label }) => (
@@ -59,7 +62,7 @@ export default function LayananCatalogSection() {
               {/* Placeholder foto layanan — gradient hijau brand */}
               <div
                 role="img"
-                aria-label={`Ilustrasi layanan ${title}`}
+                aria-label={format(dict.layananCatalog.ariaIllustrationTemplate, { title })}
                 className="grid aspect-[16/10] w-full place-items-center bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark"
               >
                 <Icon className="size-8 text-white/80" aria-hidden="true" />
@@ -74,7 +77,7 @@ export default function LayananCatalogSection() {
                   href={`/layanan/${slug}`}
                   className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
                 >
-                  Selengkapnya
+                  {dict.layananCatalog.cardLink}
                   <ArrowRight
                     className="size-4 transition-transform group-hover:translate-x-0.5"
                     aria-hidden="true"

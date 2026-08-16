@@ -1,9 +1,10 @@
-import Link from "next/link";
+import { LocalizedLink as Link } from "@/components/shared/LocalizedLink";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/Reveal";
+import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 import { cn } from "@/lib/utils";
 
 export interface PromoPackageItem {
@@ -26,13 +27,14 @@ export interface PromoPackagesHeading {
 }
 
 /* ─── Paket promo pilihan — 3 kartu (tengah gelap) ─── */
-export default function PromoPackagesSection({
+export default async function PromoPackagesSection({
   heading,
   packages,
 }: {
   heading: PromoPackagesHeading;
   packages: PromoPackageItem[];
 }) {
+  const dict = getDictionary(await getLocale());
   return (
     <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
       <h2 className="text-center text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
@@ -80,7 +82,7 @@ export default function PromoPackagesSection({
                     pkg.dark ? "text-white/60" : "text-muted-foreground",
                   )}
                 >
-                  Mulai dari
+                  {dict.promoPackages.startingFrom}
                 </p>
                 <p className="flex flex-wrap items-baseline gap-2">
                   <span
@@ -145,7 +147,7 @@ export default function PromoPackagesSection({
                   )}
                 >
                   <Link href={pkg.href}>
-                    Lihat Detail
+                    {dict.promoPackages.viewDetail}
                     <ArrowRight className="size-4" aria-hidden="true" />
                   </Link>
                 </Button>

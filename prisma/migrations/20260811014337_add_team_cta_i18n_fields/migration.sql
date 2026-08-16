@@ -1,0 +1,11 @@
+-- AlterTable
+ALTER TABLE `ctas` ADD COLUMN `buttonLabelEn` VARCHAR(191) NULL,
+    ADD COLUMN `buttonLabelZh` VARCHAR(191) NULL,
+    ADD COLUMN `subtitleEn` VARCHAR(191) NULL,
+    ADD COLUMN `subtitleZh` VARCHAR(191) NULL,
+    ADD COLUMN `titleEn` VARCHAR(191) NULL,
+    ADD COLUMN `titleZh` VARCHAR(191) NULL;
+
+-- AlterTable
+ALTER TABLE `team_members` ADD COLUMN `roleEn` VARCHAR(191) NULL,
+    ADD COLUMN `roleZh` VARCHAR(191) NULL;

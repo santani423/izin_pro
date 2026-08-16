@@ -6,20 +6,25 @@ import { AlertCircle, Check, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
+import { useDictionary, useLocale } from "@/contexts/LocaleContext";
 import { cn } from "@/lib/utils";
 import { WHATSAPP_URL } from "@/lib/landing";
 import { submitTrackingLookupAction } from "@/lib/actions/tracking";
 import type { PublicTrackingResult } from "@/lib/transaction-tracking";
 
-function formatDate(d: Date | string | null) {
+const INTL_LOCALES: Record<string, string> = { id: "id-ID", en: "en-US", zh: "zh-CN" };
+
+function formatDate(d: Date | string | null, intlLocale: string) {
   if (!d) return "-";
-  return new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+  return new Date(d).toLocaleDateString(intlLocale, { day: "numeric", month: "long", year: "numeric" });
 }
 
 /* ─── Form lacak + hasil timeline status transaksi — beneran tersambung ke
  * database (ServiceTransaction + TransactionWorkflowStep), gantiin mock
  * lama total. initialCode dipakai buat auto-lacak dari /tracking?code=... ─── */
 export default function TrackingFormSection({ initialCode }: { initialCode?: string }) {
+  const dict = useDictionary();
+  const intlLocale = INTL_LOCALES[useLocale()];
   const [input, setInput] = useState(initialCode ?? "");
   const [result, setResult] = useState<PublicTrackingResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -52,11 +57,10 @@ export default function TrackingFormSection({ initialCode }: { initialCode?: str
       <Card className="gap-0 rounded-2xl border-border/60 py-0 shadow-sm">
         <CardContent className="px-6 py-6 sm:px-8">
           <h2 className="text-lg font-bold text-foreground">
-            Lacak Status Perizinan Anda
+            {dict.trackingForm.heading}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Masukkan kode transaksi yang Anda terima via WhatsApp/email saat
-            pendaftaran layanan.
+            {dict.trackingForm.subtitle}
           </p>
 
           <form
@@ -70,8 +74,8 @@ export default function TrackingFormSection({ initialCode }: { initialCode?: str
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value.toUpperCase())}
-              placeholder="Contoh: TRX-20260731-000001"
-              aria-label="Kode transaksi"
+              placeholder={dict.trackingForm.placeholder}
+              aria-label={dict.trackingForm.ariaInput}
               className="h-10 w-full rounded-lg border border-border/60 bg-background pl-4 pr-4 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
             <Button
@@ -80,7 +84,7 @@ export default function TrackingFormSection({ initialCode }: { initialCode?: str
               disabled={loading}
               className="w-full justify-center gap-2 rounded-lg px-2.5 text-xs font-semibold sm:w-auto sm:px-6 sm:text-sm"
             >
-              {loading ? "Mencari..." : "Lacak Sekarang"}
+              {loading ? dict.trackingForm.searching : dict.trackingForm.trackNow}
               <Search className="size-4" aria-hidden="true" />
             </Button>
           </form>
@@ -97,13 +101,12 @@ export default function TrackingFormSection({ initialCode }: { initialCode?: str
           <div className="flex-1">
             <p className="text-sm font-bold text-foreground">{error}</p>
             <p className="mt-0.5 text-sm text-muted-foreground">
-              Periksa kembali penulisan kode transaksi Anda, atau hubungi tim kami
-              untuk bantuan pengecekan langsung.
+              {dict.trackingForm.notFoundHelp}
             </p>
           </div>
           <Button asChild variant="outline" className="w-full justify-center gap-2 rounded-lg sm:w-auto">
             <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
-              Hubungi Kami
+              {dict.trackingForm.contactUs}
               <WhatsAppIcon className="size-4 text-primary" />
             </a>
           </Button>
@@ -117,7 +120,7 @@ export default function TrackingFormSection({ initialCode }: { initialCode?: str
           <Card className="gap-0 rounded-2xl border-border/60 py-0">
             <CardContent className="px-6 py-6 sm:px-8">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h3 className="text-base font-bold text-foreground">Detail Transaksi</h3>
+                <h3 className="text-base font-bold text-foreground">{dict.trackingForm.detailHeading}</h3>
                 <span
                   className={cn(
                     "rounded-full px-3 py-1 text-xs font-bold",
@@ -129,10 +132,10 @@ export default function TrackingFormSection({ initialCode }: { initialCode?: str
               </div>
               <dl className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {[
-                  { label: "Kode Transaksi", value: result.code },
-                  { label: "Layanan", value: result.packageName ? `${result.serviceName} — ${result.packageName}` : result.serviceName },
-                  { label: "Tahap Saat Ini", value: result.currentStageName },
-                  { label: "Estimasi Selesai", value: formatDate(result.estimatedCompletionDate) },
+                  { label: dict.trackingForm.codeLabel, value: result.code },
+                  { label: dict.trackingForm.serviceLabel, value: result.packageName ? `${result.serviceName} — ${result.packageName}` : result.serviceName },
+                  { label: dict.trackingForm.currentStageLabel, value: result.currentStageName },
+                  { label: dict.trackingForm.estimatedCompletionLabel, value: formatDate(result.estimatedCompletionDate, intlLocale) },
                 ].map(({ label, value }) => (
                   <div key={label}>
                     <dt className="text-xs text-muted-foreground">{label}</dt>
@@ -142,7 +145,7 @@ export default function TrackingFormSection({ initialCode }: { initialCode?: str
               </dl>
               <div className="mt-5">
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Progress</span>
+                  <span>{dict.trackingForm.progressLabel}</span>
                   <span className="font-bold text-primary">{result.progressPercent}%</span>
                 </div>
                 <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-border">
@@ -159,7 +162,7 @@ export default function TrackingFormSection({ initialCode }: { initialCode?: str
           {result.steps.length > 0 && (
             <Card className="gap-0 rounded-2xl border-border/60 py-0">
               <CardContent className="px-6 py-6 sm:px-8">
-                <h3 className="text-base font-bold text-foreground">Status Proses Layanan</h3>
+                <h3 className="text-base font-bold text-foreground">{dict.trackingForm.statusHeading}</h3>
                 <ol className="mt-6 space-y-6">
                   {result.steps.map((step, index) => {
                     const done = step.status === "COMPLETED";
@@ -190,7 +193,7 @@ export default function TrackingFormSection({ initialCode }: { initialCode?: str
                             {step.name}
                             {current && (
                               <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-                                Sedang Berjalan
+                                {dict.trackingForm.inProgressBadge}
                               </span>
                             )}
                           </p>
@@ -198,7 +201,7 @@ export default function TrackingFormSection({ initialCode }: { initialCode?: str
                             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{step.description}</p>
                           )}
                           {step.completedAt && (
-                            <p className="mt-1 text-xs font-semibold text-primary">{formatDate(step.completedAt)}</p>
+                            <p className="mt-1 text-xs font-semibold text-primary">{formatDate(step.completedAt, intlLocale)}</p>
                           )}
                         </div>
                       </li>
@@ -213,7 +216,7 @@ export default function TrackingFormSection({ initialCode }: { initialCode?: str
           {result.attachments.length > 0 && (
             <Card className="gap-0 rounded-2xl border-border/60 py-0">
               <CardContent className="px-6 py-6 sm:px-8">
-                <h3 className="text-base font-bold text-foreground">Dokumen Tersedia</h3>
+                <h3 className="text-base font-bold text-foreground">{dict.trackingForm.documentsHeading}</h3>
                 <ul className="mt-3 space-y-2">
                   {result.attachments.map((a) => (
                     <li key={a.id}>

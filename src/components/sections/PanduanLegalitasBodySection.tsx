@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import { LocalizedLink as Link } from "@/components/shared/LocalizedLink";
 import { ArrowRight, CheckCircle2, ChevronRight, Download, ListOrdered } from "lucide-react";
 
 import { Button } from "@/components/ui/button";

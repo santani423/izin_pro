@@ -9,6 +9,8 @@ import BlogCommentsSection from "@/components/sections/BlogCommentsSection";
 import { getPublicBlogPostBySlug, getPublicBlogPosts } from "@/lib/blog-data";
 import { recordArticleVisit, getApprovedComments } from "@/lib/article-stats";
 import { PANDUAN_LEGALITAS_SLUG } from "@/lib/panduan-legalitas";
+import { getDictionary, getLocale } from "@/i18n/get-dictionary";
+import { format } from "@/i18n/format";
 
 /* Slug dengan route statis sendiri — dikeluarkan dari route dinamis */
 const STATIC_ARTICLE_SLUGS = [PANDUAN_LEGALITAS_SLUG];
@@ -30,7 +32,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const post = await getPublicBlogPostBySlug(slug);
-  if (!post) return { title: "Artikel Tidak Ditemukan" };
+  if (!post) return { title: getDictionary(await getLocale()).pages.blogDetail.notFoundTitle };
 
   return {
     title: post.metaTitle || post.title,
@@ -44,6 +46,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 /* ─── Halaman Detail Artikel (desain baru) ─── */
 export default async function BlogDetailPage({ params }: Props) {
   const { slug } = await params;
+  const dict = getDictionary(await getLocale());
   const post = await getPublicBlogPostBySlug(slug);
   if (!post) notFound();
 
@@ -62,14 +65,15 @@ export default async function BlogDetailPage({ params }: Props) {
       {/* 1. Hero + breadcrumb + meta penulis */}
       <PageHero
         crumbs={[
-          { label: "Beranda", href: "/" },
-          { label: "Artikel", href: "/blog" },
+          { label: dict.common.breadcrumbHome, href: "/" },
+          { label: dict.pages.blogDetail.breadcrumbArtikel, href: "/blog" },
           { label: post.title },
         ]}
+        ariaBreadcrumb={dict.common.ariaBreadcrumb}
         kicker={post.categoryName}
         title={post.title}
         description={post.excerpt}
-        imageLabel={`Ilustrasi artikel ${post.title}`}
+        imageLabel={format(dict.pages.blogDetail.imageLabelTemplate, { title: post.title })}
         mobileImageFirst
       >
         {/* Penulis & meta */}
@@ -78,16 +82,16 @@ export default async function BlogDetailPage({ params }: Props) {
             className="grid size-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-brand-lime to-brand-green-dark text-xs font-bold text-white"
             aria-hidden="true"
           >
-            IP
+            {dict.pages.blogDetail.avatarInitials}
           </span>
           <div>
             <p className="text-sm font-semibold text-foreground">
-              Ditulis oleh Tim IzinPro
+              {dict.pages.blogDetail.authorLine}
             </p>
             <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1">
                 <CalendarDays className="size-3.5" aria-hidden="true" />
-                Diperbarui: {post.dateLabel}
+                {dict.pages.blogDetail.updatedPrefix}{post.dateLabel}
               </span>
               <span className="inline-flex items-center gap-1">
                 <Clock className="size-3.5" aria-hidden="true" />
@@ -106,8 +110,8 @@ export default async function BlogDetailPage({ params }: Props) {
 
       {/* 3. CTA Banner */}
       <CtaSection
-        title="Ingin Proses Lebih Cepat & Tanpa Ribet?"
-        subtitle="Serahkan pengurusan perizinan Anda kepada tim profesional kami. Lebih hemat waktu, aman, dan pasti selesai."
+        title={dict.pages.blogDetail.ctaTitle}
+        subtitle={dict.pages.blogDetail.ctaSubtitle}
       />
     </>
   );

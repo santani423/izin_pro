@@ -10,6 +10,8 @@ import LayananDetailTypesSection from "@/components/sections/LayananDetailTypesS
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { hydrateLayananDetail } from "@/lib/hydrate-layanan-detail";
+import { pickLocalizedText } from "@/lib/locale-field";
+import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 import type { Role } from "@prisma/client";
 
 /* ─── Lazy load sections below the fold ─── */
@@ -67,12 +69,21 @@ async function getServiceForDetail(slug: string) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
+  const locale = await getLocale();
   const service = await getServiceForDetail(slug);
-  if (!service) return { title: "Layanan Tidak Ditemukan" };
+  if (!service) return { title: getDictionary(locale).pages.layananDetail.notFoundTitle };
+
+  const metaTitle = pickLocalizedText(service.metaTitle ?? service.title, service.metaTitleEn, service.metaTitleZh, locale);
+  const metaDescription = pickLocalizedText(
+    service.metaDescription ?? service.description,
+    service.metaDescriptionEn,
+    service.metaDescriptionZh,
+    locale,
+  );
 
   return {
-    title: service.metaTitle ?? service.title,
-    description: service.metaDescription ?? service.description,
+    title: metaTitle,
+    description: metaDescription,
     alternates: {
       canonical: `https://izinpro.co.id/layanan/${slug}`,
     },
@@ -82,6 +93,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 /* ─── Halaman Detail Layanan (desain baru) ─── */
 export default async function LayananDetailPage({ params }: Props) {
   const { slug } = await params;
+  const locale = await getLocale();
   const service = await getServiceForDetail(slug);
   if (!service) notFound();
 
@@ -100,7 +112,7 @@ export default async function LayananDetailPage({ params }: Props) {
     prisma.cta.findUnique({ where: { location: "DETAIL_LAYANAN" } }),
   ]);
 
-  const detail = hydrateLayananDetail(service, service.packages, faqs, testimonials, ctaDefault);
+  const detail = hydrateLayananDetail(service, service.packages, faqs, testimonials, ctaDefault, locale);
 
   return (
     <>

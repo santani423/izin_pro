@@ -1,7 +1,10 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Reveal } from "@/components/shared/Reveal";
-import { LANDING_PROMOS, type LandingPromo } from "@/lib/landing";
+import { useDictionary } from "@/contexts/LocaleContext";
+import type { LandingPromo } from "@/lib/landing";
 import { cn } from "@/lib/utils";
 
 const VARIANT_STYLES: Record<
@@ -27,20 +30,25 @@ const VARIANT_STYLES: Record<
   },
 };
 
+/* Urutan tetap 3 item — cocokin index dgn dict.promo.items (lihat i18n/dictionaries) */
+const PROMO_VARIANTS: LandingPromo["variant"][] = ["discount", "free", "package"];
+
 /* ─── Promo Spesial ─── */
 export default function PromoSection() {
+  const dict = useDictionary();
   return (
     <section id="promo" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
       <SectionHeading
-        title="Promo Spesial"
-        subtitle="Dapatkan penawaran terbaik untuk layanan perizinan pilihan Anda."
+        title={dict.promo.heading}
+        subtitle={dict.promo.subtitle}
       />
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-        {LANDING_PROMOS.map((promo, index) => {
-          const style = VARIANT_STYLES[promo.variant];
+        {dict.promo.items.map((promo, index) => {
+          const variant = PROMO_VARIANTS[index];
+          const style = VARIANT_STYLES[variant];
           return (
-            <Reveal key={promo.id} delay={index * 0.1}>
+            <Reveal key={variant} delay={index * 0.1}>
               <article
                 className={cn(
                   "flex h-full min-h-44 flex-col justify-between rounded-xl p-6 shadow-sm",

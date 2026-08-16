@@ -7,6 +7,7 @@ import PromoPackagesSection from "@/components/sections/PromoPackagesSection";
 import LayananDetailProcessSection from "@/components/sections/LayananDetailProcessSection";
 import { prisma } from "@/lib/db";
 import { hydratePromoContent, hydratePromoPackage } from "@/lib/hydrate-promo-content";
+import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 
 /* ─── Lazy load sections below the fold ─── */
 const PromoCountdownSection = dynamic(
@@ -20,17 +21,20 @@ const PromoConsultSection = dynamic(
 );
 const CtaSection = dynamic(() => import("@/components/sections/CtaSection"));
 
-export const metadata: Metadata = {
-  title: "Promosi Spesial Layanan Perizinan",
-  description:
-    "Penawaran terbaik IzinPro — paket promo Pendirian PT, Izin Usaha, dan Perizinan Lengkap dengan harga hemat, proses cepat, dan 100% legal.",
-  alternates: {
-    canonical: "https://izinpro.co.id/promo",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const dict = getDictionary(await getLocale());
+  return {
+    title: dict.pages.promo.metaTitle,
+    description: dict.pages.promo.metaDescription,
+    alternates: {
+      canonical: "https://izinpro.co.id/promo",
+    },
+  };
+}
 
 /* ─── Halaman Promo (desain baru) — seluruh konten dikelola admin di /promo ─── */
 export default async function PromoPage() {
+  const dict = getDictionary(await getLocale());
   const [rawContent, rawPackages] = await Promise.all([
     prisma.promoPageContent.findUniqueOrThrow({ where: { id: "1" } }),
     prisma.promoPackage.findMany({
@@ -46,7 +50,8 @@ export default async function PromoPage() {
     <>
       {/* 1. Hero + breadcrumb */}
       <PageHero
-        crumbs={[{ label: "Beranda", href: "/" }, { label: "Promo" }]}
+        crumbs={[{ label: dict.common.breadcrumbHome, href: "/" }, { label: dict.pages.promo.breadcrumbPromo }]}
+        ariaBreadcrumb={dict.common.ariaBreadcrumb}
         kicker={content.hero.kicker ?? undefined}
         title={
           <>
@@ -55,14 +60,14 @@ export default async function PromoPage() {
         }
         description={content.hero.description}
         imageUrl={content.hero.imageUrl}
-        imageLabel="Ilustrasi kado promo spesial IzinPro"
+        imageLabel={dict.pages.promo.imageLabel}
         overlap
       />
 
       {/* 2. Highlight keunggulan */}
       <HighlightsBar
         items={content.highlights}
-        ariaLabel="Keunggulan promo IzinPro"
+        ariaLabel={dict.pages.promo.highlightsAriaLabel}
       />
 
       {/* 3. Paket promo pilihan */}

@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { ArrowUp } from "lucide-react";
+import { useDictionary } from "@/contexts/LocaleContext";
 import { cn } from "@/lib/utils";
 
 /* ─── Tombol Kembali ke Atas ─── */
 export default function BackToTop() {
+  const dict = useDictionary();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -19,7 +21,7 @@ export default function BackToTop() {
   return (
     <button
       onClick={scrollToTop}
-      aria-label="Kembali ke atas"
+      aria-label={dict.backToTop.ariaLabel}
       className={cn(
         "fixed bottom-24 right-6 z-50 flex items-center justify-center w-10 h-10 rounded-full",
         "bg-white border border-gray-200 shadow-md text-gray-500 hover:text-primary hover:border-primary",

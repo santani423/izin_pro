@@ -15,7 +15,6 @@ generator client {
 //  url      = "mysql://u858331583_izinpro:Sandibaru%4023@localhost:3306/u858331583_izinpro"
 //}
 
-
 datasource db {
   provider = "mysql" // MariaDB (Rumahweb), compatible dgn protocol mysql
   url      = env("DATABASE_URL")
@@ -310,6 +309,9 @@ model TeamMember {
   id           String    @id @default(cuid())
   name         String
   role         String
+  // *En/*Zh kosong = fallback ke `role` di publik (lihat TentangKamiPage).
+  roleEn       String?
+  roleZh       String?
   department   String?
   email        String?
   phone        String?
@@ -354,19 +356,23 @@ enum CtaLocation {
 }
 
 model ServiceCategory {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  name        String
-  icon        String?
-  description String?  @db.Text
-  isActive    Boolean  @default(true)
-  sortOrder   Int      @default(0)
-  createdById String?
-  createdBy   User?    @relation("ServiceCategoryCreatedBy", fields: [createdById], references: [id])
-  updatedById String?
-  updatedBy   User?    @relation("ServiceCategoryUpdatedBy", fields: [updatedById], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  name          String
+  nameEn        String? // kosong = fallback ke `name` di publik
+  nameZh        String?
+  icon          String?
+  description   String?  @db.Text
+  descriptionEn String?  @db.Text
+  descriptionZh String?  @db.Text
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdById   String?
+  createdBy     User?    @relation("ServiceCategoryCreatedBy", fields: [createdById], references: [id])
+  updatedById   String?
+  updatedBy     User?    @relation("ServiceCategoryUpdatedBy", fields: [updatedById], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   services     Service[]
   testimonials Testimonial[]
@@ -378,7 +384,11 @@ model Service {
   id                     String          @id @default(cuid())
   slug                   String          @unique
   title                  String
+  titleEn                String? // kosong = fallback ke `title` di publik
+  titleZh                String?
   description            String          @db.Text
+  descriptionEn          String?         @db.Text
+  descriptionZh          String?         @db.Text
   icon                   String?
   color                  String?
   bgColor                String?
@@ -389,13 +399,21 @@ model Service {
   aboutMediaId           String? // gambar khusus section "Tentang" di /layanan/[slug] — opsional, fallback ke featuredMedia (gambar Hero) kalau kosong
   aboutMedia             Media?          @relation("ServiceAboutMedia", fields: [aboutMediaId], references: [id])
   features               Json
+  featuresEn             Json? // string[] — cuma kepake di fallbackContent() about.checklist, lihat hydrate-layanan-detail.ts
+  featuresZh             Json?
   detailContent          Json? // ServiceDetailContent (lihat src/lib/types/service-detail-content.ts) — highlights, stats, about, benefits, jenis izin, proses, dokumen, durasi, dll utk /layanan/[slug]
+  detailContentEn        Json? // ServiceDetailContentLang (deep-partial ServiceDetailContent) — fallback per-field ke `detailContent`, lihat pickServiceDetailContent()
+  detailContentZh        Json?
   estimatedDurationLabel String? // mis. "7-14 hari kerja" — dipakai modul Transaksi (WorkflowTemplate/ServiceTransaction)
   basePrice              Decimal?        @db.Decimal(12, 2) // harga dasar dipakai modul Transaksi, beda dari harga per-paket (ServicePackage.price)
   requiredDocuments      Json? // string[] dokumen yg wajib disiapkan customer, dipakai modul Transaksi
   gallery                Json? // { url: string; alt: string }[] — galeri foto layanan, dipakai modul Transaksi
   metaTitle              String?
+  metaTitleEn            String?
+  metaTitleZh            String?
   metaDescription        String?
+  metaDescriptionEn      String?
+  metaDescriptionZh      String?
   status                 ContentStatus   @default(PUBLISHED)
   isActive               Boolean         @default(true)
   sortOrder              Int             @default(0)
@@ -424,9 +442,13 @@ model ServicePackage {
   serviceId              String
   service                Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   name                   String
+  nameEn                 String? // kosong = fallback ke `name` di publik
+  nameZh                 String?
   price                  Decimal  @db.Decimal(12, 2)
   originalPrice          Decimal? @db.Decimal(12, 2)
   features               Json
+  featuresEn             Json?
+  featuresZh             Json?
   isPopular              Boolean  @default(false)
   estimatedDurationLabel String? // mis. "5-7 hari kerja" — dipakai modul Transaksi
   isActive               Boolean  @default(true)
@@ -557,18 +579,26 @@ model PromoPackage {
 }
 
 model Cta {
-  id          String       @id @default(cuid())
-  location    CtaLocation? @unique // null = CTA default, dipakai halaman tanpa varian sendiri
-  title       String
-  subtitle    String?
-  buttonLabel String
-  whatsapp    String? // null -> fallback ke Settings.whatsapp
-  createdById String?
-  createdBy   User?        @relation("CtaCreatedBy", fields: [createdById], references: [id])
-  updatedById String?
-  updatedBy   User?        @relation("CtaUpdatedBy", fields: [updatedById], references: [id])
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id            String       @id @default(cuid())
+  location      CtaLocation? @unique // null = CTA default, dipakai halaman tanpa varian sendiri
+  title         String
+  // *En/*Zh kosong = fallback ke versi Bahasa Indonesia di publik (lihat
+  // getLocalizedCta() di src/lib/locale-field.ts).
+  titleEn       String?
+  titleZh       String?
+  subtitle      String?
+  subtitleEn    String?
+  subtitleZh    String?
+  buttonLabel   String
+  buttonLabelEn String?
+  buttonLabelZh String?
+  whatsapp      String? // null -> fallback ke Settings.whatsapp
+  createdById   String?
+  createdBy     User?        @relation("CtaCreatedBy", fields: [createdById], references: [id])
+  updatedById   String?
+  updatedBy     User?        @relation("CtaUpdatedBy", fields: [updatedById], references: [id])
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   @@map("ctas")
 }
@@ -893,6 +923,8 @@ model MenuItem {
   parent      MenuItem?  @relation("MenuItemChildren", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   children    MenuItem[] @relation("MenuItemChildren")
   label       String
+  labelEn     String? // kosong = fallback ke `label` (Bahasa Indonesia) di publik
+  labelZh     String? // kosong = fallback ke `label` (Bahasa Indonesia) di publik
   href        String
   sortOrder   Int        @default(0)
   deletedAt   DateTime? // soft delete
@@ -912,11 +944,25 @@ model MenuItem {
 model Settings {
   id String @id @default("1")
 
-  // Tab Umum
-  companyName    String
-  tagline        String
-  description    String @db.Text
-  operatingHours String
+  // Tab Umum — *En/*Zh kosong = fallback ke versi Bahasa Indonesia di publik
+  // Bahasa yang dipakai pengunjung baru (belum pernah pilih bahasa lewat
+  // LocaleSwitcher, ditandai cookie) saat buka URL tanpa prefix locale —
+  // lihat getLocale() di src/i18n/get-dictionary.ts. Gak mengubah struktur
+  // URL (id tetap satu-satunya locale tanpa prefix /en /zh), cuma nentuin
+  // konten bahasa apa yang tampil duluan.
+  defaultLocale    String  @default("id")
+  companyName      String
+  companyNameEn    String?
+  companyNameZh    String?
+  tagline          String
+  taglineEn        String?
+  taglineZh        String?
+  description      String  @db.Text
+  descriptionEn    String? @db.Text
+  descriptionZh    String? @db.Text
+  operatingHours   String
+  operatingHoursEn String?
+  operatingHoursZh String?
 
   // Tab Kontak
   whatsapp String // format internasional tanpa "+", mis. "6282280007821"
@@ -939,6 +985,14 @@ model Settings {
   // Branding / identitas visual
   appLogoUrl String?
   faviconUrl String?
+
+  // Tab Font — gaya font teks website publik per bahasa (nilai = slug di
+  // FONT_OPTIONS, lihat src/lib/fonts.ts). Selalu terisi (gak nullable,
+  // beda dari *En/*Zh field lain) karena font wajib resolve ke sesuatu.
+  // Panel admin/CMS TIDAK terpengaruh — tetap pakai Plus Jakarta Sans.
+  fontFamilyId String @default("plus-jakarta-sans")
+  fontFamilyEn String @default("inter")
+  fontFamilyZh String @default("noto-sans-sc")
 
   // Tab Maintenance — nyala = pengunjung publik cuma liat halaman
   // "Under Maintenance", ADMIN/SUPER_ADMIN tetap bisa browsing situs asli
@@ -964,18 +1018,35 @@ model Settings {
 model HeroContent {
   id String @id @default("1")
 
-  titleLine1     String
-  titleHighlight String // baris tengah judul, dirender warna primary
-  titleLine3     String
-  subtitle       String @db.Text
+  // *En/*Zh kosong = fallback ke versi Bahasa Indonesia di publik (lihat
+  // getLocalizedHeroContent() di src/app/(public)/page.tsx)
+  titleLine1       String
+  titleLine1En     String?
+  titleLine1Zh     String?
+  titleHighlight   String // baris tengah judul, dirender warna primary
+  titleHighlightEn String?
+  titleHighlightZh String?
+  titleLine3       String
+  titleLine3En     String?
+  titleLine3Zh     String?
+  subtitle         String  @db.Text
+  subtitleEn       String? @db.Text
+  subtitleZh       String? @db.Text
 
   // 3 badge highlight di bawah subtitle — [{ title, subtitle }, ...] x3.
-  // Ikon tiap badge tetap hardcode di komponen sesuai urutan index.
-  highlights Json
+  // Ikon tiap badge tetap hardcode di komponen sesuai urutan index. EN/ZH
+  // fallback per-badge (bukan per-array) — lihat pickHighlights().
+  highlights   Json
+  highlightsEn Json?
+  highlightsZh Json?
 
-  ctaPrimaryLabel   String // href tombol ini tetap ikut WHATSAPP_URL, cuma labelnya yg bisa diubah
-  ctaSecondaryLabel String
-  ctaSecondaryHref  String
+  ctaPrimaryLabel     String // href tombol ini tetap ikut WHATSAPP_URL, cuma labelnya yg bisa diubah
+  ctaPrimaryLabelEn   String?
+  ctaPrimaryLabelZh   String?
+  ctaSecondaryLabel   String
+  ctaSecondaryLabelEn String?
+  ctaSecondaryLabelZh String?
+  ctaSecondaryHref    String // path internal — sama di semua bahasa, gak perlu varian
 
   // Gambar kolom kanan Hero — null = pakai kartu gradient placeholder bawaan
   // (lihat DEFAULT_HERO_CONTENT / fallback di HeroSection.tsx)
@@ -996,39 +1067,85 @@ model HeroContent {
 model AboutPageContent {
   id String @id @default("1")
 
-  heroKicker         String?
-  heroTitle          String
-  heroTitleHighlight String
-  heroSubtitleBold   String
-  heroSubtitleBody   String  @db.Text
-  heroImageUrl       String?
+  // *En/*Zh kosong = fallback ke versi Bahasa Indonesia di publik (lihat
+  // getLocalizedAboutContent() di src/lib/hydrate-about-content.ts). Json
+  // array (aboutParagraphs/stats/values/mission) fallback per-index, bukan
+  // per-array — sama pola dgn HeroContent.highlightsEn/Zh.
+  heroKicker           String?
+  heroKickerEn         String?
+  heroKickerZh         String?
+  heroTitle            String
+  heroTitleEn          String?
+  heroTitleZh          String?
+  heroTitleHighlight   String
+  heroTitleHighlightEn String?
+  heroTitleHighlightZh String?
+  heroSubtitleBold     String
+  heroSubtitleBoldEn   String?
+  heroSubtitleBoldZh   String?
+  heroSubtitleBody     String  @db.Text
+  heroSubtitleBodyEn   String? @db.Text
+  heroSubtitleBodyZh   String? @db.Text
+  heroImageUrl         String?
 
-  aboutKicker         String
-  aboutTitle          String
-  aboutTitleHighlight String
-  aboutParagraphs     Json // string[]
-  aboutImageUrl       String?
-  stats               Json // { icon: string; value: string; label: string }[] — stats[0] jadi sumber badge foto mengambang juga
+  aboutKicker           String
+  aboutKickerEn         String?
+  aboutKickerZh         String?
+  aboutTitle            String
+  aboutTitleEn          String?
+  aboutTitleZh          String?
+  aboutTitleHighlight   String
+  aboutTitleHighlightEn String?
+  aboutTitleHighlightZh String?
+  aboutParagraphs       Json // string[]
+  aboutParagraphsEn     Json?
+  aboutParagraphsZh     Json?
+  aboutImageUrl         String?
+  stats                 Json // { icon: string; value: string; label: string }[] — stats[0] jadi sumber badge foto mengambang juga
+  statsEn               Json? // { value: string; label: string }[] — icon tetap ikut `stats` (gak per-bahasa)
+  statsZh               Json?
 
-  valuesEnabled        Boolean @default(true)
-  valuesTitle          String
-  valuesTitleHighlight String
-  valuesSubtitle       String
-  values               Json // { icon: string; title: string; description: string }[]
+  valuesEnabled          Boolean @default(true)
+  valuesTitle            String
+  valuesTitleEn          String?
+  valuesTitleZh          String?
+  valuesTitleHighlight   String
+  valuesTitleHighlightEn String?
+  valuesTitleHighlightZh String?
+  valuesSubtitle         String
+  valuesSubtitleEn       String?
+  valuesSubtitleZh       String?
+  values                 Json // { icon: string; title: string; description: string }[]
+  valuesEn               Json? // { title: string; description: string }[] — icon tetap ikut `values`
+  valuesZh               Json?
 
   visiMisiEnabled Boolean @default(true)
   vision          String  @db.Text
+  visionEn        String? @db.Text
+  visionZh        String? @db.Text
   visionImageUrl  String? // null -> pakai ilustrasi skyline bawaan /images/tentang-skyline-v3.png (bukan gradient)
   mission         Json // string[]
+  missionEn       Json?
+  missionZh       Json?
   missionImageUrl String? // null -> kartu gradient placeholder bawaan (beda dari Visi, blm ada ilustrasi desain asli utk Misi)
 
-  teamEnabled        Boolean @default(true)
-  teamTitle          String // prefix, mis. "Tim" — lihat TentangTeamSection: "{teamTitle} {teamTitleHighlight} Kami"
-  teamTitleHighlight String // kata di tengah yg dirender warna primary, mis. "Profesional"
-  teamSubtitle       String
+  teamEnabled          Boolean @default(true)
+  teamTitle            String // prefix, mis. "Tim" — lihat TentangTeamSection: "{teamTitle} {teamTitleHighlight} Kami"
+  teamTitleEn          String?
+  teamTitleZh          String?
+  teamTitleHighlight   String // kata di tengah yg dirender warna primary, mis. "Profesional"
+  teamTitleHighlightEn String?
+  teamTitleHighlightZh String?
+  teamSubtitle         String
+  teamSubtitleEn       String?
+  teamSubtitleZh       String?
 
-  metaTitle       String?
-  metaDescription String?
+  metaTitle         String?
+  metaTitleEn       String?
+  metaTitleZh       String?
+  metaDescription   String?
+  metaDescriptionEn String?
+  metaDescriptionZh String?
 
   // Singleton, gak pernah "dibuat" lewat admin (selalu ada dari seed) -> gak ada createdBy
   updatedById String?

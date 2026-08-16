@@ -5,6 +5,7 @@ import { Quote, Star } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/Reveal";
+import { useDictionary } from "@/contexts/LocaleContext";
 import { cn } from "@/lib/utils";
 
 export interface TestimoniGridItem {
@@ -34,6 +35,7 @@ export default function TestimoniGridSection({
 }: {
   testimonials: TestimoniGridItem[];
 }) {
+  const dict = useDictionary();
   const [activeCategory, setActiveCategory] = useState(SEMUA);
 
   /* Tab kategori diturunkan dari kategori yang benar-benar dipakai testimoni
@@ -54,17 +56,17 @@ export default function TestimoniGridSection({
     <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
       <div className="mx-auto mb-8 max-w-2xl text-center">
         <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          Apa Kata <span className="text-primary">Klien Kami?</span>
+          {dict.testimoniGrid.headingPrefix} <span className="text-primary">{dict.testimoniGrid.headingHighlight}</span>
         </h2>
         <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-          Pengalaman nyata dari klien yang telah menggunakan layanan IzinPro.
+          {dict.testimoniGrid.subtitle}
         </p>
       </div>
 
       {categories.length > 0 && (
         <div
           role="tablist"
-          aria-label="Filter kategori testimoni"
+          aria-label={dict.testimoniGrid.ariaFilter}
           className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:justify-center sm:overflow-visible"
         >
           <button
@@ -78,7 +80,7 @@ export default function TestimoniGridSection({
                 : "border border-border/60 text-muted-foreground hover:text-primary",
             )}
           >
-            Semua Testimoni
+            {dict.testimoniGrid.allTestimoni}
           </button>
           {categories.map(([id, name]) => (
             <button
@@ -108,7 +110,7 @@ export default function TestimoniGridSection({
                   <p
                     className="flex gap-0.5"
                     role="img"
-                    aria-label="Rating 5 dari 5 bintang"
+                    aria-label={dict.testimoniGrid.ariaRating}
                   >
                     {Array.from({ length: 5 }).map((_, i) => (
                       <Star
@@ -153,7 +155,7 @@ export default function TestimoniGridSection({
 
       {filtered.length === 0 && (
         <p className="mt-8 text-center text-sm text-muted-foreground">
-          Belum ada testimoni untuk kategori ini.
+          {dict.testimoniGrid.emptyState}
         </p>
       )}
     </section>

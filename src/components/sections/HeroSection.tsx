@@ -1,14 +1,15 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import Link from "next/link";
+import { LocalizedLink as Link } from "@/components/shared/LocalizedLink";
 import Image from "next/image";
 import { ArrowRight, BadgeCheck, CheckCircle2, Star } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
-import { HERO_HIGHLIGHTS, HERO_STATS, WHATSAPP_URL } from "@/lib/landing";
+import { useDictionary } from "@/contexts/LocaleContext";
+import { HERO_HIGHLIGHTS, WHATSAPP_URL } from "@/lib/landing";
 import { cn } from "@/lib/utils";
 
 /* Ikon badge highlight tetap hardcode per-index (gak disimpan di DB) — cocokin
@@ -45,6 +46,7 @@ export const DEFAULT_HERO_CONTENT: HeroContentData = {
 
 /* ─── Hero ─── */
 export default function HeroSection({ content = DEFAULT_HERO_CONTENT }: { content?: HeroContentData }) {
+  const dict = useDictionary();
   const prefersReducedMotion = useReducedMotion();
 
   const fadeUp = (delay: number) =>
@@ -157,10 +159,10 @@ export default function HeroSection({ content = DEFAULT_HERO_CONTENT }: { conten
                   IzinPro
                 </p>
                 <p className="text-sm text-white/85">
-                  Platform Perizinan Bisnis #1 Indonesia
+                  {dict.hero.placeholderTagline}
                 </p>
                 <ul className="mt-1 flex flex-wrap justify-center gap-2">
-                  {["OSS Terintegrasi", "Bergaransi", "Transparan"].map((tag) => (
+                  {dict.hero.placeholderTags.map((tag) => (
                     <li
                       key={tag}
                       className="rounded-full bg-white/15 px-3.5 py-1.5 text-xs font-medium text-white"
@@ -182,7 +184,7 @@ export default function HeroSection({ content = DEFAULT_HERO_CONTENT }: { conten
               mengacu ke kolom kanan). */}
           {!content.imageUrl && (
           <div className="mt-4 grid grid-cols-2 gap-3 sm:contents">
-            {HERO_STATS.map((stat, index) => (
+            {dict.hero.stats.map((stat, index) => (
               <motion.div
                 key={stat.value}
                 className={cn(
@@ -220,10 +222,10 @@ export default function HeroSection({ content = DEFAULT_HERO_CONTENT }: { conten
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     {stat.label}
                   </p>
-                  {stat.withStars && (
+                  {index === 1 && (
                     <div
                       className="mt-1 flex gap-0.5"
-                      aria-label="Rating 5 dari 5 bintang"
+                      aria-label={dict.hero.ariaRating}
                     >
                       {Array.from({ length: 5 }).map((_, i) => (
                         <Star

@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Save, Globe, Phone, Share2, Eye, Construction, AlertTriangle, ImagePlus, RefreshCcw, MessageCircle } from "lucide-react";
+import { Save, Globe, Phone, Share2, Eye, Construction, AlertTriangle, ImagePlus, RefreshCcw, MessageCircle, Type } from "lucide-react";
 import { swalSuccess, swalError } from "@/lib/swal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,11 +11,47 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { COMPANY_INFO } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 import {
   saveBrandingSettingsAction, updateMaintenanceModeAction, updateWhacenterSettingsAction,
+  updateGeneralSettingsAction, updateFontSettingsAction,
+  type GeneralSettingsInput, type FontSettingsInput,
 } from "@/lib/actions/settings";
 import { DEFAULT_LOGO_URL, DEFAULT_FAVICON_URL } from "@/lib/branding-constants";
+import { LOCALES, LOCALE_LABELS, type Locale } from "@/i18n/config";
+import { fontOptionsForLocale } from "@/lib/fonts";
+
+const UMUM_LANGS = [
+  { key: "id", label: "Bahasa Indonesia" },
+  { key: "en", label: "English" },
+  { key: "zh", label: "中文" },
+] as const;
+type UmumLang = (typeof UMUM_LANGS)[number]["key"];
+
+function generalFieldKey(base: "companyName" | "tagline" | "description" | "operatingHours", lang: UmumLang) {
+  if (lang === "id") return base;
+  return `${base}${lang === "en" ? "En" : "Zh"}` as keyof GeneralSettingsInput;
+}
+
+function fontFieldKey(lang: UmumLang): keyof FontSettingsInput {
+  if (lang === "en") return "fontFamilyEn";
+  if (lang === "zh") return "fontFamilyZh";
+  return "fontFamilyId";
+}
+
+const FONT_PREVIEW_TEXT: Record<UmumLang, string> = {
+  id: "Solusi perizinan bisnis yang aman & terpercaya",
+  en: "Secure & trusted business licensing solutions",
+  zh: "安全可靠的企业办证解决方案",
+};
 
 /* ─── Halaman Pengaturan Admin ───
  * readOnly=true utk role ADMIN (bisa lihat semua tab, tapi gak bisa ubah/simpan).
@@ -28,6 +64,22 @@ export default function SettingsPageClient({
   appLogoUrl: initialAppLogoUrl,
   faviconUrl: initialFaviconUrl,
   whacenterDeviceId: initialWhacenterDeviceId,
+  defaultLocale: initialDefaultLocale,
+  companyName: initialCompanyName,
+  companyNameEn: initialCompanyNameEn,
+  companyNameZh: initialCompanyNameZh,
+  tagline: initialTagline,
+  taglineEn: initialTaglineEn,
+  taglineZh: initialTaglineZh,
+  description: initialDescription,
+  descriptionEn: initialDescriptionEn,
+  descriptionZh: initialDescriptionZh,
+  operatingHours: initialOperatingHours,
+  operatingHoursEn: initialOperatingHoursEn,
+  operatingHoursZh: initialOperatingHoursZh,
+  fontFamilyId: initialFontFamilyId,
+  fontFamilyEn: initialFontFamilyEn,
+  fontFamilyZh: initialFontFamilyZh,
 }: {
   readOnly?: boolean;
   maintenanceMode: boolean;
@@ -35,6 +87,22 @@ export default function SettingsPageClient({
   appLogoUrl: string | null;
   faviconUrl: string | null;
   whacenterDeviceId: string;
+  defaultLocale: Locale;
+  companyName: string;
+  companyNameEn: string;
+  companyNameZh: string;
+  tagline: string;
+  taglineEn: string;
+  taglineZh: string;
+  description: string;
+  descriptionEn: string;
+  descriptionZh: string;
+  operatingHours: string;
+  operatingHoursEn: string;
+  operatingHoursZh: string;
+  fontFamilyId: string;
+  fontFamilyEn: string;
+  fontFamilyZh: string;
 }) {
   const router = useRouter();
   const [saved, setSaved] = useState(false);
@@ -42,6 +110,28 @@ export default function SettingsPageClient({
   const [maintenanceMode, setMaintenanceMode] = useState(initialMaintenanceMode);
   const [maintenanceMessage, setMaintenanceMessage] = useState(initialMaintenanceMessage);
   const [whacenterDeviceId, setWhacenterDeviceId] = useState(initialWhacenterDeviceId);
+  const [umumLang, setUmumLang] = useState<UmumLang>("id");
+  const [general, setGeneral] = useState<GeneralSettingsInput>({
+    defaultLocale: initialDefaultLocale,
+    companyName: initialCompanyName,
+    companyNameEn: initialCompanyNameEn,
+    companyNameZh: initialCompanyNameZh,
+    tagline: initialTagline,
+    taglineEn: initialTaglineEn,
+    taglineZh: initialTaglineZh,
+    description: initialDescription,
+    descriptionEn: initialDescriptionEn,
+    descriptionZh: initialDescriptionZh,
+    operatingHours: initialOperatingHours,
+    operatingHoursEn: initialOperatingHoursEn,
+    operatingHoursZh: initialOperatingHoursZh,
+  });
+  const [fontLang, setFontLang] = useState<UmumLang>("id");
+  const [font, setFont] = useState<FontSettingsInput>({
+    fontFamilyId: initialFontFamilyId,
+    fontFamilyEn: initialFontFamilyEn,
+    fontFamilyZh: initialFontFamilyZh,
+  });
   const [appLogoUrl, setAppLogoUrl] = useState(initialAppLogoUrl);
   const [faviconUrl, setFaviconUrl] = useState(initialFaviconUrl);
   const [appLogoFile, setAppLogoFile] = useState<File | null>(null);
@@ -74,6 +164,38 @@ export default function SettingsPageClient({
       {saved ? "✓ Tersimpan!" : "Simpan Perubahan"}
     </Button>
   );
+
+  const saveGeneral = () => {
+    startTransition(async () => {
+      try {
+        const res = await updateGeneralSettingsAction(general);
+        if (res.ok) {
+          swalSuccess("Informasi Website disimpan");
+          router.refresh();
+        } else {
+          swalError(res.message);
+        }
+      } catch {
+        swalError("Gagal menyimpan Informasi Website. Cek koneksi lalu coba lagi.");
+      }
+    });
+  };
+
+  const saveFont = () => {
+    startTransition(async () => {
+      try {
+        const res = await updateFontSettingsAction(font);
+        if (res.ok) {
+          swalSuccess("Gaya font disimpan");
+          router.refresh();
+        } else {
+          swalError(res.message);
+        }
+      } catch {
+        swalError("Gagal menyimpan gaya font. Cek koneksi lalu coba lagi.");
+      }
+    });
+  };
 
   const saveMaintenance = () => {
     startTransition(async () => {
@@ -153,6 +275,7 @@ export default function SettingsPageClient({
         <Tabs defaultValue="umum">
           <TabsList className="rounded-xl mb-6 bg-gray-200">
             <TabsTrigger value="umum" className="rounded-lg">Umum</TabsTrigger>
+            <TabsTrigger value="font" className="rounded-lg">Font</TabsTrigger>
             <TabsTrigger value="kontak" className="rounded-lg">Kontak</TabsTrigger>
             <TabsTrigger value="sosmed" className="rounded-lg">Sosial Media</TabsTrigger>
             <TabsTrigger value="seo" className="rounded-lg">SEO</TabsTrigger>
@@ -252,28 +375,172 @@ export default function SettingsPageClient({
                   {isPending ? "Menyimpan..." : "Simpan Logo & Favicon"}
                 </Button>
               )}
-              <div className="space-y-1.5">
-                <Label>Nama Perusahaan</Label>
-                <Input defaultValue={COMPANY_INFO.name} className="rounded-xl" disabled={readOnly} />
+              <div className="space-y-1.5 border-t border-admin-line pt-5">
+                <Label>Bahasa Default Situs</Label>
+                <p className="text-xs text-gray-400">
+                  Bahasa yang tampil ke pengunjung baru yang belum pernah memilih bahasa lewat
+                  tombol ganti bahasa (Globe) di navbar. Gak mengubah URL — cuma nentuin konten
+                  bahasa apa yang tampil duluan di URL tanpa awalan /en atau /zh.
+                </p>
+                <Select
+                  items={Object.fromEntries(LOCALES.map((l) => [l, LOCALE_LABELS[l]]))}
+                  value={general.defaultLocale}
+                  onValueChange={(v) => v && setGeneral({ ...general, defaultLocale: v as Locale })}
+                >
+                  <SelectTrigger className="h-10 w-full max-w-xs rounded-xl" disabled={readOnly}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent alignItemWithTrigger={false} align="start">
+                    {LOCALES.map((l) => (
+                      <SelectItem key={l} value={l}>{LOCALE_LABELS[l]}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5 pt-2">
+                <Label>Bahasa Konten</Label>
+                <p className="text-xs text-gray-400">
+                  Field di bawah tampil ke publik sesuai bahasa yang dipilih pengunjung. English/中文 boleh
+                  dikosongkan — otomatis fallback ke Bahasa Indonesia.
+                </p>
+                <div className="flex w-fit gap-1 rounded-xl bg-gray-100 p-1">
+                  {UMUM_LANGS.map(({ key, label }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setUmumLang(key)}
+                      className={cn(
+                        "rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
+                        umumLang === key ? "bg-white text-primary shadow-sm" : "text-gray-500 hover:text-gray-700",
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="space-y-1.5">
-                <Label>Tagline</Label>
-                <Input defaultValue={COMPANY_INFO.tagline} className="rounded-xl" disabled={readOnly} />
+                <Label>
+                  Nama Perusahaan
+                  {umumLang !== "id" && <span className="font-normal text-gray-400"> — opsional</span>}
+                </Label>
+                <Input
+                  value={general[generalFieldKey("companyName", umumLang)]}
+                  onChange={(e) => setGeneral({ ...general, [generalFieldKey("companyName", umumLang)]: e.target.value })}
+                  className="rounded-xl"
+                  disabled={readOnly}
+                />
               </div>
               <div className="space-y-1.5">
-                <Label>Deskripsi Singkat</Label>
+                <Label>
+                  Tagline
+                  {umumLang !== "id" && <span className="font-normal text-gray-400"> — opsional</span>}
+                </Label>
+                <Input
+                  value={general[generalFieldKey("tagline", umumLang)]}
+                  onChange={(e) => setGeneral({ ...general, [generalFieldKey("tagline", umumLang)]: e.target.value })}
+                  className="rounded-xl"
+                  disabled={readOnly}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>
+                  Deskripsi Singkat
+                  {umumLang !== "id" && <span className="font-normal text-gray-400"> — opsional</span>}
+                </Label>
                 <Textarea
-                  defaultValue={COMPANY_INFO.description}
+                  value={general[generalFieldKey("description", umumLang)]}
+                  onChange={(e) => setGeneral({ ...general, [generalFieldKey("description", umumLang)]: e.target.value })}
                   rows={3}
                   className="rounded-xl resize-none"
                   disabled={readOnly}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Jam Operasional</Label>
-                <Input defaultValue={COMPANY_INFO.hours} className="rounded-xl" disabled={readOnly} />
+                <Label>
+                  Jam Operasional
+                  {umumLang !== "id" && <span className="font-normal text-gray-400"> — opsional</span>}
+                </Label>
+                <Input
+                  value={general[generalFieldKey("operatingHours", umumLang)]}
+                  onChange={(e) => setGeneral({ ...general, [generalFieldKey("operatingHours", umumLang)]: e.target.value })}
+                  className="rounded-xl"
+                  disabled={readOnly}
+                />
               </div>
-              {saveButton}
+              {!readOnly && (
+                <Button onClick={saveGeneral} disabled={isPending} className="gap-2 rounded-xl">
+                  <Save size={15} />
+                  {isPending ? "Menyimpan..." : "Simpan Perubahan"}
+                </Button>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* ─── Tab Font ─── */}
+          <TabsContent value="font">
+            <div className="bg-white rounded-2xl border border-admin-line p-6 space-y-5 max-w-3xl">
+              <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                <Type size={16} className="text-primary" />
+                Gaya Font Website Publik
+              </h3>
+              <p className="text-sm text-gray-500">
+                Pilih gaya font teks yang tampil ke pengunjung — bisa beda-beda per bahasa. Panel
+                admin ini sendiri tetap pakai font desain default, gak ikut berubah.
+              </p>
+              <div className="space-y-1.5">
+                <Label>Bahasa</Label>
+                <div className="flex w-fit gap-1 rounded-xl bg-gray-100 p-1">
+                  {UMUM_LANGS.map(({ key, label }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setFontLang(key)}
+                      className={cn(
+                        "rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
+                        fontLang === key ? "bg-white text-primary shadow-sm" : "text-gray-500 hover:text-gray-700",
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {fontOptionsForLocale(fontLang).map((opt) => {
+                  const selected = font[fontFieldKey(fontLang)] === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      disabled={readOnly}
+                      onClick={() => setFont({ ...font, [fontFieldKey(fontLang)]: opt.value })}
+                      className={cn(
+                        "rounded-xl border p-4 text-left transition-colors disabled:cursor-not-allowed",
+                        selected
+                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                          : "border-gray-200 hover:border-gray-300",
+                      )}
+                    >
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <span className="text-xs font-semibold text-gray-700">{opt.label}</span>
+                        <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500">
+                          {opt.style}
+                        </span>
+                      </div>
+                      <p className={cn(opt.font.className, "truncate text-lg text-gray-900")}>
+                        {FONT_PREVIEW_TEXT[fontLang]}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+              {!readOnly && (
+                <Button onClick={saveFont} disabled={isPending} className="gap-2 rounded-xl">
+                  <Save size={15} />
+                  {isPending ? "Menyimpan..." : "Simpan Gaya Font"}
+                </Button>
+              )}
             </div>
           </TabsContent>
 

@@ -2,38 +2,23 @@ import { MessageSquareText, Search, Ticket } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/Reveal";
+import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 
-const HOW_IT_WORKS = [
-  {
-    icon: Ticket,
-    title: "Dapatkan Nomor Order",
-    description:
-      "Nomor order dikirim via WhatsApp/email saat Anda mendaftar layanan IzinPro.",
-  },
-  {
-    icon: Search,
-    title: "Masukkan & Lacak",
-    description:
-      "Ketik nomor order di kolom pencarian di atas, lalu klik Lacak Sekarang.",
-  },
-  {
-    icon: MessageSquareText,
-    title: "Pantau atau Tanyakan",
-    description:
-      "Lihat tahapan proses secara langsung, atau hubungi tim kami untuk detail lebih lanjut.",
-  },
-];
+const HOW_IT_WORKS_ICONS = [Ticket, Search, MessageSquareText];
 
 /* ─── Cara kerja tracking — 3 kartu ─── */
-export default function TrackingInfoSection() {
+export default async function TrackingInfoSection() {
+  const dict = getDictionary(await getLocale());
   return (
     <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
       <h2 className="text-center text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-        Bagaimana <span className="text-primary">Cara Kerjanya?</span>
+        {dict.trackingInfo.headingPrefix} <span className="text-primary">{dict.trackingInfo.headingHighlight}</span>
       </h2>
 
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {HOW_IT_WORKS.map(({ icon: Icon, title, description }, index) => (
+        {dict.trackingInfo.steps.map(({ title, description }, index) => {
+          const Icon = HOW_IT_WORKS_ICONS[index];
+          return (
           <Reveal key={title} delay={index * 0.08}>
             <Card className="h-full gap-0 rounded-xl border-border/60 py-0">
               <CardContent className="flex h-full flex-col items-center px-5 py-6 text-center">
@@ -49,7 +34,8 @@ export default function TrackingInfoSection() {
               </CardContent>
             </Card>
           </Reveal>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

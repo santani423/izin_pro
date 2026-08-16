@@ -6,6 +6,7 @@ import KontakInfoBar from "@/components/sections/KontakInfoBar";
 import KontakFormSection from "@/components/sections/KontakFormSection";
 import { prisma } from "@/lib/db";
 import { hydrateKontakContent } from "@/lib/hydrate-kontak-content";
+import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 
 /* ─── Lazy load sections below the fold ─── */
 const KontakLocationSection = dynamic(
@@ -16,17 +17,20 @@ const KontakFaqSection = dynamic(
 );
 const CtaSection = dynamic(() => import("@/components/sections/CtaSection"));
 
-export const metadata: Metadata = {
-  title: "Hubungi IzinPro — Konsultasi Perizinan Gratis",
-  description:
-    "Hubungi IzinPro melalui form, WhatsApp, email, atau datang langsung ke kantor kami di Tebet, Jakarta Selatan. Konsultasi perizinan gratis.",
-  alternates: {
-    canonical: "https://izinpro.co.id/kontak",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const dict = getDictionary(await getLocale());
+  return {
+    title: dict.pages.kontak.metaTitle,
+    description: dict.pages.kontak.metaDescription,
+    alternates: {
+      canonical: "https://izinpro.co.id/kontak",
+    },
+  };
+}
 
 /* ─── Halaman Kontak (desain baru) — seluruh konten dikelola admin di /kontak ─── */
 export default async function KontakPage() {
+  const dict = getDictionary(await getLocale());
   const [rawContent, faqRows, services] = await Promise.all([
     prisma.kontakPageContent.findUniqueOrThrow({ where: { id: "1" } }),
     prisma.faq.findMany({
@@ -47,7 +51,8 @@ export default async function KontakPage() {
     <>
       {/* 1. Hero + breadcrumb */}
       <PageHero
-        crumbs={[{ label: "Beranda", href: "/" }, { label: "Kontak" }]}
+        crumbs={[{ label: dict.common.breadcrumbHome, href: "/" }, { label: dict.pages.kontak.breadcrumbKontak }]}
+        ariaBreadcrumb={dict.common.ariaBreadcrumb}
         kicker={content.hero.kicker ?? undefined}
         title={
           <>
@@ -56,7 +61,7 @@ export default async function KontakPage() {
         }
         description={content.hero.description}
         imageUrl={content.hero.imageUrl}
-        imageLabel="Foto customer service IzinPro siap membantu"
+        imageLabel={dict.pages.kontak.imageLabel}
         overlap
       />
 

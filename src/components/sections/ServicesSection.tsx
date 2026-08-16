@@ -1,10 +1,14 @@
-import Link from "next/link";
+"use client";
+
+import { LocalizedLink as Link } from "@/components/shared/LocalizedLink";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Reveal } from "@/components/shared/Reveal";
+import { useDictionary } from "@/contexts/LocaleContext";
+import { format } from "@/i18n/format";
 import { SERVICE_ICONS, DEFAULT_SERVICE_ICON } from "@/lib/service-icons";
 
 export interface ServiceCardData {
@@ -19,12 +23,13 @@ export interface ServiceCardData {
 
 /* ─── Daftar Layanan ─── */
 export default function ServicesSection({ services }: { services: ServiceCardData[] }) {
+  const dict = useDictionary();
   return (
     <section id="layanan" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
       <SectionHeading
-        title="Daftar Layanan"
-        subtitle="Layanan legal dengan proses mudah, cepat dan sesuai regulasi."
-        linkLabel="Lihat Semua Layanan"
+        title={dict.services.heading}
+        subtitle={dict.services.subtitle}
+        linkLabel={dict.services.linkLabel}
         linkHref="/layanan"
       />
 
@@ -50,7 +55,7 @@ export default function ServicesSection({ services }: { services: ServiceCardDat
                     /* Placeholder foto layanan — gradient hijau brand (fallback bawaan) */
                     <div
                       role="img"
-                      aria-label={`Ilustrasi layanan ${title}`}
+                      aria-label={format(dict.services.ariaIllustrationTemplate, { title })}
                       className="aspect-[16/10] w-full bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark"
                     />
                   )}
@@ -68,7 +73,7 @@ export default function ServicesSection({ services }: { services: ServiceCardDat
                     href={href}
                     className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
                   >
-                    Selengkapnya
+                    {dict.services.cardLink}
                     <ArrowRight
                       className="size-4 transition-transform group-hover:translate-x-0.5"
                       aria-hidden="true"

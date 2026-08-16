@@ -34,7 +34,7 @@ function revalidateMenuConsumers() {
 
 export async function createMenuItemAction(
   menuKey: "header" | "footer",
-  data: { label: string; href: string; parentId?: string | null },
+  data: { label: string; href: string; labelEn?: string | null; labelZh?: string | null; parentId?: string | null },
 ): Promise<ActionResult> {
   try {
     const session = await requireContentEditor();
@@ -53,6 +53,8 @@ export async function createMenuItemAction(
         menuId: menu.id,
         parentId,
         label: data.label.trim(),
+        labelEn: data.labelEn?.trim() || null,
+        labelZh: data.labelZh?.trim() || null,
         href: data.href.trim(),
         sortOrder: count,
         createdById: session.user.id,
@@ -68,7 +70,7 @@ export async function createMenuItemAction(
 
 export async function updateMenuItemAction(
   id: string,
-  data: { label: string; href: string },
+  data: { label: string; href: string; labelEn?: string | null; labelZh?: string | null },
 ): Promise<ActionResult> {
   try {
     const session = await requireContentEditor();
@@ -77,7 +79,13 @@ export async function updateMenuItemAction(
     }
     await prisma.menuItem.update({
       where: { id },
-      data: { label: data.label.trim(), href: data.href.trim(), updatedById: session.user.id },
+      data: {
+        label: data.label.trim(),
+        labelEn: data.labelEn?.trim() || null,
+        labelZh: data.labelZh?.trim() || null,
+        href: data.href.trim(),
+        updatedById: session.user.id,
+      },
     });
     revalidateMenuConsumers();
     return { ok: true };

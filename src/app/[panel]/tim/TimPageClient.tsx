@@ -47,10 +47,17 @@ type MemberRow = TeamMember & { photoMedia: { url: string } | null };
 const initialsOf = (name: string) =>
   name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
 
+const LANGS = [
+  { key: "id", label: "ID" },
+  { key: "en", label: "EN" },
+  { key: "zh", label: "中文" },
+] as const;
+type Lang = (typeof LANGS)[number]["key"];
+
 interface MemberFormState {
   id: string;
   name: string;
-  role: string;
+  role: Record<Lang, string>;
   department: string;
   email: string;
   phone: string;
@@ -65,7 +72,7 @@ function emptyForm(): MemberFormState {
   return {
     id: "",
     name: "",
-    role: "",
+    role: { id: "", en: "", zh: "" },
     department: "",
     email: "",
     phone: "",
@@ -81,7 +88,7 @@ function toForm(m: MemberRow): MemberFormState {
   return {
     id: m.id,
     name: m.name,
-    role: m.role,
+    role: { id: m.role, en: m.roleEn ?? "", zh: m.roleZh ?? "" },
     department: m.department ?? "",
     email: m.email ?? "",
     phone: m.phone ?? "",
@@ -213,6 +220,7 @@ export default function TimPageClient({ members: initialMembers }: { members: Me
   }
 
   const [form, setForm] = useState<MemberFormState | null>(null);
+  const [lang, setLang] = useState<Lang>("id");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
@@ -252,15 +260,17 @@ export default function TimPageClient({ members: initialMembers }: { members: Me
 
   const save = () => {
     if (!form) return;
-    if (!form.name.trim() || !form.role.trim()) {
-      swalError("Nama dan jabatan wajib diisi");
+    if (!form.name.trim() || !form.role.id.trim()) {
+      swalError("Nama dan jabatan (Bahasa Indonesia) wajib diisi");
       return;
     }
     startSaveTransition(async () => {
       try {
         const payload = {
           name: form.name,
-          role: form.role,
+          role: form.role.id,
+          roleEn: form.role.en,
+          roleZh: form.role.zh,
           department: form.department || null,
           email: form.email || null,
           phone: form.phone || null,
@@ -350,7 +360,7 @@ export default function TimPageClient({ members: initialMembers }: { members: Me
               />
             </div>
           </div>
-          <Button size="sm" className="gap-1.5 rounded-xl flex-shrink-0" onClick={() => setForm(emptyForm())}>
+          <Button size="sm" className="gap-1.5 rounded-xl flex-shrink-0" onClick={() => { setLang("id"); setForm(emptyForm()); }}>
             <Plus size={14} />
             Tambah Anggota
           </Button>
@@ -407,7 +417,7 @@ export default function TimPageClient({ members: initialMembers }: { members: Me
                   <MoreHorizontal size={16} />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-40 rounded-xl">
-                  <DropdownMenuItem className="text-sm cursor-pointer gap-2" onClick={() => setForm(toForm(member))}>
+                  <DropdownMenuItem className="text-sm cursor-pointer gap-2" onClick={() => { setLang("id"); setForm(toForm(member)); }}>
                     <Pencil size={13} className="text-gray-400" />
                     Edit
                   </DropdownMenuItem>
@@ -536,6 +546,24 @@ export default function TimPageClient({ members: initialMembers }: { members: Me
                       />
                     </label>
                   </div>
+                  <div className="flex w-fit gap-1 rounded-lg bg-gray-100 p-1">
+                    {LANGS.map(({ key, label }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setLang(key)}
+                        className={cn(
+                          "rounded-md px-2.5 py-1 text-xs font-semibold transition-colors",
+                          lang === key ? "bg-white text-primary shadow-sm" : "text-gray-500 hover:text-gray-700",
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    Jabatan English/中文 opsional — kosong = ikut Bahasa Indonesia di halaman publik.
+                  </p>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="t-name" className="text-sm font-semibold text-gray-700">Nama</Label>
@@ -548,13 +576,15 @@ export default function TimPageClient({ members: initialMembers }: { members: Me
                       />
                     </div>
                     <div>
-                      <Label htmlFor="t-role" className="text-sm font-semibold text-gray-700">Jabatan</Label>
+                      <Label htmlFor="t-role" className="text-sm font-semibold text-gray-700">
+                        Jabatan{lang !== "id" && <span className="font-normal text-gray-400"> — opsional</span>}
+                      </Label>
                       <Input
                         id="t-role"
                         className="mt-1.5 rounded-lg"
                         placeholder="mis. Legal Consultant"
-                        value={form.role}
-                        onChange={(e) => setForm({ ...form, role: e.target.value })}
+                        value={form.role[lang]}
+                        onChange={(e) => setForm({ ...form, role: { ...form.role, [lang]: e.target.value } })}
                       />
                     </div>
                   </div>

@@ -8,6 +8,8 @@ import TentangAboutSection from "@/components/sections/TentangAboutSection";
 import { LAYANAN_HIGHLIGHTS } from "@/lib/layanan";
 import { prisma } from "@/lib/db";
 import { hydrateAboutContent } from "@/lib/hydrate-about-content";
+import { getDictionary, getLocale } from "@/i18n/get-dictionary";
+import { pickLocalizedText, getLocalizedCta } from "@/lib/locale-field";
 import type { TeamMemberCard } from "@/components/sections/TentangTeamSection";
 
 /* ─── Lazy load sections below the fold ─── */
@@ -30,12 +32,19 @@ async function getAboutPageContent() {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
   const content = await getAboutPageContent();
-  if (!content) return { title: "Tentang Kami" };
+  if (!content) return { title: getDictionary(locale).pages.tentangKami.notFoundTitle };
+
+  const metaTitle = pickLocalizedText(content.metaTitle ?? "", content.metaTitleEn, content.metaTitleZh, locale);
+  const metaDescription = pickLocalizedText(content.metaDescription ?? "", content.metaDescriptionEn, content.metaDescriptionZh, locale);
+  const heroTitle = pickLocalizedText(content.heroTitle, content.heroTitleEn, content.heroTitleZh, locale);
+  const heroTitleHighlight = pickLocalizedText(content.heroTitleHighlight, content.heroTitleHighlightEn, content.heroTitleHighlightZh, locale);
+  const heroSubtitleBody = pickLocalizedText(content.heroSubtitleBody, content.heroSubtitleBodyEn, content.heroSubtitleBodyZh, locale);
 
   return {
-    title: content.metaTitle ?? `${content.heroTitle} ${content.heroTitleHighlight}`,
-    description: content.metaDescription ?? content.heroSubtitleBody,
+    title: metaTitle || `${heroTitle} ${heroTitleHighlight}`,
+    description: metaDescription || heroSubtitleBody,
     alternates: {
       canonical: "https://izinpro.co.id/tentang-kami",
     },
@@ -44,9 +53,11 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /* ─── Halaman Tentang IzinPro (desain baru) ─── */
 export default async function TentangKamiPage() {
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
   const content = await getAboutPageContent();
   if (!content) notFound();
-  const hydrated = hydrateAboutContent(content);
+  const hydrated = hydrateAboutContent(content, locale);
 
   const [teamMembers, cta] = await Promise.all([
     prisma.teamMember.findMany({
@@ -60,7 +71,7 @@ export default async function TentangKamiPage() {
   const teamCards: TeamMemberCard[] = teamMembers.map((m) => ({
     id: m.id,
     name: m.name,
-    role: m.role,
+    role: pickLocalizedText(m.role, m.roleEn, m.roleZh, locale),
     photoUrl: m.photoMedia?.url ?? null,
     linkedinUrl: m.linkedinUrl,
   }));
@@ -71,7 +82,8 @@ export default async function TentangKamiPage() {
     <>
       {/* 1. Hero + breadcrumb */}
       <PageHero
-        crumbs={[{ label: "Beranda", href: "/" }, { label: "Tentang Kami" }]}
+        crumbs={[{ label: dict.common.breadcrumbHome, href: "/" }, { label: dict.pages.tentangKami.breadcrumbTentangKami }]}
+        ariaBreadcrumb={dict.common.ariaBreadcrumb}
         kicker={hero.kicker ?? undefined}
         title={
           <>
@@ -86,13 +98,16 @@ export default async function TentangKamiPage() {
             <span className="mt-3 block">{hero.subtitleBody}</span>
           </>
         }
-        imageLabel="Foto kantor resepsionis IzinPro"
+        imageLabel={dict.pages.tentangKami.imageLabel}
         imageUrl={hero.imageUrl}
         overlap
       />
 
       {/* 2. Highlight keunggulan */}
-      <HighlightsBar items={LAYANAN_HIGHLIGHTS} />
+      <HighlightsBar
+        items={LAYANAN_HIGHLIGHTS.map((h, i) => ({ ...h, label: dict.layananCatalog.highlights[i] ?? h.label }))}
+        ariaLabel={dict.layananCatalog.highlightsAriaLabel}
+      />
 
       {/* 3. Tentang kami + statistik */}
       <TentangAboutSection content={about} />
@@ -111,11 +126,7 @@ export default async function TentangKamiPage() {
       )}
 
       {/* 7. CTA Banner */}
-      <CtaSection
-        title={cta?.title}
-        subtitle={cta?.subtitle ?? undefined}
-        buttonLabel={cta?.buttonLabel ?? undefined}
-      />
+      <CtaSection {...getLocalizedCta(cta, locale)} />
     </>
   );
 }

@@ -4,11 +4,12 @@ import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 
 import { Reveal } from "@/components/shared/Reveal";
-import { FAQS } from "@/lib/constants";
+import { useDictionary } from "@/contexts/LocaleContext";
 import { cn } from "@/lib/utils";
 
 /* ─── FAQ — Pertanyaan yang Sering Diajukan ─── */
 export default function FaqSection() {
+  const dict = useDictionary();
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
@@ -16,15 +17,15 @@ export default function FaqSection() {
       {/* Heading center — khusus FAQ, berbeda dari pola rata kiri section lain */}
       <div className="mx-auto mb-8 max-w-2xl text-center">
         <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          Pertanyaan yang Sering Diajukan
+          {dict.faq.heading}
         </h2>
         <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-          Temukan jawaban atas pertanyaan umum tentang layanan IzinPro.
+          {dict.faq.subtitle}
         </p>
       </div>
 
       <div className="mx-auto max-w-3xl space-y-3">
-        {FAQS.map((faq, index) => {
+        {dict.faq.items.map((faq, index) => {
           const isOpen = openIndex === index;
           return (
             <Reveal key={faq.question} delay={index * 0.05}>

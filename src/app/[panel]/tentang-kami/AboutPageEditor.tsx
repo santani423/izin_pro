@@ -18,6 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SortableList } from "@/components/admin/SortableList";
 import { IconPicker } from "@/components/admin/IconPicker";
+import { cn } from "@/lib/utils";
 import {
   saveAboutHeroContentAction,
   saveAboutHeroImageAction,
@@ -29,15 +30,74 @@ import {
   saveAboutMissionImageAction,
   saveAboutTeamSettingsAction,
   saveAboutSeoAction,
-  type AboutStatInput,
-  type AboutValueInput,
+  type AboutHeroLangInput,
+  type AboutSectionLangInput,
+  type AboutValuesLangInput,
+  type AboutVisiMisiLangInput,
+  type AboutTeamLangInput,
+  type AboutSeoLangInput,
 } from "@/lib/actions/about";
+
+const LANGS = [
+  { key: "id", label: "Bahasa Indonesia" },
+  { key: "en", label: "English" },
+  { key: "zh", label: "中文" },
+] as const;
+type Lang = (typeof LANGS)[number]["key"];
+type ByLang<T> = Record<Lang, T>;
+
+/** Nilai EN/ZH null di DB -> array kosong sepanjang base biar index-nya
+ * sinkron sama icon/ID (bukan berarti admin harus isi semua, field yang
+ * kosong ("") otomatis fallback ke Bahasa Indonesia pas ditampilkan publik). */
+function padStatsLang(raw: unknown, length: number): { value: string; label: string }[] {
+  const arr = (raw as { value?: string; label?: string }[] | null) ?? [];
+  return Array.from({ length }, (_, i) => ({ value: arr[i]?.value ?? "", label: arr[i]?.label ?? "" }));
+}
+function padValuesLang(raw: unknown, length: number): { title: string; description: string }[] {
+  const arr = (raw as { title?: string; description?: string }[] | null) ?? [];
+  return Array.from({ length }, (_, i) => ({ title: arr[i]?.title ?? "", description: arr[i]?.description ?? "" }));
+}
+function padStringArray(raw: unknown): string[] {
+  return (raw as string[] | null) ?? [];
+}
 
 /** Buang field `_key` sintetis (dipakai SortableList sbg id drag) sebelum
  * item balik disimpan ke state/DB — sama pola dgn LayananDetailEditor. */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function stripKey<T extends { _key: string }>({ _key, ...rest }: T): Omit<T, "_key"> {
   return rest;
+}
+
+function LangSwitcher({ lang, onChange }: { lang: Lang; onChange: (l: Lang) => void }) {
+  return (
+    <div className="bg-white rounded-2xl border border-admin-line p-6 space-y-3">
+      <Label>Bahasa Konten</Label>
+      <p className="text-xs text-gray-400">
+        Field teks di semua tab bawah ini tampil ke publik sesuai bahasa yang dipilih pengunjung.
+        English/中文 boleh dikosongkan — otomatis fallback ke Bahasa Indonesia per-field.
+      </p>
+      <div className="flex w-fit gap-1 rounded-xl bg-gray-100 p-1">
+        {LANGS.map(({ key, label }) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => onChange(key)}
+            className={cn(
+              "rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
+              lang === key ? "bg-white text-primary shadow-sm" : "text-gray-500 hover:text-gray-700",
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function OptionalHint({ lang }: { lang: Lang }) {
+  if (lang === "id") return null;
+  return <span className="font-normal text-gray-400"> — opsional</span>;
 }
 
 function SectionCard({
@@ -75,59 +135,214 @@ export default function AboutPageEditor({
   panel: string;
 }) {
   const router = useRouter();
+  const [lang, setLang] = useState<Lang>("id");
 
   /* ─── Hero ─── */
-  const [heroKicker, setHeroKicker] = useState(content.heroKicker ?? "");
-  const [heroTitle, setHeroTitle] = useState(content.heroTitle);
-  const [heroTitleHighlight, setHeroTitleHighlight] = useState(content.heroTitleHighlight);
-  const [heroSubtitleBold, setHeroSubtitleBold] = useState(content.heroSubtitleBold);
-  const [heroSubtitleBody, setHeroSubtitleBody] = useState(content.heroSubtitleBody);
+  const [hero, setHero] = useState<ByLang<AboutHeroLangInput>>({
+    id: {
+      heroKicker: content.heroKicker ?? "",
+      heroTitle: content.heroTitle,
+      heroTitleHighlight: content.heroTitleHighlight,
+      heroSubtitleBold: content.heroSubtitleBold,
+      heroSubtitleBody: content.heroSubtitleBody,
+    },
+    en: {
+      heroKicker: content.heroKickerEn ?? "",
+      heroTitle: content.heroTitleEn ?? "",
+      heroTitleHighlight: content.heroTitleHighlightEn ?? "",
+      heroSubtitleBold: content.heroSubtitleBoldEn ?? "",
+      heroSubtitleBody: content.heroSubtitleBodyEn ?? "",
+    },
+    zh: {
+      heroKicker: content.heroKickerZh ?? "",
+      heroTitle: content.heroTitleZh ?? "",
+      heroTitleHighlight: content.heroTitleHighlightZh ?? "",
+      heroSubtitleBold: content.heroSubtitleBoldZh ?? "",
+      heroSubtitleBody: content.heroSubtitleBodyZh ?? "",
+    },
+  });
   const [heroImageUrl, setHeroImageUrl] = useState(content.heroImageUrl);
   const [isUploadingHeroImage, setIsUploadingHeroImage] = useState(false);
   const [isSavingHero, startSaveHero] = useTransition();
+  const setHeroField = (l: Lang, patch: Partial<AboutHeroLangInput>) =>
+    setHero((prev) => ({ ...prev, [l]: { ...prev[l], ...patch } }));
 
   /* ─── Tentang Kami + Statistik ─── */
-  const [aboutKicker, setAboutKicker] = useState(content.aboutKicker);
-  const [aboutTitle, setAboutTitle] = useState(content.aboutTitle);
-  const [aboutTitleHighlight, setAboutTitleHighlight] = useState(content.aboutTitleHighlight);
-  const [aboutParagraphs, setAboutParagraphs] = useState<string[]>(content.aboutParagraphs as string[]);
-  const [stats, setStats] = useState<AboutStatInput[]>(content.stats as unknown as AboutStatInput[]);
+  const initialStatsIcons = (content.stats as unknown as { icon: string }[]).map((s) => s.icon);
+  const [statsIcons, setStatsIcons] = useState<string[]>(initialStatsIcons);
+  const [about, setAbout] = useState<ByLang<AboutSectionLangInput>>({
+    id: {
+      aboutKicker: content.aboutKicker,
+      aboutTitle: content.aboutTitle,
+      aboutTitleHighlight: content.aboutTitleHighlight,
+      aboutParagraphs: content.aboutParagraphs as string[],
+      stats: (content.stats as unknown as { value: string; label: string }[]).map((s) => ({ value: s.value, label: s.label })),
+    },
+    en: {
+      aboutKicker: content.aboutKickerEn ?? "",
+      aboutTitle: content.aboutTitleEn ?? "",
+      aboutTitleHighlight: content.aboutTitleHighlightEn ?? "",
+      aboutParagraphs: padStringArray(content.aboutParagraphsEn),
+      stats: padStatsLang(content.statsEn, initialStatsIcons.length),
+    },
+    zh: {
+      aboutKicker: content.aboutKickerZh ?? "",
+      aboutTitle: content.aboutTitleZh ?? "",
+      aboutTitleHighlight: content.aboutTitleHighlightZh ?? "",
+      aboutParagraphs: padStringArray(content.aboutParagraphsZh),
+      stats: padStatsLang(content.statsZh, initialStatsIcons.length),
+    },
+  });
   const [aboutImageUrl, setAboutImageUrl] = useState(content.aboutImageUrl);
   const [isUploadingAboutImage, setIsUploadingAboutImage] = useState(false);
   const [isSavingAbout, startSaveAbout] = useTransition();
+  const setAboutField = (l: Lang, patch: Partial<AboutSectionLangInput>) =>
+    setAbout((prev) => ({ ...prev, [l]: { ...prev[l], ...patch } }));
+
+  const addStat = () => {
+    setStatsIcons((prev) => [...prev, "star"]);
+    setAbout((prev) => ({
+      id: { ...prev.id, stats: [...prev.id.stats, { value: "", label: "" }] },
+      en: { ...prev.en, stats: [...prev.en.stats, { value: "", label: "" }] },
+      zh: { ...prev.zh, stats: [...prev.zh.stats, { value: "", label: "" }] },
+    }));
+  };
+  const removeStat = (index: number) => {
+    setStatsIcons((prev) => prev.filter((_, i) => i !== index));
+    setAbout((prev) => ({
+      id: { ...prev.id, stats: prev.id.stats.filter((_, i) => i !== index) },
+      en: { ...prev.en, stats: prev.en.stats.filter((_, i) => i !== index) },
+      zh: { ...prev.zh, stats: prev.zh.stats.filter((_, i) => i !== index) },
+    }));
+  };
+  const updateStatField = (index: number, field: "value" | "label", value: string) => {
+    setAbout((prev) => ({
+      ...prev,
+      [lang]: { ...prev[lang], stats: prev[lang].stats.map((s, i) => (i === index ? { ...s, [field]: value } : s)) },
+    }));
+  };
+  const reorderStats = (nextIcons: { icon: string; index: number; _key: string }[]) => {
+    const order = nextIcons.map((item) => item.index);
+    setStatsIcons(order.map((i) => statsIcons[i]));
+    setAbout((prev) => ({
+      id: { ...prev.id, stats: order.map((i) => prev.id.stats[i]) },
+      en: { ...prev.en, stats: order.map((i) => prev.en.stats[i]) },
+      zh: { ...prev.zh, stats: order.map((i) => prev.zh.stats[i]) },
+    }));
+  };
 
   /* ─── Nilai-Nilai ─── */
   const [valuesEnabled, setValuesEnabled] = useState(content.valuesEnabled);
-  const [valuesTitle, setValuesTitle] = useState(content.valuesTitle);
-  const [valuesTitleHighlight, setValuesTitleHighlight] = useState(content.valuesTitleHighlight);
-  const [valuesSubtitle, setValuesSubtitle] = useState(content.valuesSubtitle);
-  const [values, setValues] = useState<AboutValueInput[]>(content.values as unknown as AboutValueInput[]);
+  const initialValuesIcons = (content.values as unknown as { icon: string }[]).map((v) => v.icon);
+  const [valuesIcons, setValuesIcons] = useState<string[]>(initialValuesIcons);
+  const [values, setValues] = useState<ByLang<AboutValuesLangInput>>({
+    id: {
+      valuesTitle: content.valuesTitle,
+      valuesTitleHighlight: content.valuesTitleHighlight,
+      valuesSubtitle: content.valuesSubtitle,
+      values: (content.values as unknown as { title: string; description: string }[]).map((v) => ({ title: v.title, description: v.description })),
+    },
+    en: {
+      valuesTitle: content.valuesTitleEn ?? "",
+      valuesTitleHighlight: content.valuesTitleHighlightEn ?? "",
+      valuesSubtitle: content.valuesSubtitleEn ?? "",
+      values: padValuesLang(content.valuesEn, initialValuesIcons.length),
+    },
+    zh: {
+      valuesTitle: content.valuesTitleZh ?? "",
+      valuesTitleHighlight: content.valuesTitleHighlightZh ?? "",
+      valuesSubtitle: content.valuesSubtitleZh ?? "",
+      values: padValuesLang(content.valuesZh, initialValuesIcons.length),
+    },
+  });
   const [isSavingValues, startSaveValues] = useTransition();
+  const setValuesField = (l: Lang, patch: Partial<AboutValuesLangInput>) =>
+    setValues((prev) => ({ ...prev, [l]: { ...prev[l], ...patch } }));
+
+  const addValue = () => {
+    setValuesIcons((prev) => [...prev, "shield-check"]);
+    setValues((prev) => ({
+      id: { ...prev.id, values: [...prev.id.values, { title: "", description: "" }] },
+      en: { ...prev.en, values: [...prev.en.values, { title: "", description: "" }] },
+      zh: { ...prev.zh, values: [...prev.zh.values, { title: "", description: "" }] },
+    }));
+  };
+  const removeValue = (index: number) => {
+    setValuesIcons((prev) => prev.filter((_, i) => i !== index));
+    setValues((prev) => ({
+      id: { ...prev.id, values: prev.id.values.filter((_, i) => i !== index) },
+      en: { ...prev.en, values: prev.en.values.filter((_, i) => i !== index) },
+      zh: { ...prev.zh, values: prev.zh.values.filter((_, i) => i !== index) },
+    }));
+  };
+  const updateValueField = (index: number, field: "title" | "description", value: string) => {
+    setValues((prev) => ({
+      ...prev,
+      [lang]: { ...prev[lang], values: prev[lang].values.map((v, i) => (i === index ? { ...v, [field]: value } : v)) },
+    }));
+  };
+  const reorderValues = (nextIcons: { icon: string; index: number; _key: string }[]) => {
+    const order = nextIcons.map((item) => item.index);
+    setValuesIcons(order.map((i) => valuesIcons[i]));
+    setValues((prev) => ({
+      id: { ...prev.id, values: order.map((i) => prev.id.values[i]) },
+      en: { ...prev.en, values: order.map((i) => prev.en.values[i]) },
+      zh: { ...prev.zh, values: order.map((i) => prev.zh.values[i]) },
+    }));
+  };
 
   /* ─── Visi & Misi ─── */
   const [visiMisiEnabled, setVisiMisiEnabled] = useState(content.visiMisiEnabled);
-  const [vision, setVision] = useState(content.vision);
-  const [mission, setMission] = useState<string[]>(content.mission as string[]);
+  const [visiMisi, setVisiMisi] = useState<ByLang<AboutVisiMisiLangInput>>({
+    id: { vision: content.vision, mission: content.mission as string[] },
+    en: { vision: content.visionEn ?? "", mission: padStringArray(content.missionEn) },
+    zh: { vision: content.visionZh ?? "", mission: padStringArray(content.missionZh) },
+  });
   const [visionImageUrl, setVisionImageUrl] = useState(content.visionImageUrl);
   const [isUploadingVisionImage, setIsUploadingVisionImage] = useState(false);
   const [missionImageUrl, setMissionImageUrl] = useState(content.missionImageUrl);
   const [isUploadingMissionImage, setIsUploadingMissionImage] = useState(false);
   const [isSavingVisiMisi, startSaveVisiMisi] = useTransition();
+  const setVisiMisiField = (l: Lang, patch: Partial<AboutVisiMisiLangInput>) =>
+    setVisiMisi((prev) => ({ ...prev, [l]: { ...prev[l], ...patch } }));
 
   /* ─── Tim (pengaturan saja — anggota dikelola /admin/tim) ─── */
   const [teamEnabled, setTeamEnabled] = useState(content.teamEnabled);
-  const [teamTitle, setTeamTitle] = useState(content.teamTitle);
-  const [teamTitleHighlight, setTeamTitleHighlight] = useState(content.teamTitleHighlight);
-  const [teamSubtitle, setTeamSubtitle] = useState(content.teamSubtitle);
+  const [team, setTeam] = useState<ByLang<AboutTeamLangInput>>({
+    id: { teamTitle: content.teamTitle, teamTitleHighlight: content.teamTitleHighlight, teamSubtitle: content.teamSubtitle },
+    en: {
+      teamTitle: content.teamTitleEn ?? "",
+      teamTitleHighlight: content.teamTitleHighlightEn ?? "",
+      teamSubtitle: content.teamSubtitleEn ?? "",
+    },
+    zh: {
+      teamTitle: content.teamTitleZh ?? "",
+      teamTitleHighlight: content.teamTitleHighlightZh ?? "",
+      teamSubtitle: content.teamSubtitleZh ?? "",
+    },
+  });
   const [isSavingTeamSettings, startSaveTeamSettings] = useTransition();
+  const setTeamField = (l: Lang, patch: Partial<AboutTeamLangInput>) =>
+    setTeam((prev) => ({ ...prev, [l]: { ...prev[l], ...patch } }));
 
   /* ─── SEO ─── */
-  const [metaTitle, setMetaTitle] = useState(content.metaTitle ?? "");
-  const [metaDescription, setMetaDescription] = useState(content.metaDescription ?? "");
+  const [seo, setSeo] = useState<ByLang<AboutSeoLangInput>>({
+    id: { metaTitle: content.metaTitle ?? "", metaDescription: content.metaDescription ?? "" },
+    en: { metaTitle: content.metaTitleEn ?? "", metaDescription: content.metaDescriptionEn ?? "" },
+    zh: { metaTitle: content.metaTitleZh ?? "", metaDescription: content.metaDescriptionZh ?? "" },
+  });
   const [isSavingSeo, startSaveSeo] = useTransition();
+  const setSeoField = (l: Lang, patch: Partial<AboutSeoLangInput>) =>
+    setSeo((prev) => ({ ...prev, [l]: { ...prev[l], ...patch } }));
 
-  const statsList = useMemo(() => stats.map((s, i) => ({ ...s, _key: `s-${i}` })), [stats]);
-  const valuesList = useMemo(() => values.map((v, i) => ({ ...v, _key: `v-${i}` })), [values]);
+  const statsList = useMemo(
+    () => statsIcons.map((icon, i) => ({ icon, index: i, _key: `s-${i}` })),
+    [statsIcons],
+  );
+  const valuesList = useMemo(
+    () => valuesIcons.map((icon, i) => ({ icon, index: i, _key: `v-${i}` })),
+    [valuesIcons],
+  );
 
   const previewHref = `/tentang-kami`;
 
@@ -175,13 +390,7 @@ export default function AboutPageEditor({
   const saveHero = () => {
     startSaveHero(async () => {
       try {
-        const res = await saveAboutHeroContentAction({
-          heroKicker,
-          heroTitle,
-          heroTitleHighlight,
-          heroSubtitleBold,
-          heroSubtitleBody,
-        });
+        const res = await saveAboutHeroContentAction({ id: hero.id, en: hero.en, zh: hero.zh });
         if (res.ok) {
           swalSuccess("Konten Hero berhasil disimpan");
           router.refresh();
@@ -239,11 +448,9 @@ export default function AboutPageEditor({
     startSaveAbout(async () => {
       try {
         const res = await saveAboutSectionContentAction({
-          aboutKicker,
-          aboutTitle,
-          aboutTitleHighlight,
-          aboutParagraphs,
-          stats,
+          id: { ...about.id, stats: about.id.stats.map((s, i) => ({ ...s, icon: statsIcons[i] })) },
+          en: about.en,
+          zh: about.zh,
         });
         if (res.ok) {
           swalSuccess("Konten Tentang Kami berhasil disimpan");
@@ -262,11 +469,13 @@ export default function AboutPageEditor({
     startSaveValues(async () => {
       try {
         const res = await saveAboutValuesContentAction({
-          valuesEnabled,
-          valuesTitle,
-          valuesTitleHighlight,
-          valuesSubtitle,
-          values,
+          id: {
+            valuesEnabled,
+            ...values.id,
+            values: values.id.values.map((v, i) => ({ ...v, icon: valuesIcons[i] })),
+          },
+          en: values.en,
+          zh: values.zh,
         });
         if (res.ok) {
           swalSuccess("Konten Nilai-Nilai berhasil disimpan");
@@ -364,7 +573,7 @@ export default function AboutPageEditor({
   const saveVisiMisi = () => {
     startSaveVisiMisi(async () => {
       try {
-        const res = await saveAboutVisiMisiContentAction({ visiMisiEnabled, vision, mission });
+        const res = await saveAboutVisiMisiContentAction({ visiMisiEnabled, id: visiMisi.id, en: visiMisi.en, zh: visiMisi.zh });
         if (res.ok) {
           swalSuccess("Konten Visi & Misi berhasil disimpan");
           router.refresh();
@@ -381,7 +590,7 @@ export default function AboutPageEditor({
   const saveTeamSettings = () => {
     startSaveTeamSettings(async () => {
       try {
-        const res = await saveAboutTeamSettingsAction({ teamEnabled, teamTitle, teamTitleHighlight, teamSubtitle });
+        const res = await saveAboutTeamSettingsAction({ teamEnabled, id: team.id, en: team.en, zh: team.zh });
         if (res.ok) {
           swalSuccess("Pengaturan section Tim berhasil disimpan");
           router.refresh();
@@ -398,7 +607,7 @@ export default function AboutPageEditor({
   const saveSeo = () => {
     startSaveSeo(async () => {
       try {
-        const res = await saveAboutSeoAction({ metaTitle, metaDescription });
+        const res = await saveAboutSeoAction({ id: seo.id, en: seo.en, zh: seo.zh });
         if (res.ok) {
           swalSuccess("SEO berhasil disimpan");
           router.refresh();
@@ -410,6 +619,13 @@ export default function AboutPageEditor({
       }
     });
   };
+
+  const h = hero[lang];
+  const a = about[lang];
+  const v = values[lang];
+  const vm = visiMisi[lang];
+  const t = team[lang];
+  const s = seo[lang];
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
@@ -436,6 +652,8 @@ export default function AboutPageEditor({
           Preview Halaman
         </Link>
       </div>
+
+      <LangSwitcher lang={lang} onChange={setLang} />
 
       <Tabs defaultValue="hero">
         <TabsList className="rounded-xl mb-2 bg-gray-200 flex-wrap h-auto">
@@ -484,25 +702,25 @@ export default function AboutPageEditor({
           <SectionCard icon={Sparkles} title="Judul & Subjudul">
             <div className="space-y-1.5">
               <Label>Kicker (label kecil di atas judul, opsional)</Label>
-              <Input value={heroKicker} onChange={(e) => setHeroKicker(e.target.value)} className="rounded-xl" />
+              <Input value={h.heroKicker} onChange={(e) => setHeroField(lang, { heroKicker: e.target.value })} className="rounded-xl" />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label>Judul</Label>
-                <Input value={heroTitle} onChange={(e) => setHeroTitle(e.target.value)} className="rounded-xl" placeholder="Tentang" />
+                <Label>Judul<OptionalHint lang={lang} /></Label>
+                <Input value={h.heroTitle} onChange={(e) => setHeroField(lang, { heroTitle: e.target.value })} className="rounded-xl" placeholder="Tentang" />
               </div>
               <div className="space-y-1.5">
-                <Label>Judul (bagian hijau)</Label>
-                <Input value={heroTitleHighlight} onChange={(e) => setHeroTitleHighlight(e.target.value)} className="rounded-xl" placeholder="IzinPro" />
+                <Label>Judul (bagian hijau)<OptionalHint lang={lang} /></Label>
+                <Input value={h.heroTitleHighlight} onChange={(e) => setHeroField(lang, { heroTitleHighlight: e.target.value })} className="rounded-xl" placeholder="IzinPro" />
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>Subjudul (baris tebal)</Label>
-              <Textarea value={heroSubtitleBold} onChange={(e) => setHeroSubtitleBold(e.target.value)} rows={2} className="rounded-xl resize-none" />
+              <Label>Subjudul (baris tebal)<OptionalHint lang={lang} /></Label>
+              <Textarea value={h.heroSubtitleBold} onChange={(e) => setHeroField(lang, { heroSubtitleBold: e.target.value })} rows={2} className="rounded-xl resize-none" />
             </div>
             <div className="space-y-1.5">
-              <Label>Subjudul (paragraf)</Label>
-              <Textarea value={heroSubtitleBody} onChange={(e) => setHeroSubtitleBody(e.target.value)} rows={3} className="rounded-xl resize-none" />
+              <Label>Subjudul (paragraf)<OptionalHint lang={lang} /></Label>
+              <Textarea value={h.heroSubtitleBody} onChange={(e) => setHeroField(lang, { heroSubtitleBody: e.target.value })} rows={3} className="rounded-xl resize-none" />
             </div>
             <Button onClick={saveHero} disabled={isSavingHero} className="gap-2 rounded-xl">
               <Save size={15} />
@@ -547,72 +765,69 @@ export default function AboutPageEditor({
 
           <SectionCard icon={Info} title="Judul & Deskripsi">
             <div className="space-y-1.5">
-              <Label>Kicker</Label>
-              <Input value={aboutKicker} onChange={(e) => setAboutKicker(e.target.value)} className="rounded-xl" />
+              <Label>Kicker<OptionalHint lang={lang} /></Label>
+              <Input value={a.aboutKicker} onChange={(e) => setAboutField(lang, { aboutKicker: e.target.value })} className="rounded-xl" />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label>Judul</Label>
-                <Input value={aboutTitle} onChange={(e) => setAboutTitle(e.target.value)} className="rounded-xl" />
+                <Label>Judul<OptionalHint lang={lang} /></Label>
+                <Input value={a.aboutTitle} onChange={(e) => setAboutField(lang, { aboutTitle: e.target.value })} className="rounded-xl" />
               </div>
               <div className="space-y-1.5">
-                <Label>Judul (bagian hijau)</Label>
-                <Input value={aboutTitleHighlight} onChange={(e) => setAboutTitleHighlight(e.target.value)} className="rounded-xl" />
+                <Label>Judul (bagian hijau)<OptionalHint lang={lang} /></Label>
+                <Input value={a.aboutTitleHighlight} onChange={(e) => setAboutField(lang, { aboutTitleHighlight: e.target.value })} className="rounded-xl" />
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>Paragraf (satu per baris)</Label>
+              <Label>Paragraf (satu per baris)<OptionalHint lang={lang} /></Label>
               <Textarea
-                value={aboutParagraphs.join("\n")}
-                onChange={(e) => setAboutParagraphs(e.target.value.split("\n"))}
+                value={a.aboutParagraphs.join("\n")}
+                onChange={(e) => setAboutField(lang, { aboutParagraphs: e.target.value.split("\n") })}
                 rows={4}
                 className="rounded-xl resize-none"
               />
             </div>
           </SectionCard>
 
-          <SectionCard icon={Award} title="Kartu Statistik" description="Statistik pertama juga jadi badge di atas foto.">
+          <SectionCard icon={Award} title="Kartu Statistik" description="Statistik pertama juga jadi badge di atas foto. Ikon sama di semua bahasa — cuma nilai & label yang diterjemahkan.">
             <SortableList
               id="about-stats-list"
               items={statsList}
-              getId={(s) => s._key}
-              onReorder={(next) => setStats(next.map(stripKey))}
-              renderItem={(s, i) => (
-                <div className="grid grid-cols-[9rem_5rem_1fr_auto] items-center gap-2 rounded-xl border border-gray-200 p-2.5">
-                  <IconPicker
-                    value={s.icon}
-                    onChange={(icon) => setStats((prev) => prev.map((x, idx) => (idx === i ? { ...x, icon } : x)))}
-                  />
-                  <Input
-                    value={s.value}
-                    onChange={(e) => setStats((prev) => prev.map((x, idx) => (idx === i ? { ...x, value: e.target.value } : x)))}
-                    className="rounded-lg"
-                    placeholder="5.000+"
-                  />
-                  <Input
-                    value={s.label}
-                    onChange={(e) => setStats((prev) => prev.map((x, idx) => (idx === i ? { ...x, label: e.target.value } : x)))}
-                    className="rounded-lg"
-                    placeholder="Label"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setStats((prev) => prev.filter((_, idx) => idx !== i))}
-                    className="p-1.5 text-gray-400 hover:text-red-500"
-                    aria-label="Hapus statistik"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              )}
+              getId={(x) => x._key}
+              onReorder={reorderStats}
+              renderItem={(item, i) => {
+                const stat = a.stats[i] ?? { value: "", label: "" };
+                return (
+                  <div className="grid grid-cols-[9rem_5rem_1fr_auto] items-center gap-2 rounded-xl border border-gray-200 p-2.5">
+                    <IconPicker
+                      value={item.icon}
+                      onChange={(icon) => setStatsIcons((prev) => prev.map((x, idx) => (idx === i ? icon : x)))}
+                    />
+                    <Input
+                      value={stat.value}
+                      onChange={(e) => updateStatField(i, "value", e.target.value)}
+                      className="rounded-lg"
+                      placeholder="5.000+"
+                    />
+                    <Input
+                      value={stat.label}
+                      onChange={(e) => updateStatField(i, "label", e.target.value)}
+                      className="rounded-lg"
+                      placeholder="Label"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeStat(i)}
+                      className="p-1.5 text-gray-400 hover:text-red-500"
+                      aria-label="Hapus statistik"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                );
+              }}
             />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="gap-1.5 rounded-lg"
-              onClick={() => setStats((prev) => [...prev, { icon: "star", value: "", label: "" }])}
-            >
+            <Button type="button" variant="outline" size="sm" className="gap-1.5 rounded-lg" onClick={addStat}>
               <Plus size={14} /> Tambah Statistik
             </Button>
           </SectionCard>
@@ -633,65 +848,62 @@ export default function AboutPageEditor({
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label>Judul (bagian hijau)</Label>
-                <Input value={valuesTitleHighlight} onChange={(e) => setValuesTitleHighlight(e.target.value)} className="rounded-xl" placeholder="Nilai-Nilai" />
+                <Label>Judul (bagian hijau)<OptionalHint lang={lang} /></Label>
+                <Input value={v.valuesTitleHighlight} onChange={(e) => setValuesField(lang, { valuesTitleHighlight: e.target.value })} className="rounded-xl" placeholder="Nilai-Nilai" />
               </div>
               <div className="space-y-1.5">
-                <Label>Judul</Label>
-                <Input value={valuesTitle} onChange={(e) => setValuesTitle(e.target.value)} className="rounded-xl" placeholder="yang Kami Junjung" />
+                <Label>Judul<OptionalHint lang={lang} /></Label>
+                <Input value={v.valuesTitle} onChange={(e) => setValuesField(lang, { valuesTitle: e.target.value })} className="rounded-xl" placeholder="yang Kami Junjung" />
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>Subjudul</Label>
-              <Textarea value={valuesSubtitle} onChange={(e) => setValuesSubtitle(e.target.value)} rows={2} className="rounded-xl resize-none" />
+              <Label>Subjudul<OptionalHint lang={lang} /></Label>
+              <Textarea value={v.valuesSubtitle} onChange={(e) => setValuesField(lang, { valuesSubtitle: e.target.value })} rows={2} className="rounded-xl resize-none" />
             </div>
 
             <SortableList
               id="values-list"
               items={valuesList}
-              getId={(v) => v._key}
-              onReorder={(next) => setValues(next.map(stripKey))}
-              renderItem={(v, i) => (
-                <div className="space-y-2 rounded-xl border border-gray-200 p-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-40">
-                      <IconPicker
-                        value={v.icon}
-                        onChange={(icon) => setValues((prev) => prev.map((x, idx) => (idx === i ? { ...x, icon } : x)))}
+              getId={(x) => x._key}
+              onReorder={reorderValues}
+              renderItem={(item, i) => {
+                const val = v.values[i] ?? { title: "", description: "" };
+                return (
+                  <div className="space-y-2 rounded-xl border border-gray-200 p-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-40">
+                        <IconPicker
+                          value={item.icon}
+                          onChange={(icon) => setValuesIcons((prev) => prev.map((x, idx) => (idx === i ? icon : x)))}
+                        />
+                      </div>
+                      <Input
+                        value={val.title}
+                        onChange={(e) => updateValueField(i, "title", e.target.value)}
+                        className="flex-1 rounded-lg"
+                        placeholder="Judul"
                       />
+                      <button
+                        type="button"
+                        onClick={() => removeValue(i)}
+                        className="p-1.5 text-gray-400 hover:text-red-500"
+                        aria-label="Hapus nilai"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
-                    <Input
-                      value={v.title}
-                      onChange={(e) => setValues((prev) => prev.map((x, idx) => (idx === i ? { ...x, title: e.target.value } : x)))}
-                      className="flex-1 rounded-lg"
-                      placeholder="Judul"
+                    <Textarea
+                      value={val.description}
+                      onChange={(e) => updateValueField(i, "description", e.target.value)}
+                      rows={2}
+                      className="rounded-lg resize-none"
+                      placeholder="Deskripsi"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setValues((prev) => prev.filter((_, idx) => idx !== i))}
-                      className="p-1.5 text-gray-400 hover:text-red-500"
-                      aria-label="Hapus nilai"
-                    >
-                      <Trash2 size={14} />
-                    </button>
                   </div>
-                  <Textarea
-                    value={v.description}
-                    onChange={(e) => setValues((prev) => prev.map((x, idx) => (idx === i ? { ...x, description: e.target.value } : x)))}
-                    rows={2}
-                    className="rounded-lg resize-none"
-                    placeholder="Deskripsi"
-                  />
-                </div>
-              )}
+                );
+              }}
             />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="gap-1.5 rounded-lg"
-              onClick={() => setValues((prev) => [...prev, { icon: "shield-check", title: "", description: "" }])}
-            >
+            <Button type="button" variant="outline" size="sm" className="gap-1.5 rounded-lg" onClick={addValue}>
               <Plus size={14} /> Tambah Nilai
             </Button>
 
@@ -740,14 +952,14 @@ export default function AboutPageEditor({
             </div>
 
             <div className="space-y-1.5">
-              <Label>Visi</Label>
-              <Textarea value={vision} onChange={(e) => setVision(e.target.value)} rows={2} className="rounded-xl resize-none" />
+              <Label>Visi<OptionalHint lang={lang} /></Label>
+              <Textarea value={vm.vision} onChange={(e) => setVisiMisiField(lang, { vision: e.target.value })} rows={2} className="rounded-xl resize-none" />
             </div>
             <div className="space-y-1.5">
-              <Label>Misi (satu per baris)</Label>
+              <Label>Misi (satu per baris)<OptionalHint lang={lang} /></Label>
               <Textarea
-                value={mission.join("\n")}
-                onChange={(e) => setMission(e.target.value.split("\n"))}
+                value={vm.mission.join("\n")}
+                onChange={(e) => setVisiMisiField(lang, { mission: e.target.value.split("\n") })}
                 rows={4}
                 className="rounded-xl resize-none"
               />
@@ -804,18 +1016,18 @@ export default function AboutPageEditor({
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label>Judul</Label>
-                <Input value={teamTitle} onChange={(e) => setTeamTitle(e.target.value)} className="rounded-xl" placeholder="Tim" />
+                <Label>Judul<OptionalHint lang={lang} /></Label>
+                <Input value={t.teamTitle} onChange={(e) => setTeamField(lang, { teamTitle: e.target.value })} className="rounded-xl" placeholder="Tim" />
               </div>
               <div className="space-y-1.5">
-                <Label>Judul (bagian hijau)</Label>
-                <Input value={teamTitleHighlight} onChange={(e) => setTeamTitleHighlight(e.target.value)} className="rounded-xl" placeholder="Profesional" />
+                <Label>Judul (bagian hijau)<OptionalHint lang={lang} /></Label>
+                <Input value={t.teamTitleHighlight} onChange={(e) => setTeamField(lang, { teamTitleHighlight: e.target.value })} className="rounded-xl" placeholder="Profesional" />
               </div>
             </div>
-            <p className="text-xs text-gray-400">Tampil sebagai: &quot;{teamTitle} {teamTitleHighlight} Kami&quot;</p>
+            <p className="text-xs text-gray-400">Tampil sebagai: &quot;{t.teamTitle} {t.teamTitleHighlight} Kami&quot;</p>
             <div className="space-y-1.5">
-              <Label>Subjudul</Label>
-              <Textarea value={teamSubtitle} onChange={(e) => setTeamSubtitle(e.target.value)} rows={2} className="rounded-xl resize-none" />
+              <Label>Subjudul<OptionalHint lang={lang} /></Label>
+              <Textarea value={t.teamSubtitle} onChange={(e) => setTeamField(lang, { teamSubtitle: e.target.value })} rows={2} className="rounded-xl resize-none" />
             </div>
 
             <Button onClick={saveTeamSettings} disabled={isSavingTeamSettings} className="gap-2 rounded-xl">
@@ -839,12 +1051,12 @@ export default function AboutPageEditor({
         <TabsContent value="seo" className="space-y-5">
           <SectionCard icon={Search} title="SEO">
             <div className="space-y-1.5">
-              <Label>Meta Title</Label>
-              <Input value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} className="rounded-xl" placeholder={`${heroTitle} ${heroTitleHighlight}`} />
+              <Label>Meta Title<OptionalHint lang={lang} /></Label>
+              <Input value={s.metaTitle} onChange={(e) => setSeoField(lang, { metaTitle: e.target.value })} className="rounded-xl" placeholder={`${h.heroTitle} ${h.heroTitleHighlight}`} />
             </div>
             <div className="space-y-1.5">
-              <Label>Meta Description</Label>
-              <Textarea value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} rows={3} className="rounded-xl resize-none" placeholder={heroSubtitleBody} />
+              <Label>Meta Description<OptionalHint lang={lang} /></Label>
+              <Textarea value={s.metaDescription} onChange={(e) => setSeoField(lang, { metaDescription: e.target.value })} rows={3} className="rounded-xl resize-none" placeholder={h.heroSubtitleBody} />
             </div>
             <Button onClick={saveSeo} disabled={isSavingSeo} className="gap-2 rounded-xl">
               <Save size={15} />

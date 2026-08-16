@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
+import { LocalizedLink as Link } from "@/components/shared/LocalizedLink";
 import {
   ArrowRight,
   CalendarDays,
@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { BLOG_TOPICS } from "@/lib/blog";
+import { useDictionary } from "@/contexts/LocaleContext";
+import { format } from "@/i18n/format";
 import type { PublicBlogPost, BlogCategory } from "@/lib/blog-data";
 
 const PAGE_SIZE = 4;
@@ -35,8 +37,9 @@ export default function BlogCatalogSection({
   posts: PublicBlogPost[];
   categories: BlogCategory[];
 }) {
+  const dict = useDictionary();
   const [query, setQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState("Semua Artikel");
+  const [activeCategory, setActiveCategory] = useState(dict.blogCatalog.allArticles);
   const [sortNewest, setSortNewest] = useState(true);
   const [page, setPage] = useState(1);
   const [subscribed, setSubscribed] = useState(false);
@@ -49,12 +52,12 @@ export default function BlogCatalogSection({
         post.title.toLowerCase().includes(q) ||
         post.excerpt.toLowerCase().includes(q);
       const matchCategory =
-        activeCategory === "Semua Artikel" || post.categoryName === activeCategory;
+        activeCategory === dict.blogCatalog.allArticles || post.categoryName === activeCategory;
       return matchQuery && matchCategory;
     });
     /* posts sudah urut terbaru → terlama (orderBy publishedAt desc) */
     return sortNewest ? result : [...result].reverse();
-  }, [posts, query, activeCategory, sortNewest]);
+  }, [posts, query, activeCategory, sortNewest, dict]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -67,7 +70,7 @@ export default function BlogCatalogSection({
     <>
       {/* Search bar — kartu menimpa bawah hero */}
       <section
-        aria-label="Pencarian artikel"
+        aria-label={dict.blogCatalog.ariaSearchSection}
         className="relative z-10 mx-auto -mt-10 max-w-7xl px-4 sm:px-6 lg:px-8"
       >
         <div className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-background p-4 shadow-sm sm:flex-row">
@@ -83,13 +86,13 @@ export default function BlogCatalogSection({
                 setQuery(e.target.value);
                 setPage(1);
               }}
-              placeholder="Cari artikel, topik, atau kata kunci..."
-              aria-label="Cari artikel"
+              placeholder={dict.blogCatalog.searchPlaceholder}
+              aria-label={dict.blogCatalog.ariaSearchInput}
               className="h-10 w-full rounded-lg border border-border/60 bg-background pl-10 pr-4 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
           </div>
           <Button className="justify-center gap-2 rounded-lg font-semibold sm:px-6">
-            Cari
+            {dict.blogCatalog.searchButton}
             <Search className="size-4" aria-hidden="true" />
           </Button>
         </div>
@@ -101,7 +104,7 @@ export default function BlogCatalogSection({
           {/* Kategori */}
           <Card className="gap-0 rounded-xl border-border/60 py-0">
             <CardContent className="px-5 py-5">
-              <h2 className="text-sm font-bold text-foreground">Kategori</h2>
+              <h2 className="text-sm font-bold text-foreground">{dict.blogCatalog.categoriesHeading}</h2>
               <ul className="mt-3 space-y-1">
                 {categories.map(({ label, count }) => (
                   <li key={label}>
@@ -131,7 +134,7 @@ export default function BlogCatalogSection({
           <Card className="gap-0 rounded-xl border-border/60 py-0">
             <CardContent className="px-5 py-5">
               <h2 className="text-sm font-bold text-foreground">
-                Topik Populer
+                {dict.blogCatalog.popularTopicsHeading}
               </h2>
               <div className="mt-3 flex flex-wrap gap-2">
                 {BLOG_TOPICS.map((topic) => (
@@ -155,15 +158,14 @@ export default function BlogCatalogSection({
           <Card className="gap-0 rounded-xl border-border/60 py-0">
             <CardContent className="px-5 py-5">
               <h2 className="text-sm font-bold text-foreground">
-                Dapatkan Update Artikel Terbaru
+                {dict.blogCatalog.newsletterHeading}
               </h2>
               <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                Berlangganan newsletter kami untuk mendapatkan insight dan
-                informasi terbaru.
+                {dict.blogCatalog.newsletterCopy}
               </p>
               {subscribed ? (
                 <p className="mt-3 rounded-lg bg-primary/10 px-3 py-2.5 text-xs font-semibold text-primary">
-                  Terima kasih! Anda sudah berlangganan.
+                  {dict.blogCatalog.newsletterThanks}
                 </p>
               ) : (
                 <form
@@ -176,21 +178,21 @@ export default function BlogCatalogSection({
                   <input
                     type="email"
                     required
-                    placeholder="Masukkan email Anda"
-                    aria-label="Email untuk newsletter"
+                    placeholder={dict.blogCatalog.newsletterPlaceholder}
+                    aria-label={dict.blogCatalog.ariaNewsletterInput}
                     className="h-10 w-full rounded-lg border border-border/60 bg-background px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                   <Button
                     type="submit"
                     className="w-full justify-center gap-2 rounded-lg font-semibold"
                   >
-                    Berlangganan
+                    {dict.blogCatalog.newsletterButton}
                     <Send className="size-4" aria-hidden="true" />
                   </Button>
                 </form>
               )}
               <p className="mt-2 text-[11px] text-muted-foreground">
-                Kami tidak akan membagikan email Anda kepada pihak ketiga.
+                {dict.blogCatalog.newsletterPrivacy}
               </p>
             </CardContent>
           </Card>
@@ -200,22 +202,22 @@ export default function BlogCatalogSection({
         <div>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-              Artikel Terbaru
+              {dict.blogCatalog.latestArticlesHeading}
             </h2>
             <Select
-              items={{ terbaru: "Terbaru", terlama: "Terlama" }}
+              items={{ terbaru: dict.blogCatalog.sortNewest, terlama: dict.blogCatalog.sortOldest }}
               value={sortNewest ? "terbaru" : "terlama"}
               onValueChange={(value) => setSortNewest(value === "terbaru")}
             >
               <SelectTrigger
-                aria-label="Urutkan artikel"
+                aria-label={dict.blogCatalog.ariaSort}
                 className="h-9 min-w-32 rounded-lg border-border/60 bg-background pl-3 font-medium hover:border-primary/40 focus-visible:border-primary focus-visible:ring-primary/20"
               >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent alignItemWithTrigger={false} align="end">
-                <SelectItem value="terbaru">Terbaru</SelectItem>
-                <SelectItem value="terlama">Terlama</SelectItem>
+                <SelectItem value="terbaru">{dict.blogCatalog.sortNewest}</SelectItem>
+                <SelectItem value="terlama">{dict.blogCatalog.sortOldest}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -223,21 +225,21 @@ export default function BlogCatalogSection({
           {visible.length === 0 ? (
             <div className="mt-8 rounded-xl border border-dashed border-border px-6 py-12 text-center">
               <p className="text-sm font-semibold text-foreground">
-                Artikel tidak ditemukan
+                {dict.blogCatalog.emptyTitle}
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Coba kata kunci lain atau reset filter pencarian.
+                {dict.blogCatalog.emptyCopy}
               </p>
               <Button
                 variant="outline"
                 className="mt-4 rounded-lg"
                 onClick={() => {
                   setQuery("");
-                  setActiveCategory("Semua Artikel");
+                  setActiveCategory(dict.blogCatalog.allArticles);
                   setPage(1);
                 }}
               >
-                Reset Filter
+                {dict.blogCatalog.resetFilter}
               </Button>
             </div>
           ) : (
@@ -253,13 +255,13 @@ export default function BlogCatalogSection({
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={post.imageUrl}
-                        alt={`Thumbnail artikel ${post.title}`}
+                        alt={format(dict.blogCatalog.ariaThumbnailTemplate, { title: post.title })}
                         className="size-full object-cover"
                       />
                     ) : (
                       <div
                         role="img"
-                        aria-label={`Thumbnail artikel ${post.title}`}
+                        aria-label={format(dict.blogCatalog.ariaThumbnailTemplate, { title: post.title })}
                         className={`size-full bg-gradient-to-br ${post.gradient}`}
                       />
                     )}
@@ -293,7 +295,7 @@ export default function BlogCatalogSection({
                       href={`/blog/${post.slug}`}
                       className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
                     >
-                      Baca Selengkapnya
+                      {dict.blogCatalog.readMore}
                       <ArrowRight
                         className="size-4 transition-transform group-hover:translate-x-0.5"
                         aria-hidden="true"
@@ -308,7 +310,7 @@ export default function BlogCatalogSection({
           {/* Pagination */}
           {totalPages > 1 && (
             <nav
-              aria-label="Navigasi halaman artikel"
+              aria-label={dict.blogCatalog.ariaPaginationNav}
               className="mt-8 flex items-center justify-center gap-2"
             >
               <button
@@ -318,7 +320,7 @@ export default function BlogCatalogSection({
                 className="inline-flex items-center gap-1 rounded-lg border border-border/60 px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary disabled:pointer-events-none disabled:opacity-50"
               >
                 <ChevronLeft className="size-4" aria-hidden="true" />
-                Sebelumnya
+                {dict.blogCatalog.prevPage}
               </button>
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
                 <button
@@ -342,7 +344,7 @@ export default function BlogCatalogSection({
                 onClick={() => setPage(currentPage + 1)}
                 className="inline-flex items-center gap-1 rounded-lg border border-border/60 px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary disabled:pointer-events-none disabled:opacity-50"
               >
-                Selanjutnya
+                {dict.blogCatalog.nextPage}
                 <ChevronRight className="size-4" aria-hidden="true" />
               </button>
             </nav>

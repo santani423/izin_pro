@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/db";
+import { getDictionary, getLocale } from "@/i18n/get-dictionary";
+import { format } from "@/i18n/format";
 import type { BlogPost, Category, Media } from "@prisma/client";
 
 /* Gradient thumbnail placeholder — dipakai kalau artikel belum punya
@@ -30,20 +32,24 @@ export interface PublicBlogPost {
   publishedAt: Date;
 }
 
-function toReadTimeLabel(content: string): string {
+const INTL_LOCALES: Record<string, string> = { id: "id-ID", en: "en-US", zh: "zh-CN" };
+
+function toReadTimeLabel(content: string, dict: ReturnType<typeof getDictionary>): string {
   const plainText = content.replace(/<[^>]+>/g, " ");
   const wordCount = plainText.trim().split(/\s+/).filter(Boolean).length;
   const minutes = Math.max(1, Math.round(wordCount / 200));
-  return `${minutes} menit baca`;
+  return format(dict.blogCatalog.readTimeTemplate, { minutes });
 }
 
-function toDateLabel(date: Date | null): string {
+function toDateLabel(date: Date | null, intlLocale: string): string {
   if (!date) return "";
-  return date.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+  return date.toLocaleDateString(intlLocale, { day: "numeric", month: "long", year: "numeric" });
 }
 
 function mapPublicPost(
   row: BlogPost & { category: Category; featuredMedia: Media | null },
+  dict: ReturnType<typeof getDictionary>,
+  intlLocale: string,
 ): PublicBlogPost {
   return {
     id: row.id,
@@ -51,9 +57,9 @@ function mapPublicPost(
     title: row.title,
     excerpt: row.excerpt,
     categoryName: row.category.name,
-    dateLabel: toDateLabel(row.publishedAt),
-    readTimeLabel: toReadTimeLabel(row.content),
-    viewsLabel: row.views.toLocaleString("id-ID"),
+    dateLabel: toDateLabel(row.publishedAt, intlLocale),
+    readTimeLabel: toReadTimeLabel(row.content, dict),
+    viewsLabel: row.views.toLocaleString(intlLocale),
     gradient: hashGradient(row.slug),
     imageUrl: row.featuredMedia?.url ?? null,
     publishedAt: row.publishedAt ?? row.createdAt,
@@ -62,12 +68,15 @@ function mapPublicPost(
 
 /* ─── Semua artikel published, dipakai katalog /blog & homepage ─── */
 export async function getPublicBlogPosts(): Promise<PublicBlogPost[]> {
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
+  const intlLocale = INTL_LOCALES[locale];
   const rows = await prisma.blogPost.findMany({
     where: { deletedAt: null, status: "PUBLISHED" },
     include: { category: true, featuredMedia: true },
     orderBy: { publishedAt: "desc" },
   });
-  return rows.map(mapPublicPost);
+  return rows.map((row) => mapPublicPost(row, dict, intlLocale));
 }
 
 export interface PublicBlogPostDetail extends PublicBlogPost {
@@ -82,6 +91,9 @@ export interface PublicBlogPostDetail extends PublicBlogPost {
  * increment sungguhan ada di recordArticleVisit() (lib/article-stats.ts),
  * dipanggil sekali aja dari body halaman. ─── */
 export async function getPublicBlogPostBySlug(slug: string): Promise<PublicBlogPostDetail | null> {
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
+  const intlLocale = INTL_LOCALES[locale];
   const row = await prisma.blogPost.findFirst({
     where: { slug, deletedAt: null, status: "PUBLISHED" },
     include: { category: true, featuredMedia: true, tags: { include: { tag: true } } },
@@ -89,7 +101,7 @@ export async function getPublicBlogPostBySlug(slug: string): Promise<PublicBlogP
   if (!row) return null;
 
   return {
-    ...mapPublicPost(row),
+    ...mapPublicPost(row, dict, intlLocale),
     content: row.content,
     metaTitle: row.metaTitle,
     metaDescription: row.metaDescription,
@@ -104,13 +116,14 @@ export interface BlogCategory {
 }
 
 export async function getBlogCategories(): Promise<BlogCategory[]> {
+  const dict = getDictionary(await getLocale());
   const categories = await prisma.category.findMany({
     include: { _count: { select: { posts: { where: { deletedAt: null, status: "PUBLISHED" } } } } },
     orderBy: { name: "asc" },
   });
   const total = categories.reduce((sum, c) => sum + c._count.posts, 0);
   return [
-    { label: "Semua Artikel", count: total },
+    { label: dict.blogCatalog.allArticles, count: total },
     ...categories.map((c) => ({ label: c.name, count: c._count.posts })),
   ];
 }
