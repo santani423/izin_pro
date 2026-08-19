@@ -1,6 +1,14 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Tanpa ini, Next.js salah nebak root project pas ada lockfile lain di
+  // direktori atasnya (mis. ~/package-lock.json) — Turbopack jadi watch
+  // seluruh home directory, bikin dev server ngabisin CPU terus-terusan
+  // dan tiap request jadi lambat banget (lihat warning "multiple lockfiles").
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
   experimental: {
     // Default 1MB terlalu kecil utk upload logo klien/media (admin/klien, admin/media)
     serverActions: { bodySizeLimit: "4mb" },
