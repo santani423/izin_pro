@@ -6,7 +6,11 @@ import { CalendarDays, Clock } from "lucide-react";
 import PageHero from "@/components/shared/PageHero";
 import BlogDetailProseSection from "@/components/sections/BlogDetailProseSection";
 import BlogCommentsSection from "@/components/sections/BlogCommentsSection";
-import { getPublicBlogPostBySlug, getPublicBlogPosts } from "@/lib/blog-data";
+import {
+  getPublicBlogPostBySlug,
+  getPublicBlogPosts,
+  getBlogSlugsForSitemap,
+} from "@/lib/blog-data";
 import { recordArticleVisit, getApprovedComments } from "@/lib/article-stats";
 import { PANDUAN_LEGALITAS_SLUG } from "@/lib/panduan-legalitas";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
@@ -22,8 +26,11 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
+/* Build-safe: pakai getBlogSlugsForSitemap() (query slug murni, tanpa
+ * getLocale()/headers()) — bukan getPublicBlogPosts(), yang butuh locale
+ * request-time dan gak bisa dipanggil saat build. */
 export async function generateStaticParams() {
-  const posts = await getPublicBlogPosts();
+  const posts = await getBlogSlugsForSitemap();
   return posts
     .filter((p) => !STATIC_ARTICLE_SLUGS.includes(p.slug))
     .map((p) => ({ slug: p.slug }));
