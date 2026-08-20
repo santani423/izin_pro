@@ -41,11 +41,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const post = await getPublicBlogPostBySlug(slug);
   if (!post) return { title: getDictionary(await getLocale()).pages.blogDetail.notFoundTitle };
 
+  const title = post.metaTitle || post.title;
+  const description = post.metaDescription || post.excerpt;
+  const url = `https://izinpro.co.id/blog/${slug}`;
+  const imageUrl = post.imageUrl || "/og-image.png";
+
   return {
-    title: post.metaTitle || post.title,
-    description: post.metaDescription || post.excerpt,
+    title,
+    description,
     alternates: {
-      canonical: `https://izinpro.co.id/blog/${slug}`,
+      canonical: url,
+    },
+    openGraph: {
+      type: "article",
+      url,
+      title,
+      description,
+      images: [{ url: imageUrl, width: 1200, height: 630, alt: post.title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [imageUrl],
     },
   };
 }
@@ -81,6 +99,7 @@ export default async function BlogDetailPage({ params }: Props) {
         title={post.title}
         description={post.excerpt}
         imageLabel={format(dict.pages.blogDetail.imageLabelTemplate, { title: post.title })}
+        imageUrl={post.imageUrl}
         mobileImageFirst
       >
         {/* Penulis & meta */}
