@@ -9,8 +9,8 @@ export default async function TentangVisiMisiSection({ content }: { content: Abo
   const dict = getDictionary(await getLocale());
   return (
     <section className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 pb-14 sm:px-6 md:grid-cols-2 lg:px-8">
-      {/* Visi — gambar skyline jadi background penuh kartu, hijau basic nongol kalau gambar transparan */}
-      <div className="relative isolate flex min-h-[22rem] flex-col overflow-hidden rounded-2xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark p-6">
+      {/* Visi — gambar skyline jadi background penuh kartu, transparan kalau gambar punya area transparan */}
+      <div className="relative isolate flex min-h-[22rem] flex-col overflow-hidden rounded-2xl bg-transparent p-6">
         <Image
           src={content.visionImageUrl}
           alt={dict.tentangVisiMisi.visionImageAlt}
@@ -30,8 +30,8 @@ export default async function TentangVisiMisiSection({ content }: { content: Abo
         </p>
       </div>
 
-      {/* Misi — gambar ilustrasi jadi background penuh kartu, hijau basic nongol kalau gambar transparan/belum diisi */}
-      <div className="relative isolate flex min-h-[22rem] flex-col overflow-hidden rounded-2xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark p-6">
+      {/* Misi — gambar ilustrasi jadi background penuh kartu, transparan kalau gambar punya area transparan/belum diisi */}
+      <div className="relative isolate flex min-h-[22rem] flex-col overflow-hidden rounded-2xl bg-transparent p-6">
         {content.missionImageUrl && (
           <Image
             src={content.missionImageUrl}
