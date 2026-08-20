@@ -539,7 +539,7 @@ export default function LayananManager({
 
       {/* ─── Dialog tambah/edit layanan ─── */}
       <Dialog open={form !== null} onOpenChange={(o) => !o && setForm(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
           {form && (
             <>
               <DialogTitle className="text-base font-bold text-gray-900">
