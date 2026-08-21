@@ -65,6 +65,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       images: [imageUrl],
     },
+    /* Favicon tab browser ikut cover artikel — cuma di-override kalau
+     * postnya punya featuredMedia; kalau enggak, warisi favicon situs
+     * (Settings.faviconUrl) dari root layout. */
+    ...(post.imageUrl ? { icons: { icon: post.imageUrl } } : {}),
   };
 }
 
