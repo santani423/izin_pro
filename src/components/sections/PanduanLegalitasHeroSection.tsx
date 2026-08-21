@@ -18,8 +18,24 @@ export default function PanduanLegalitasHeroSection() {
   const waMessage = encodeURIComponent(hero.waMessage);
 
   return (
-    <section className="bg-brand-surface">
-      <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-8 px-4 pb-14 pt-10 sm:px-6 lg:grid-cols-2 lg:px-8">
+    <section className="relative overflow-hidden bg-brand-surface">
+      {/* Foto hero — full-bleed nempel tepi kanan & atas-bawah section
+          (≥lg), sisi kiri di-fade ke transparan biar nyatu sama konten.
+          Konsisten sama pola di hero beranda & detail layanan. */}
+      <div className="absolute inset-y-0 right-0 hidden w-[45%] lg:block">
+        <div className="absolute inset-0 [-webkit-mask-image:linear-gradient(to_right,transparent,black_38%)] [mask-image:linear-gradient(to_right,transparent,black_38%)]">
+          <Image
+            src={hero.image}
+            alt={hero.imageAlt}
+            fill
+            sizes="45vw"
+            className="object-cover"
+            priority
+          />
+        </div>
+      </div>
+
+      <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-8 px-4 pb-14 pt-10 sm:px-6 lg:grid-cols-2 lg:px-8">
         {/* Breadcrumb — selalu paling atas (mobile: sebelum foto) */}
         <nav
           aria-label="Breadcrumb"
@@ -88,15 +104,16 @@ export default function PanduanLegalitasHeroSection() {
           </Reveal>
         </div>
 
-        {/* Foto hero — konsultan bersama klien + kartu stat (mobile: di antara breadcrumb & judul) */}
-        <Reveal delay={0.15}>
+        {/* Foto hero — konsultan bersama klien (mobile/tablet: di antara
+            breadcrumb & judul; ≥lg dipakai versi full-bleed di atas) */}
+        <Reveal delay={0.15} className="lg:hidden">
           <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl shadow-sm">
             <Image
               src={hero.image}
               alt={hero.imageAlt}
               fill
               priority
-              sizes="(min-width: 1024px) 600px, 100vw"
+              sizes="100vw"
               className="object-cover"
             />
           </div>

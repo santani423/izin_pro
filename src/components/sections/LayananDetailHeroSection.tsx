@@ -23,9 +23,70 @@ export default async function LayananDetailHeroSection({
     format(dict.layananDetailHero.waMessageTemplate, { title: detail.title }),
   );
 
+  const heroImageAlt = format(dict.layananDetailHero.ariaIllustrationTemplate, { title: detail.title });
+
+  /* Isi kartu stat (dipakai di versi mobile & full-bleed) */
+  const renderStatCard = ({ icon: Icon, value, label, withStars }: LayananDetail["stats"][number]) => (
+    <>
+      <p className="flex items-center gap-2 text-lg font-extrabold text-foreground">
+        <Icon className="size-5 text-primary" aria-hidden="true" />
+        {value}
+      </p>
+      <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
+      {withStars && (
+        <p className="mt-1 flex gap-0.5" role="img" aria-label={dict.layananDetailHero.ariaRating}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Star key={i} className="size-3.5 fill-amber-400 text-amber-400" aria-hidden="true" />
+          ))}
+        </p>
+      )}
+    </>
+  );
+
   return (
-    <section className="bg-brand-surface">
-      <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:px-8">
+    <section className="relative overflow-hidden bg-brand-surface">
+      {/* Foto hero — full-bleed nempel tepi kanan & atas-bawah section
+          (≥lg), sisi kiri di-fade ke transparan biar nyatu sama konten,
+          kartu stat sejajar numpuk di pojok kanan bawah. Konsisten sama
+          pola di hero beranda. */}
+      <div className="absolute inset-y-0 right-0 hidden w-[45%] lg:block">
+        <div className="absolute inset-0 [-webkit-mask-image:linear-gradient(to_right,transparent,black_38%)] [mask-image:linear-gradient(to_right,transparent,black_38%)]">
+          {detail.imageUrl ? (
+            <Image
+              src={detail.imageUrl}
+              alt={heroImageAlt}
+              fill
+              sizes="45vw"
+              className="object-cover"
+              priority
+            />
+          ) : (
+            <div
+              role="img"
+              aria-label={heroImageAlt}
+              className="h-full w-full bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark"
+            />
+          )}
+        </div>
+
+        {detail.stats.map((stat, index) => (
+          <div
+            key={index}
+            className={cn(
+              "absolute right-8 w-44 animate-float rounded-xl border border-border/60 bg-background px-4 py-3 shadow-lg",
+              index === 0 ? "bottom-36" : "bottom-8",
+            )}
+            style={{
+              animationDuration: `${4 + index * 1.5}s`,
+              animationDelay: `${1 + index * 0.5}s`,
+            }}
+          >
+            {renderStatCard(stat)}
+          </div>
+        ))}
+      </div>
+
+      <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:px-8">
         <div>
           {/* Breadcrumb */}
           <nav
@@ -88,16 +149,17 @@ export default async function LayananDetailHeroSection({
           </Button>
         </div>
 
-        {/* Foto + kartu statistik mengambang — badge kanan atas & kiri
-            bawah, konsisten sama pola di hero beranda. */}
-        <Reveal delay={0.15} className="relative">
+        {/* Foto + kartu statistik mengambang, cuma <lg (≥lg dipakai versi
+            full-bleed di luar grid, lihat atas) — badge sejajar numpuk
+            di pojok kanan bawah. */}
+        <Reveal delay={0.15} className="relative lg:hidden">
           {detail.imageUrl ? (
             <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl">
               <Image
                 src={detail.imageUrl}
-                alt={format(dict.layananDetailHero.ariaIllustrationTemplate, { title: detail.title })}
+                alt={heroImageAlt}
                 fill
-                sizes="(min-width: 1024px) 50vw, 100vw"
+                sizes="100vw"
                 className="object-cover"
                 priority
               />
@@ -105,44 +167,25 @@ export default async function LayananDetailHeroSection({
           ) : (
             <div
               role="img"
-              aria-label={format(dict.layananDetailHero.ariaIllustrationTemplate, { title: detail.title })}
+              aria-label={heroImageAlt}
               className="aspect-[16/10] w-full rounded-2xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark"
             />
           )}
-          <div className="mt-4 grid grid-cols-2 gap-3 lg:contents">
-            {detail.stats.map(({ icon: Icon, value, label, withStars }, index) => (
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:contents">
+            {detail.stats.map((stat, index) => (
               <div
                 key={index}
                 className={cn(
                   "rounded-xl border border-border/60 bg-background px-4 py-3 shadow-sm",
-                  "lg:absolute lg:w-44 lg:animate-float lg:shadow-lg",
-                  index === 0 ? "lg:-right-3 lg:top-5" : "lg:-left-3 lg:bottom-8",
+                  "sm:absolute sm:-right-3 sm:w-44 sm:animate-float sm:shadow-lg",
+                  index === 0 ? "sm:bottom-36" : "sm:bottom-8",
                 )}
                 style={{
                   animationDuration: `${4 + index * 1.5}s`,
                   animationDelay: `${1 + index * 0.5}s`,
                 }}
               >
-                <p className="flex items-center gap-2 text-lg font-extrabold text-foreground">
-                  <Icon className="size-5 text-primary" aria-hidden="true" />
-                  {value}
-                </p>
-                <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
-                {withStars && (
-                  <p
-                    className="mt-1 flex gap-0.5"
-                    role="img"
-                    aria-label={dict.layananDetailHero.ariaRating}
-                  >
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star
-                        key={i}
-                        className="size-3.5 fill-amber-400 text-amber-400"
-                        aria-hidden="true"
-                      />
-                    ))}
-                  </p>
-                )}
+                {renderStatCard(stat)}
               </div>
             ))}
           </div>

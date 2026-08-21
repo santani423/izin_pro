@@ -1,14 +1,24 @@
 import { LocalizedLink as Link } from "@/components/shared/LocalizedLink";
 import { ChevronRight } from "lucide-react";
-import { Reveal } from "@/components/shared/Reveal";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 
 /* ─── Hero halaman Daftar Layanan — breadcrumb, judul & foto ─── */
 export default async function LayananHeroSection() {
   const dict = getDictionary(await getLocale());
   return (
-    <section className="bg-brand-surface">
-      <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-8 px-4 pb-20 pt-10 sm:px-6 lg:grid-cols-2 lg:px-8">
+    <section className="relative overflow-hidden bg-brand-surface">
+      {/* Placeholder foto hero — gradient hijau brand, full-bleed nempel
+          tepi kanan & atas-bawah section (≥lg), sisi kiri di-fade ke
+          transparan. Konsisten sama pola di hero beranda & lainnya. */}
+      <div className="absolute inset-y-0 right-0 hidden w-[45%] lg:block">
+        <div
+          role="img"
+          aria-label={dict.layananHero.ariaImage}
+          className="h-full w-full bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark [-webkit-mask-image:linear-gradient(to_right,transparent,black_38%)] [mask-image:linear-gradient(to_right,transparent,black_38%)]"
+        />
+      </div>
+
+      <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-8 px-4 pb-20 pt-10 sm:px-6 lg:grid-cols-2 lg:px-8">
         <div>
           {/* Breadcrumb */}
           <nav
@@ -29,15 +39,6 @@ export default async function LayananHeroSection() {
             {dict.layananHero.subtitle}
           </p>
         </div>
-
-        {/* Placeholder foto hero — gradient hijau brand */}
-        <Reveal delay={0.15} className="hidden lg:block">
-          <div
-            role="img"
-            aria-label={dict.layananHero.ariaImage}
-            className="aspect-[16/9] w-full rounded-2xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark"
-          />
-        </Reveal>
       </div>
     </section>
   );

@@ -135,15 +135,16 @@ export default function HeroSection({ content = DEFAULT_HERO_CONTENT }: { conten
           )}
         </div>
 
-        {/* Floating stat cards di atas foto full-bleed */}
+        {/* Floating stat cards di atas foto full-bleed — sejajar, numpuk
+            di pojok kanan bawah */}
         {dict.hero.stats.map((stat, index) => (
           <motion.div
             key={stat.value}
-            className={cn("absolute", index === 0 ? "right-8 top-14" : "left-10 bottom-14")}
+            className={cn("absolute right-8", index === 0 ? "bottom-36" : "bottom-8")}
             {...(prefersReducedMotion
               ? {}
               : {
-                  initial: { opacity: 0, x: index === 0 ? 32 : -32 },
+                  initial: { opacity: 0, x: 32 },
                   animate: { opacity: 1, x: 0 },
                   transition: {
                     duration: 0.5,
@@ -260,7 +261,7 @@ export default function HeroSection({ content = DEFAULT_HERO_CONTENT }: { conten
 
           {/* Floating stat cards — tampil di atas foto (custom maupun kartu
               gradient bawaan). Mobile: grid 2 kolom di bawah kartu; ≥sm:
-              melayang di kanan atas & kiri bawah (sm:contents membuat
+              sejajar numpuk di pojok kanan bawah (sm:contents membuat
               wrapper "hilang" sehingga posisi absolute mengacu ke kolom
               kanan). */}
           <div className="mt-4 grid grid-cols-2 gap-3 sm:contents">
@@ -268,15 +269,13 @@ export default function HeroSection({ content = DEFAULT_HERO_CONTENT }: { conten
               <motion.div
                 key={stat.value}
                 className={cn(
-                  "sm:absolute",
-                  index === 0
-                    ? "sm:-right-3 sm:top-5"
-                    : "sm:-left-3 sm:bottom-8",
+                  "sm:absolute sm:-right-3",
+                  index === 0 ? "sm:bottom-36" : "sm:bottom-8",
                 )}
                 {...(prefersReducedMotion
                   ? {}
                   : {
-                      initial: { opacity: 0, x: index === 0 ? 32 : -32 },
+                      initial: { opacity: 0, x: 32 },
                       animate: { opacity: 1, x: 0 },
                       transition: {
                         duration: 0.5,

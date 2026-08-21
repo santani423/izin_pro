@@ -98,11 +98,34 @@ export default function PageHero({
     </>
   );
 
+  /* imageContent (mis. mockup /tracking) tetap kartu contained biasa —
+   * bukan foto asli, jadi gak dipaksa ke pola full-bleed di bawah. */
+  const hasCustomVisual = Boolean(imageContent);
+
   return (
-    <section className="bg-brand-surface">
+    <section className="relative overflow-hidden bg-brand-surface">
+      {/* Foto hero — full-bleed nempel tepi kanan & atas-bawah section
+          (≥lg), sisi kiri di-fade ke transparan biar nyatu sama konten.
+          Konsisten sama pola di hero beranda & detail layanan. */}
+      {!hasCustomVisual && (
+        <div className="absolute inset-y-0 right-0 hidden w-[45%] lg:block">
+          <div className="absolute inset-0 [-webkit-mask-image:linear-gradient(to_right,transparent,black_38%)] [mask-image:linear-gradient(to_right,transparent,black_38%)]">
+            {imageUrl ? (
+              <Image src={imageUrl} alt={imageLabel} fill sizes="45vw" className="object-cover" priority />
+            ) : (
+              <div
+                role="img"
+                aria-label={imageLabel}
+                className="h-full w-full bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark"
+              />
+            )}
+          </div>
+        </div>
+      )}
+
       <div
         className={cn(
-          "mx-auto grid max-w-7xl grid-cols-1 items-center gap-8 px-4 pt-10 sm:px-6 lg:grid-cols-2 lg:px-8",
+          "relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-8 px-4 pt-10 sm:px-6 lg:grid-cols-2 lg:px-8",
           overlap ? "pb-20" : "pb-14",
         )}
       >
@@ -110,12 +133,12 @@ export default function PageHero({
           <>
             {breadcrumbNav}
             <div className="order-last lg:order-none">{textContent}</div>
-            <Reveal delay={0.15}>
+            <Reveal delay={0.15} className={cn(!hasCustomVisual && "lg:hidden")}>
               {imageContent ? (
                 <div aria-hidden="true">{imageContent}</div>
               ) : imageUrl ? (
                 <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl">
-                  <Image src={imageUrl} alt={imageLabel} fill sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover" priority />
+                  <Image src={imageUrl} alt={imageLabel} fill sizes="100vw" className="object-cover" priority />
                 </div>
               ) : (
                 <div
@@ -129,7 +152,7 @@ export default function PageHero({
         ) : (
           <>
             <div>{textContent}</div>
-            <Reveal delay={0.15} className="hidden lg:block">
+            <Reveal delay={0.15} className={hasCustomVisual ? "hidden lg:block" : "hidden"}>
               {imageContent ? (
                 <div aria-hidden="true">{imageContent}</div>
               ) : imageUrl ? (
