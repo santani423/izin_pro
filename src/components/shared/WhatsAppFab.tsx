@@ -3,6 +3,7 @@
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { useDictionary } from "@/contexts/LocaleContext";
 import { WHATSAPP_URL } from "@/lib/landing";
+import { trackContact } from "@/lib/meta-pixel";
 
 /* ─── Floating Action Button WhatsApp ───
  * Teks ajakan muncul dari balik ikon saat di-hover (desktop) atau focus (keyboard).
@@ -14,6 +15,7 @@ export default function WhatsAppFab() {
       href={WHATSAPP_URL}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={() => trackContact()}
       aria-label={dict.whatsappFab.ariaLabel}
       className="group fixed bottom-5 right-5 z-50 flex items-center rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/30 transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     >

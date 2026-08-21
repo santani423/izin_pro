@@ -4,6 +4,7 @@ import Footer from "@/components/shared/Footer";
 import WhatsAppFab from "@/components/shared/WhatsAppFab";
 import BackToTop from "@/components/shared/BackToTop";
 import MaintenancePage from "@/components/shared/MaintenancePage";
+import MetaPixel from "@/components/MetaPixel";
 import { LocaleProvider } from "@/contexts/LocaleContext";
 import { getLocale, getDictionary } from "@/i18n/get-dictionary";
 import { prisma } from "@/lib/db";
@@ -74,6 +75,9 @@ export default async function PublicLayout({
 
   return (
     <LocaleProvider locale={locale} dict={dict}>
+      {/* Meta Pixel — satu Pixel ID untuk seluruh website publik (bukan
+       * area admin), dipasang sekali di sini. Lihat components/MetaPixel.tsx. */}
+      <MetaPixel />
       {/* className="contents" -> gak nambah box baru (layout flex body gak
        * kepengaruh), tapi font-family dari sini tetap ke-inherit semua
        * elemen di bawahnya. Lihat tab Font di /admin/settings. */}

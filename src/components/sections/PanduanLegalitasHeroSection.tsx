@@ -4,6 +4,7 @@ import { ChevronRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
+import { WhatsAppLink } from "@/components/shared/WhatsAppLink";
 import { Reveal } from "@/components/shared/Reveal";
 import { COMPANY_INFO } from "@/lib/constants";
 import {
@@ -75,14 +76,14 @@ export default function PanduanLegalitasHeroSection() {
               size="lg"
               className="mt-8 w-full justify-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold sm:w-auto sm:gap-2 sm:px-5 sm:text-sm"
             >
-              <a
+              <WhatsAppLink
                 href={`https://wa.me/${COMPANY_INFO.whatsapp}?text=${waMessage}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 {hero.cta}
                 <WhatsAppIcon className="size-3.5 sm:size-4" />
-              </a>
+              </WhatsAppLink>
             </Button>
           </Reveal>
         </div>

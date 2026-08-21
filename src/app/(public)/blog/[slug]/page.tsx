@@ -6,6 +6,7 @@ import { CalendarDays, Clock } from "lucide-react";
 import PageHero from "@/components/shared/PageHero";
 import BlogDetailProseSection from "@/components/sections/BlogDetailProseSection";
 import BlogCommentsSection from "@/components/sections/BlogCommentsSection";
+import ViewContentTracker from "@/components/ViewContentTracker";
 import {
   getPublicBlogPostBySlug,
   getPublicBlogPosts,
@@ -92,6 +93,14 @@ export default async function BlogDetailPage({ params }: Props) {
 
   return (
     <>
+      {/* Meta Pixel — ViewContent dengan data artikel asli (bukan hardcode) */}
+      <ViewContentTracker
+        content_name={post.title}
+        content_type="article"
+        content_ids={[post.id]}
+        content_category={post.categoryName}
+      />
+
       {/* 1. Hero + breadcrumb + meta penulis */}
       <PageHero
         crumbs={[

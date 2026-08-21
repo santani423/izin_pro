@@ -9,6 +9,7 @@ import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { useDictionary, useLocale } from "@/contexts/LocaleContext";
 import { cn } from "@/lib/utils";
 import { WHATSAPP_URL } from "@/lib/landing";
+import { trackContact } from "@/lib/meta-pixel";
 import { submitTrackingLookupAction } from "@/lib/actions/tracking";
 import type { PublicTrackingResult } from "@/lib/transaction-tracking";
 
@@ -105,7 +106,7 @@ export default function TrackingFormSection({ initialCode }: { initialCode?: str
             </p>
           </div>
           <Button asChild variant="outline" className="w-full justify-center gap-2 rounded-lg sm:w-auto">
-            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
+            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" onClick={() => trackContact()}>
               {dict.trackingForm.contactUs}
               <WhatsAppIcon className="size-4 text-primary" />
             </a>

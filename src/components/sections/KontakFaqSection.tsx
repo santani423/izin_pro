@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { cn } from "@/lib/utils";
 import { WHATSAPP_URL } from "@/lib/landing";
+import { trackContact } from "@/lib/meta-pixel";
 
 export interface KontakFaqItem {
   question: string;
@@ -118,6 +119,7 @@ export default function KontakFaqSection({
                     href={WHATSAPP_URL}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => trackContact()}
                   >
                     {helpCard.buttonLabel}
                     <WhatsAppIcon className="size-3.5 sm:size-4" />

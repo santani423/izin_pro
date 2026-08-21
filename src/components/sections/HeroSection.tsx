@@ -11,6 +11,7 @@ import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { useDictionary } from "@/contexts/LocaleContext";
 import { HERO_HIGHLIGHTS, WHATSAPP_URL } from "@/lib/landing";
 import { cn } from "@/lib/utils";
+import { trackContact } from "@/lib/meta-pixel";
 
 /* Ikon badge highlight tetap hardcode per-index (gak disimpan di DB) — cocokin
  * urutannya kalau HERO_HIGHLIGHTS di landing.ts diubah. */
@@ -115,7 +116,7 @@ export default function HeroSection({ content = DEFAULT_HERO_CONTENT }: { conten
               size="lg"
               className="flex-1 justify-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold sm:flex-none sm:gap-2 sm:px-5 sm:text-sm"
             >
-              <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
+              <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" onClick={() => trackContact()}>
                 {content.ctaPrimaryLabel}
                 <WhatsAppIcon className="size-3.5 sm:size-4" />
               </a>

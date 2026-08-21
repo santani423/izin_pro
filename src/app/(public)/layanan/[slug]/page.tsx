@@ -7,6 +7,7 @@ import LayananDetailHeroSection from "@/components/sections/LayananDetailHeroSec
 import LayananDetailAboutSection from "@/components/sections/LayananDetailAboutSection";
 import LayananDetailBenefitsSection from "@/components/sections/LayananDetailBenefitsSection";
 import LayananDetailTypesSection from "@/components/sections/LayananDetailTypesSection";
+import ViewContentTracker from "@/components/ViewContentTracker";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { hydrateLayananDetail } from "@/lib/hydrate-layanan-detail";
@@ -116,6 +117,14 @@ export default async function LayananDetailPage({ params }: Props) {
 
   return (
     <>
+      {/* Meta Pixel — ViewContent dengan data layanan asli (bukan hardcode) */}
+      <ViewContentTracker
+        content_name={detail.title}
+        content_type="service"
+        content_ids={[service.id]}
+        content_category={service.category?.name}
+      />
+
       {/* 1. Hero + breadcrumb + statistik */}
       <LayananDetailHeroSection detail={detail} />
 

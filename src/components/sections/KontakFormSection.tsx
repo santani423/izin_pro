@@ -18,6 +18,7 @@ import {
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { useDictionary } from "@/contexts/LocaleContext";
 import { cn } from "@/lib/utils";
+import { trackContact, trackLead } from "@/lib/meta-pixel";
 import { submitInquiryAction } from "@/lib/actions/inquiry";
 import { resolveDetailIcon } from "@/lib/detail-icons";
 import type { KontakChannelRaw } from "@/lib/hydrate-kontak-content";
@@ -90,6 +91,7 @@ export default function KontakFormSection({
     });
     if (res.ok) {
       setSubmitted(true);
+      trackLead();
       reset();
     } else {
       setSubmitError(res.message);
@@ -315,6 +317,7 @@ export default function KontakFormSection({
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackContact()}
                 className="group flex items-center gap-4 rounded-xl border border-border/60 bg-background px-5 py-4 shadow-sm transition-colors hover:border-primary/40"
               >
                 <span

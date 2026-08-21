@@ -5,6 +5,7 @@ import { ArrowRight, CheckCircle2, ChevronRight, Download, ListOrdered } from "l
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
+import { WhatsAppLink } from "@/components/shared/WhatsAppLink";
 import { Reveal } from "@/components/shared/Reveal";
 import BlogDetailFaq from "@/components/sections/BlogDetailFaq";
 import { COMPANY_INFO } from "@/lib/constants";
@@ -256,14 +257,14 @@ export default function PanduanLegalitasBodySection() {
               asChild
               className="mt-4 w-full justify-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold sm:gap-2 sm:text-sm"
             >
-              <a
+              <WhatsAppLink
                 href={`https://wa.me/${COMPANY_INFO.whatsapp}?text=${waHelp}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 {PANDUAN_LEGALITAS_HELP.cta}
                 <WhatsAppIcon className="size-3.5 sm:size-4" />
-              </a>
+              </WhatsAppLink>
             </Button>
           </div>
 

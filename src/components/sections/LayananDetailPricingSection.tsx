@@ -3,6 +3,7 @@ import { Check, ClipboardCheck, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/Reveal";
+import { WhatsAppLink } from "@/components/shared/WhatsAppLink";
 import { cn } from "@/lib/utils";
 import { COMPANY_INFO } from "@/lib/constants";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
@@ -128,13 +129,13 @@ export default async function LayananDetailPricingSection({
                             : "border border-primary/40 bg-transparent text-primary hover:bg-primary/5",
                         )}
                       >
-                        <a
+                        <WhatsAppLink
                           href={`https://wa.me/${COMPANY_INFO.whatsapp}?text=${waMessage}`}
                           target="_blank"
                           rel="noopener noreferrer"
                         >
                           {dict.layananDetailPricing.choosePackage}
-                        </a>
+                        </WhatsAppLink>
                       </Button>
                     </CardContent>
                   </Card>

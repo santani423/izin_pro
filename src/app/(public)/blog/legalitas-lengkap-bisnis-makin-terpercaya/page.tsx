@@ -3,7 +3,9 @@ import dynamic from "next/dynamic";
 
 import PanduanLegalitasHeroSection from "@/components/sections/PanduanLegalitasHeroSection";
 import PanduanLegalitasBodySection from "@/components/sections/PanduanLegalitasBodySection";
+import ViewContentTracker from "@/components/ViewContentTracker";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
+import { PANDUAN_LEGALITAS_HERO, PANDUAN_LEGALITAS_SLUG } from "@/lib/panduan-legalitas";
 
 /* ─── Lazy load section below the fold ─── */
 const CtaSection = dynamic(() => import("@/components/sections/CtaSection"));
@@ -24,6 +26,16 @@ export default async function PanduanLegalitasPage() {
   const dict = getDictionary(await getLocale());
   return (
     <>
+      {/* Meta Pixel — ViewContent. Halaman ini punya route statis sendiri
+       * (bukan lewat [slug]/artikel dari DB), jadi gak ada id numerik —
+       * pakai slug sbg identifier sesuai instruksi #7. */}
+      <ViewContentTracker
+        content_name={`${PANDUAN_LEGALITAS_HERO.titleLead} ${PANDUAN_LEGALITAS_HERO.titleHighlight}`}
+        content_type="article"
+        content_ids={[PANDUAN_LEGALITAS_SLUG]}
+        content_category={PANDUAN_LEGALITAS_HERO.kicker}
+      />
+
       {/* 1. Hero + breadcrumb + CTA */}
       <PanduanLegalitasHeroSection />
 
