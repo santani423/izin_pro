@@ -3,11 +3,13 @@ import Image from "next/image";
 import { ChevronRight, Star } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Reveal } from "@/components/shared/Reveal";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { WhatsAppLink } from "@/components/shared/WhatsAppLink";
 import { COMPANY_INFO } from "@/lib/constants";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 import { format } from "@/i18n/format";
+import { cn } from "@/lib/utils";
 import type { LayananDetail } from "@/lib/hydrate-layanan-detail";
 
 /* ─── Hero detail layanan — breadcrumb, judul, highlight & kartu statistik ─── */
@@ -86,8 +88,9 @@ export default async function LayananDetailHeroSection({
           </Button>
         </div>
 
-        {/* Foto + kartu statistik mengambang */}
-        <div className="relative">
+        {/* Foto + kartu statistik mengambang — badge kanan atas & kiri
+            bawah, konsisten sama pola di hero beranda. */}
+        <Reveal delay={0.15} className="relative">
           {detail.imageUrl ? (
             <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl">
               <Image
@@ -106,11 +109,19 @@ export default async function LayananDetailHeroSection({
               className="aspect-[16/10] w-full rounded-2xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark"
             />
           )}
-          <div className="mt-4 flex flex-wrap gap-4 lg:absolute lg:-right-2 lg:bottom-6 lg:mt-0 lg:flex-col">
+          <div className="mt-4 grid grid-cols-2 gap-3 lg:contents">
             {detail.stats.map(({ icon: Icon, value, label, withStars }, index) => (
               <div
                 key={index}
-                className="flex-1 rounded-xl border border-border/60 bg-background px-4 py-3 shadow-sm lg:flex-none"
+                className={cn(
+                  "rounded-xl border border-border/60 bg-background px-4 py-3 shadow-sm",
+                  "lg:absolute lg:w-44 lg:animate-float lg:shadow-lg",
+                  index === 0 ? "lg:-right-3 lg:top-5" : "lg:-left-3 lg:bottom-8",
+                )}
+                style={{
+                  animationDuration: `${4 + index * 1.5}s`,
+                  animationDelay: `${1 + index * 0.5}s`,
+                }}
               >
                 <p className="flex items-center gap-2 text-lg font-extrabold text-foreground">
                   <Icon className="size-5 text-primary" aria-hidden="true" />
@@ -135,7 +146,7 @@ export default async function LayananDetailHeroSection({
               </div>
             ))}
           </div>
-        </div>
+        </Reveal>
       </div>
     </section>
   );

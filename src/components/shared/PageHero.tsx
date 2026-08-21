@@ -3,6 +3,7 @@ import Image from "next/image";
 import { ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { Reveal } from "@/components/shared/Reveal";
 import { cn } from "@/lib/utils";
 
 interface Crumb {
@@ -109,37 +110,41 @@ export default function PageHero({
           <>
             {breadcrumbNav}
             <div className="order-last lg:order-none">{textContent}</div>
-            {imageContent ? (
-              <div aria-hidden="true">{imageContent}</div>
-            ) : imageUrl ? (
-              <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl">
-                <Image src={imageUrl} alt={imageLabel} fill sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover" priority />
-              </div>
-            ) : (
-              <div
-                role="img"
-                aria-label={imageLabel}
-                className="aspect-[16/9] w-full rounded-2xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark"
-              />
-            )}
+            <Reveal delay={0.15}>
+              {imageContent ? (
+                <div aria-hidden="true">{imageContent}</div>
+              ) : imageUrl ? (
+                <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl">
+                  <Image src={imageUrl} alt={imageLabel} fill sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover" priority />
+                </div>
+              ) : (
+                <div
+                  role="img"
+                  aria-label={imageLabel}
+                  className="aspect-[16/9] w-full rounded-2xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark"
+                />
+              )}
+            </Reveal>
           </>
         ) : (
           <>
             <div>{textContent}</div>
-            {imageContent ? (
-              <div className="hidden lg:block" aria-hidden="true">{imageContent}</div>
-            ) : imageUrl ? (
-              <div className="relative hidden aspect-[16/9] w-full overflow-hidden rounded-2xl lg:block">
-                <Image src={imageUrl} alt={imageLabel} fill sizes="50vw" className="object-cover" priority />
-              </div>
-            ) : (
-              /* Placeholder foto hero — gradient hijau brand */
-              <div
-                role="img"
-                aria-label={imageLabel}
-                className="hidden aspect-[16/9] w-full rounded-2xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark lg:block"
-              />
-            )}
+            <Reveal delay={0.15} className="hidden lg:block">
+              {imageContent ? (
+                <div aria-hidden="true">{imageContent}</div>
+              ) : imageUrl ? (
+                <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl">
+                  <Image src={imageUrl} alt={imageLabel} fill sizes="50vw" className="object-cover" priority />
+                </div>
+              ) : (
+                /* Placeholder foto hero — gradient hijau brand */
+                <div
+                  role="img"
+                  aria-label={imageLabel}
+                  className="aspect-[16/9] w-full rounded-2xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark"
+                />
+              )}
+            </Reveal>
           </>
         )}
       </div>

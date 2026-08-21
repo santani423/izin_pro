@@ -1,5 +1,6 @@
 import { LocalizedLink as Link } from "@/components/shared/LocalizedLink";
 import { ChevronRight } from "lucide-react";
+import { Reveal } from "@/components/shared/Reveal";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 
 /* ─── Hero halaman Daftar Layanan — breadcrumb, judul & foto ─── */
@@ -30,11 +31,13 @@ export default async function LayananHeroSection() {
         </div>
 
         {/* Placeholder foto hero — gradient hijau brand */}
-        <div
-          role="img"
-          aria-label={dict.layananHero.ariaImage}
-          className="hidden aspect-[16/9] w-full rounded-2xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark lg:block"
-        />
+        <Reveal delay={0.15} className="hidden lg:block">
+          <div
+            role="img"
+            aria-label={dict.layananHero.ariaImage}
+            className="aspect-[16/9] w-full rounded-2xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark"
+          />
+        </Reveal>
       </div>
     </section>
   );

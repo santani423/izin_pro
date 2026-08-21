@@ -59,12 +59,113 @@ export default function HeroSection({ content = DEFAULT_HERO_CONTENT }: { conten
           transition: { duration: 0.5, delay, ease: "easeOut" as const },
         };
 
+  /* Konten kartu gradient placeholder (dipakai di versi mobile & full-bleed) */
+  const renderPlaceholder = () => (
+    <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
+      <span className="grid size-20 place-items-center rounded-3xl bg-white/15">
+        <CheckCircle2 className="size-9 text-white" aria-hidden="true" />
+      </span>
+      <p className="text-3xl font-extrabold tracking-tight text-white">IzinPro</p>
+      <p className="text-sm text-white/85">{dict.hero.placeholderTagline}</p>
+      <ul className="mt-1 flex flex-wrap justify-center gap-2">
+        {dict.hero.placeholderTags.map((tag) => (
+          <li
+            key={tag}
+            className="rounded-full bg-white/15 px-3.5 py-1.5 text-xs font-medium text-white"
+          >
+            {tag}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+
+  /* Isi kartu stat (dipakai di versi mobile & full-bleed, cuma posisi
+   * pembungkusnya beda) */
+  const renderStatCardContent = (stat: { value: string; label: string }, index: number) => (
+    <CardContent className="px-4 py-3">
+      <p className="flex items-center gap-1.5 text-xl font-extrabold text-foreground">
+        <span className="flex size-6 items-center justify-center rounded-md bg-primary/10 text-primary">
+          <BadgeCheck className="size-3.5" aria-hidden="true" />
+        </span>
+        {stat.value}
+      </p>
+      <p className="mt-0.5 text-xs text-muted-foreground">{stat.label}</p>
+      {index === 1 && (
+        <div className="mt-1 flex gap-0.5" aria-label={dict.hero.ariaRating}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Star
+              key={i}
+              className="size-3.5 fill-amber-400 text-amber-400"
+              aria-hidden="true"
+            />
+          ))}
+        </div>
+      )}
+    </CardContent>
+  );
+
   return (
     <section
       id="beranda"
       className="relative overflow-hidden bg-gradient-to-b from-muted/60 to-background"
     >
-      <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 lg:grid-cols-2 lg:gap-8 lg:px-8 lg:py-20">
+      {/* Foto hero — full-bleed nempel tepi kanan & atas-bawah section
+          (≥lg). Ditaruh di luar container max-w-7xl (posisinya absolute
+          terhadap <section>) biar gak kepotong padding kanan, mirip hero
+          split-layout di referensi desain. */}
+      <div className="absolute inset-y-0 right-0 hidden w-[45%] lg:block">
+        {/* Sisi kiri foto di-fade ke transparan (mask) biar nyatu sama
+            background section, bukan potongan tegas — efeknya kayak
+            gambar "meleleh" masuk ke area konten teks. */}
+        <div className="absolute inset-0 [-webkit-mask-image:linear-gradient(to_right,transparent,black_38%)] [mask-image:linear-gradient(to_right,transparent,black_38%)]">
+          {content.imageUrl ? (
+            <Image
+              src={content.imageUrl}
+              alt="IzinPro"
+              fill
+              sizes="45vw"
+              className="object-cover"
+              priority
+            />
+          ) : (
+            <div className="h-full w-full bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark">
+              {renderPlaceholder()}
+            </div>
+          )}
+        </div>
+
+        {/* Floating stat cards di atas foto full-bleed */}
+        {dict.hero.stats.map((stat, index) => (
+          <motion.div
+            key={stat.value}
+            className={cn("absolute", index === 0 ? "right-8 top-14" : "left-10 bottom-14")}
+            {...(prefersReducedMotion
+              ? {}
+              : {
+                  initial: { opacity: 0, x: index === 0 ? 32 : -32 },
+                  animate: { opacity: 1, x: 0 },
+                  transition: {
+                    duration: 0.5,
+                    delay: 0.5 + index * 0.15,
+                    ease: "easeOut" as const,
+                  },
+                })}
+          >
+            <Card
+              className="animate-float w-44 rounded-xl border-border/60 py-0 shadow-lg"
+              style={{
+                animationDuration: `${4 + index * 1.5}s`,
+                animationDelay: `${1 + index * 0.5}s`,
+              }}
+            >
+              {renderStatCardContent(stat, index)}
+            </Card>
+          </motion.div>
+        ))}
+      </div>
+
+      <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 lg:grid-cols-2 lg:gap-8 lg:px-8 lg:py-20">
         {/* Kolom kiri — teks */}
         <div>
           <motion.h1
@@ -135,8 +236,9 @@ export default function HeroSection({ content = DEFAULT_HERO_CONTENT }: { conten
           </motion.div>
         </div>
 
-        {/* Kolom kanan — gambar + floating stats */}
-        <motion.div {...fadeUp(0.2)} className="relative">
+        {/* Kolom kanan — gambar + floating stats, cuma <lg (≥lg dipakai
+            versi full-bleed di luar grid, lihat atas) */}
+        <motion.div {...fadeUp(0.2)} className="relative lg:hidden">
           {content.imageUrl ? (
             /* Gambar hero custom dari admin — gantiin kartu gradient sepenuhnya */
             <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl shadow-sm">
@@ -144,7 +246,7 @@ export default function HeroSection({ content = DEFAULT_HERO_CONTENT }: { conten
                 src={content.imageUrl}
                 alt="IzinPro"
                 fill
-                sizes="(min-width: 1024px) 50vw, 100vw"
+                sizes="100vw"
                 className="object-cover"
                 priority
               />
@@ -152,38 +254,15 @@ export default function HeroSection({ content = DEFAULT_HERO_CONTENT }: { conten
           ) : (
             /* Kartu hero — gradient hijau brand berisi identitas IzinPro (fallback bawaan) */
             <div className="aspect-[4/3] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-brand-lime via-primary to-brand-green-dark shadow-sm">
-              <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
-                <span className="grid size-20 place-items-center rounded-3xl bg-white/15">
-                  <CheckCircle2 className="size-9 text-white" aria-hidden="true" />
-                </span>
-                <p className="text-3xl font-extrabold tracking-tight text-white">
-                  IzinPro
-                </p>
-                <p className="text-sm text-white/85">
-                  {dict.hero.placeholderTagline}
-                </p>
-                <ul className="mt-1 flex flex-wrap justify-center gap-2">
-                  {dict.hero.placeholderTags.map((tag) => (
-                    <li
-                      key={tag}
-                      className="rounded-full bg-white/15 px-3.5 py-1.5 text-xs font-medium text-white"
-                    >
-                      {tag}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {renderPlaceholder()}
             </div>
           )}
 
-          {/* Floating stat cards — cuma tampil di atas kartu gradient bawaan.
-              Disembunyikan otomatis kalau admin pasang gambar custom, krn
-              posisi absolute-nya gak selalu pas di atas foto sembarang
-              (mis. rasio/komposisi beda-beda tiap gambar). Mobile: grid 2
-              kolom di bawah kartu; ≥sm: melayang di kiri bawah & kanan atas
-              (sm:contents membuat wrapper "hilang" sehingga posisi absolute
-              mengacu ke kolom kanan). */}
-          {!content.imageUrl && (
+          {/* Floating stat cards — tampil di atas foto (custom maupun kartu
+              gradient bawaan). Mobile: grid 2 kolom di bawah kartu; ≥sm:
+              melayang di kanan atas & kiri bawah (sm:contents membuat
+              wrapper "hilang" sehingga posisi absolute mengacu ke kolom
+              kanan). */}
           <div className="mt-4 grid grid-cols-2 gap-3 sm:contents">
             {dict.hero.stats.map((stat, index) => (
               <motion.div
@@ -191,13 +270,13 @@ export default function HeroSection({ content = DEFAULT_HERO_CONTENT }: { conten
                 className={cn(
                   "sm:absolute",
                   index === 0
-                    ? "sm:-left-3 sm:bottom-8"
-                    : "sm:-right-3 sm:top-5",
+                    ? "sm:-right-3 sm:top-5"
+                    : "sm:-left-3 sm:bottom-8",
                 )}
                 {...(prefersReducedMotion
                   ? {}
                   : {
-                      initial: { opacity: 0, x: index === 0 ? -32 : 32 },
+                      initial: { opacity: 0, x: index === 0 ? 32 : -32 },
                       animate: { opacity: 1, x: 0 },
                       transition: {
                         duration: 0.5,
@@ -213,36 +292,11 @@ export default function HeroSection({ content = DEFAULT_HERO_CONTENT }: { conten
                     animationDelay: `${1 + index * 0.5}s`,
                   }}
                 >
-                  <CardContent className="px-4 py-3">
-                  <p className="flex items-center gap-1.5 text-xl font-extrabold text-foreground">
-                    <span className="flex size-6 items-center justify-center rounded-md bg-primary/10 text-primary">
-                      <BadgeCheck className="size-3.5" aria-hidden="true" />
-                    </span>
-                    {stat.value}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {stat.label}
-                  </p>
-                  {index === 1 && (
-                    <div
-                      className="mt-1 flex gap-0.5"
-                      aria-label={dict.hero.ariaRating}
-                    >
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star
-                          key={i}
-                          className="size-3.5 fill-amber-400 text-amber-400"
-                          aria-hidden="true"
-                        />
-                      ))}
-                    </div>
-                  )}
-                  </CardContent>
+                  {renderStatCardContent(stat, index)}
                 </Card>
               </motion.div>
             ))}
           </div>
-          )}
         </motion.div>
       </div>
     </section>
