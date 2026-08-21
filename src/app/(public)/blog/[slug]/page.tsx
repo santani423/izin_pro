@@ -15,6 +15,7 @@ import { recordArticleVisit, getApprovedComments } from "@/lib/article-stats";
 import { PANDUAN_LEGALITAS_SLUG } from "@/lib/panduan-legalitas";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 import { format } from "@/i18n/format";
+import { SITE_URL } from "@/lib/site-url";
 
 /* Slug dengan route statis sendiri — dikeluarkan dari route dinamis */
 const STATIC_ARTICLE_SLUGS = [PANDUAN_LEGALITAS_SLUG];
@@ -43,7 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const title = post.metaTitle || post.title;
   const description = post.metaDescription || post.excerpt;
-  const url = `https://izinpro.co.id/blog/${slug}`;
+  const url = `${SITE_URL}/blog/${slug}`;
   const imageUrl = post.imageUrl || "/og-image.png";
 
   return {

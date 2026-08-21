@@ -4,6 +4,7 @@ import "./globals.css";
 import { getBrandingAssetUrls } from "@/lib/branding";
 import { getLocale } from "@/i18n/get-dictionary";
 import { getLocalizedGeneralSettings } from "@/lib/general-settings";
+import { SITE_URL } from "@/lib/site-url";
 
 /* ─── Font: Plus Jakarta Sans (heading & body) ─── */
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -32,7 +33,7 @@ export async function generateMetadata(): Promise<Metadata> {
     "IzinPro adalah penyedia jasa perizinan bisnis terpercaya di Indonesia. Pendirian PT, NIB, Izin Usaha, dan lebih banyak layanan dengan proses cepat, transparan, dan legal.";
 
   return {
-    metadataBase: new URL("https://izinpro.co.id"),
+    metadataBase: new URL(SITE_URL),
     title: {
       default: title,
       template: `%s | ${general.companyName}`,
@@ -54,7 +55,7 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       type: "website",
       locale: OG_LOCALE[locale] ?? "id_ID",
-      url: "https://izinpro.co.id",
+      url: SITE_URL,
       siteName: general.companyName,
       title,
       description,
