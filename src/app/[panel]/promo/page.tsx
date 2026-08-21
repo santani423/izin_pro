@@ -14,7 +14,7 @@ export default async function AdminPromoPage({
   const { panel } = await params;
   await requirePanelAccess(panel, "/promo");
 
-  const [content, rawPackages, services] = await Promise.all([
+  const [content, rawPackages, services, banners] = await Promise.all([
     prisma.promoPageContent.findUniqueOrThrow({ where: { id: "1" } }),
     prisma.promoPackage.findMany({
       include: { service: { select: { id: true, title: true, slug: true } } },
@@ -24,6 +24,11 @@ export default async function AdminPromoPage({
       where: { deletedAt: null },
       select: { id: true, title: true, slug: true },
       orderBy: { title: "asc" },
+    }),
+    prisma.promoBanner.findMany({
+      where: { deletedAt: null },
+      include: { image: { select: { url: true } } },
+      orderBy: { sortOrder: "asc" },
     }),
   ]);
 
@@ -41,6 +46,7 @@ export default async function AdminPromoPage({
       content={content}
       packages={packages}
       services={services}
+      banners={banners}
       panel={panel}
     />
   );

@@ -5,10 +5,16 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   Save, ImagePlus, Trash2, Plus, Pencil, LayoutTemplate, Sparkles, Package,
-  Timer, Award, ListOrdered, Headset, Megaphone,
+  Timer, Award, ListOrdered, Headset, Megaphone, Gift,
 } from "lucide-react";
 import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
-import type { PromoPageContent, PromoPackage as PromoPackageModel } from "@prisma/client";
+import type {
+  PromoPageContent,
+  PromoPackage as PromoPackageModel,
+  PromoBanner as PromoBannerModel,
+  PromoBannerVariant,
+} from "@prisma/client";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,11 +43,77 @@ import {
   savePromoConsultContentAction,
   savePromoConsultImageAction,
   savePromoCtaContentAction,
+  createPromoBannerAction,
+  updatePromoBannerAction,
+  deletePromoBannerAction,
+  reorderPromoBannersAction,
+  uploadPromoBannerImageAction,
   type PromoHighlightInput,
   type PromoPackageFormData,
   type PromoWhyInput,
   type PromoStepInput,
+  type PromoBannerLangData,
+  type PromoBannerFormData,
 } from "@/lib/actions/promo-page";
+
+/* ─── Lang switcher (ID/EN/中文) — sama pola dgn CtaBannerPageClient.tsx,
+ * dipakai buat toggle field mana yg keliatan pas ngedit Banner Promo Beranda. */
+const LANGS = [
+  { key: "id", label: "Bahasa Indonesia" },
+  { key: "en", label: "English" },
+  { key: "zh", label: "中文" },
+] as const;
+type Lang = (typeof LANGS)[number]["key"];
+
+function LangSwitcher({ lang, onChange }: { lang: Lang; onChange: (l: Lang) => void }) {
+  return (
+    <div className="flex w-fit gap-1 rounded-lg bg-gray-100 p-1">
+      {LANGS.map(({ key, label }) => (
+        <button
+          key={key}
+          type="button"
+          onClick={() => onChange(key)}
+          className={cn(
+            "rounded-md px-2.5 py-1 text-xs font-semibold transition-colors",
+            lang === key ? "bg-white text-primary shadow-sm" : "text-gray-500 hover:text-gray-700",
+          )}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const VARIANT_LABELS: Record<PromoBannerVariant, string> = {
+  DISCOUNT: "Diskon",
+  FREE: "Gratis",
+  PACKAGE: "Paket Hemat",
+};
+
+interface BannerFormState {
+  id: string | null;
+  lang: Record<Lang, PromoBannerLangData>;
+  variant: PromoBannerVariant;
+  ctaHref: string;
+  isActive: boolean;
+  imageMediaId: string | null;
+  imageUrl: string | null;
+}
+
+const emptyBannerLang = (): PromoBannerLangData => ({ eyebrow: "", title: "", description: "", ctaLabel: "" });
+
+const emptyBannerForm = (): BannerFormState => ({
+  id: null,
+  lang: { id: emptyBannerLang(), en: emptyBannerLang(), zh: emptyBannerLang() },
+  variant: "DISCOUNT",
+  ctaHref: "",
+  isActive: true,
+  imageMediaId: null,
+  imageUrl: null,
+});
+
+type SerializedPromoBanner = PromoBannerModel & { image: { url: string } | null };
 
 type SerializedPromoPackage = Omit<PromoPackageModel, "price" | "originalPrice"> & {
   price: number;
@@ -115,10 +187,12 @@ export default function PromoPageClient({
   content,
   packages,
   services,
+  banners,
 }: {
   content: PromoPageContent;
   packages: SerializedPromoPackage[];
   services: ServiceOption[];
+  banners: SerializedPromoBanner[];
   panel: string;
 }) {
   const router = useRouter();
@@ -150,6 +224,13 @@ export default function PromoPageClient({
   const [packageForm, setPackageForm] = useState<PackageFormState | null>(null);
   const [isSavingPackage, startSavePackage] = useTransition();
   const [isReordering, startReorder] = useTransition();
+
+  /* ─── Banner Promo Beranda (CRUD) ─── */
+  const [bannerForm, setBannerForm] = useState<BannerFormState | null>(null);
+  const [bannerFormLang, setBannerFormLang] = useState<Lang>("id");
+  const [isSavingBanner, startSaveBanner] = useTransition();
+  const [isReorderingBanners, startReorderBanners] = useTransition();
+  const [isUploadingBannerImage, setIsUploadingBannerImage] = useState(false);
 
   /* ─── Countdown ─── */
   const [countdownTitlePrefix, setCountdownTitlePrefix] = useState(content.countdownTitlePrefix);
@@ -352,6 +433,121 @@ export default function PromoPageClient({
     });
   };
 
+  /* ─── Banner Promo Beranda handlers ─── */
+  const openBannerForm = (banner: SerializedPromoBanner | null) => {
+    setBannerForm(
+      banner
+        ? {
+            id: banner.id,
+            lang: {
+              id: {
+                eyebrow: banner.eyebrow,
+                title: banner.title,
+                description: banner.description ?? "",
+                ctaLabel: banner.ctaLabel ?? "",
+              },
+              en: {
+                eyebrow: banner.eyebrowEn ?? "",
+                title: banner.titleEn ?? "",
+                description: banner.descriptionEn ?? "",
+                ctaLabel: banner.ctaLabelEn ?? "",
+              },
+              zh: {
+                eyebrow: banner.eyebrowZh ?? "",
+                title: banner.titleZh ?? "",
+                description: banner.descriptionZh ?? "",
+                ctaLabel: banner.ctaLabelZh ?? "",
+              },
+            },
+            variant: banner.variant,
+            ctaHref: banner.ctaHref ?? "",
+            isActive: banner.isActive,
+            imageMediaId: banner.imageMediaId,
+            imageUrl: banner.image?.url ?? null,
+          }
+        : emptyBannerForm(),
+    );
+    setBannerFormLang("id");
+  };
+
+  const uploadBannerImage = async (file: File) => {
+    if (!bannerForm) return;
+    setIsUploadingBannerImage(true);
+    try {
+      const fd = new FormData();
+      fd.append("image", file);
+      const res = await uploadPromoBannerImageAction(fd);
+      if (res.ok) {
+        setBannerForm({ ...bannerForm, imageUrl: res.url, imageMediaId: res.mediaId });
+      } else {
+        swalError(res.message);
+      }
+    } catch {
+      swalError("Gagal mengunggah gambar. Cek koneksi lalu coba lagi.");
+    } finally {
+      setIsUploadingBannerImage(false);
+    }
+  };
+
+  const removeBannerImage = () => {
+    if (!bannerForm) return;
+    setBannerForm({ ...bannerForm, imageUrl: null, imageMediaId: null });
+  };
+
+  const saveBanner = () => {
+    if (!bannerForm) return;
+    const data: PromoBannerFormData = {
+      id: bannerForm.lang.id,
+      en: bannerForm.lang.en,
+      zh: bannerForm.lang.zh,
+      variant: bannerForm.variant,
+      ctaHref: bannerForm.ctaHref,
+      isActive: bannerForm.isActive,
+      imageMediaId: bannerForm.imageMediaId,
+    };
+    startSaveBanner(async () => {
+      try {
+        const res = bannerForm.id
+          ? await updatePromoBannerAction(bannerForm.id, data)
+          : await createPromoBannerAction(data);
+        if (res.ok) {
+          swalSuccess(bannerForm.id ? "Banner diperbarui" : "Banner ditambahkan");
+          setBannerForm(null);
+          router.refresh();
+        } else {
+          swalError(res.message);
+        }
+      } catch {
+        swalError("Gagal menyimpan banner. Cek koneksi lalu coba lagi.");
+      }
+    });
+  };
+
+  const removeBanner = async (banner: SerializedPromoBanner) => {
+    const confirmed = await swalConfirmDelete(`Banner "${banner.eyebrow}"`);
+    if (!confirmed) return;
+    startSaveBanner(async () => {
+      const res = await deletePromoBannerAction(banner.id);
+      if (res.ok) {
+        swalSuccess("Banner dihapus");
+        router.refresh();
+      } else {
+        swalError(res.message);
+      }
+    });
+  };
+
+  const reorderBanners = (next: SerializedPromoBanner[]) => {
+    startReorderBanners(async () => {
+      const res = await reorderPromoBannersAction(next.map((b) => b.id));
+      if (res.ok) {
+        router.refresh();
+      } else {
+        swalError(res.message);
+      }
+    });
+  };
+
   /* ─── Countdown handlers ─── */
   const saveCountdown = () => {
     startSaveCountdown(async () => {
@@ -492,6 +688,7 @@ export default function PromoPageClient({
           <TabsTrigger value="banner" className="rounded-lg">Banner</TabsTrigger>
           <TabsTrigger value="highlight" className="rounded-lg">Highlight</TabsTrigger>
           <TabsTrigger value="packages" className="rounded-lg">Paket Promo</TabsTrigger>
+          <TabsTrigger value="banners" className="rounded-lg">Banner Promo Beranda</TabsTrigger>
           <TabsTrigger value="countdown" className="rounded-lg">Countdown</TabsTrigger>
           <TabsTrigger value="why" className="rounded-lg">Kenapa Promo</TabsTrigger>
           <TabsTrigger value="steps" className="rounded-lg">Cara Klaim</TabsTrigger>
@@ -692,6 +889,67 @@ export default function PromoPageClient({
               onClick={() => openPackageForm(null)}
             >
               <Plus size={14} /> Tambah Paket
+            </Button>
+          </SectionCard>
+        </TabsContent>
+
+        {/* ─── Banner Promo Beranda (kartu "Promo Spesial" homepage, bukan banner di atas) ─── */}
+        <TabsContent value="banners" className="space-y-5">
+          <SectionCard
+            icon={Gift}
+            title="Banner Promo Beranda"
+            description="3 kartu 'Promo Spesial' yang tampil di homepage (PromoSection) — beda dari Banner di tab pertama, yang itu buat halaman /promo."
+          >
+            <SortableList
+              id="promo-banners-list"
+              items={banners}
+              getId={(b) => b.id}
+              onReorder={reorderBanners}
+              disabled={isReorderingBanners}
+              renderItem={(banner) => (
+                <div className="flex items-center gap-3 rounded-xl border border-gray-200 p-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <Badge variant="secondary" className="text-[10px]">{VARIANT_LABELS[banner.variant]}</Badge>
+                      <span className="font-semibold text-sm text-gray-900 truncate">
+                        {banner.eyebrow} — {banner.title}
+                      </span>
+                      {!banner.isActive && <Badge className="text-[10px]" variant="outline">Nonaktif</Badge>}
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500 truncate">{banner.description}</p>
+                  </div>
+                  <div className="flex flex-shrink-0 gap-1">
+                    <button
+                      type="button"
+                      onClick={() => openBannerForm(banner)}
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/5 transition-colors"
+                      aria-label="Edit banner"
+                    >
+                      <Pencil size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeBanner(banner)}
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                      aria-label="Hapus banner"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            />
+            {banners.length === 0 && (
+              <p className="text-sm text-gray-400">Belum ada banner promo beranda.</p>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5 rounded-lg"
+              onClick={() => openBannerForm(null)}
+            >
+              <Plus size={14} /> Tambah Banner
             </Button>
           </SectionCard>
         </TabsContent>
@@ -1040,6 +1298,185 @@ export default function PromoPageClient({
                 </Button>
                 <Button className="flex-1 rounded-lg" onClick={savePackage} disabled={isSavingPackage}>
                   {isSavingPackage ? "Menyimpan..." : "Simpan"}
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={bannerForm !== null} onOpenChange={(o) => !o && setBannerForm(null)}>
+        <DialogContent className="sm:max-w-md">
+          {bannerForm && (
+            <>
+              <DialogTitle className="text-base font-bold text-gray-900">
+                {bannerForm.id ? "Edit Banner Promo" : "Tambah Banner Promo"}
+              </DialogTitle>
+              <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-sm font-semibold text-gray-700">Gaya Kartu</Label>
+                    <Select
+                      items={VARIANT_LABELS}
+                      value={bannerForm.variant}
+                      onValueChange={(v) => v && setBannerForm({ ...bannerForm, variant: v as PromoBannerVariant })}
+                    >
+                      <SelectTrigger className="mt-1.5 h-10 w-full rounded-lg border-border/60 bg-background pl-3 font-medium hover:border-primary/40 focus-visible:border-primary focus-visible:ring-primary/20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent alignItemWithTrigger={false} align="start">
+                        {(Object.keys(VARIANT_LABELS) as PromoBannerVariant[]).map((v) => (
+                          <SelectItem key={v} value={v}>{VARIANT_LABELS[v]}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-end pb-2">
+                    <label className="flex items-center gap-2 text-sm text-gray-700">
+                      <Switch
+                        checked={bannerForm.isActive}
+                        onCheckedChange={(v) => setBannerForm({ ...bannerForm, isActive: v })}
+                        className="data-[state=checked]:bg-primary"
+                      />
+                      Aktif
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700">Gambar Banner (opsional)</Label>
+                  <div className="mt-1.5 flex items-center gap-3">
+                    <div className="flex h-16 w-28 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+                      {bannerForm.imageUrl ? (
+                        <Image src={bannerForm.imageUrl} alt="" width={112} height={64} unoptimized className="h-full w-full object-cover" />
+                      ) : (
+                        <ImagePlus size={18} className="text-gray-300" />
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="inline-flex w-fit cursor-pointer items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50">
+                        <ImagePlus size={14} />
+                        {isUploadingBannerImage ? "Mengunggah..." : "Pilih Gambar"}
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          className="hidden"
+                          disabled={isUploadingBannerImage}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) uploadBannerImage(file);
+                            e.target.value = "";
+                          }}
+                        />
+                      </label>
+                      {bannerForm.imageUrl && (
+                        <button
+                          type="button"
+                          onClick={removeBannerImage}
+                          disabled={isUploadingBannerImage}
+                          className="w-fit text-xs font-medium text-red-500 hover:underline disabled:opacity-50"
+                        >
+                          Hapus gambar
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <p className="mt-1.5 text-xs text-gray-400">
+                    Rekomendasi ukuran 900×600px (rasio 3:2), gambar otomatis di-crop mengisi kartu. Format PNG/JPG/WebP, maks 15MB.
+                    Kosongkan untuk pakai kartu warna/gradient bawaan.
+                  </p>
+                </div>
+
+                <LangSwitcher lang={bannerFormLang} onChange={setBannerFormLang} />
+
+                <div>
+                  <Label htmlFor="banner-eyebrow" className="text-sm font-semibold text-gray-700">
+                    Eyebrow{bannerFormLang !== "id" && <span className="font-normal text-gray-400"> — opsional</span>}
+                  </Label>
+                  <Input
+                    id="banner-eyebrow"
+                    className="mt-1.5 rounded-lg"
+                    placeholder="mis. DISKON"
+                    value={bannerForm.lang[bannerFormLang].eyebrow}
+                    onChange={(e) =>
+                      setBannerForm({
+                        ...bannerForm,
+                        lang: { ...bannerForm.lang, [bannerFormLang]: { ...bannerForm.lang[bannerFormLang], eyebrow: e.target.value } },
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="banner-title" className="text-sm font-semibold text-gray-700">
+                    Judul{bannerFormLang !== "id" && <span className="font-normal text-gray-400"> — opsional</span>}
+                  </Label>
+                  <Input
+                    id="banner-title"
+                    className="mt-1.5 rounded-lg"
+                    placeholder="mis. 25%"
+                    value={bannerForm.lang[bannerFormLang].title}
+                    onChange={(e) =>
+                      setBannerForm({
+                        ...bannerForm,
+                        lang: { ...bannerForm.lang, [bannerFormLang]: { ...bannerForm.lang[bannerFormLang], title: e.target.value } },
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="banner-description" className="text-sm font-semibold text-gray-700">
+                    Deskripsi{bannerFormLang !== "id" && <span className="font-normal text-gray-400"> — opsional</span>}
+                  </Label>
+                  <Textarea
+                    id="banner-description"
+                    rows={2}
+                    className="mt-1.5 rounded-lg resize-none"
+                    value={bannerForm.lang[bannerFormLang].description}
+                    onChange={(e) =>
+                      setBannerForm({
+                        ...bannerForm,
+                        lang: { ...bannerForm.lang, [bannerFormLang]: { ...bannerForm.lang[bannerFormLang], description: e.target.value } },
+                      })
+                    }
+                  />
+                </div>
+                <div className={cn("grid gap-3", bannerFormLang === "id" ? "grid-cols-2" : "grid-cols-1")}>
+                  <div>
+                    <Label htmlFor="banner-cta-label" className="text-sm font-semibold text-gray-700">
+                      Label Tombol{bannerFormLang !== "id" && <span className="font-normal text-gray-400"> — opsional</span>}
+                    </Label>
+                    <Input
+                      id="banner-cta-label"
+                      className="mt-1.5 rounded-lg"
+                      value={bannerForm.lang[bannerFormLang].ctaLabel}
+                      onChange={(e) =>
+                        setBannerForm({
+                          ...bannerForm,
+                          lang: { ...bannerForm.lang, [bannerFormLang]: { ...bannerForm.lang[bannerFormLang], ctaLabel: e.target.value } },
+                        })
+                      }
+                    />
+                  </div>
+                  {bannerFormLang === "id" && (
+                    <div>
+                      <Label htmlFor="banner-cta-href" className="text-sm font-semibold text-gray-700">Link Tombol</Label>
+                      <Input
+                        id="banner-cta-href"
+                        className="mt-1.5 rounded-lg"
+                        placeholder="/layanan atau https://wa.me/..."
+                        value={bannerForm.ctaHref}
+                        onChange={(e) => setBannerForm({ ...bannerForm, ctaHref: e.target.value })}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <Button variant="outline" className="flex-1 rounded-lg" onClick={() => setBannerForm(null)}>
+                  Batal
+                </Button>
+                <Button className="flex-1 rounded-lg" onClick={saveBanner} disabled={isSavingBanner}>
+                  {isSavingBanner ? "Menyimpan..." : "Simpan"}
                 </Button>
               </div>
             </>

@@ -86,15 +86,6 @@ const zh: Dictionary = {
     ],
   },
 
-  about: {
-    heading: "关于 IzinPro",
-    description:
-      "IzinPro 是一家值得信赖的企业办证服务提供商，致力于以快速、透明、安全的流程为客户提供最优质的服务。",
-    points: ["合法合规", "流程快速高效", "免费透明咨询", "服务齐全、值得信赖"],
-    button: "了解更多关于我们",
-    videoTitle: "IzinPro 公司简介视频",
-  },
-
   articles: {
     heading: "最新文章",
     subtitle: "企业办证与商业法规的最新资讯。",

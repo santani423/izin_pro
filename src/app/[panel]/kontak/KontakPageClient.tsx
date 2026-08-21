@@ -568,7 +568,9 @@ export default function KontakPageClient({
               <Label>URL Embed Peta (Google Maps)</Label>
               <Textarea value={mapsEmbedUrl} onChange={(e) => setMapsEmbedUrl(e.target.value)} rows={2} className="rounded-xl resize-none font-mono text-xs" />
               <p className="text-xs text-gray-400">
-                Dari Google Maps: Bagikan → Sematkan peta → salin URL di atribut src iframe.
+                Dari Google Maps: Bagikan → tab &quot;Sematkan peta&quot; (bukan &quot;Kirim tautan&quot;) → salin kode
+                HTML-nya (boleh seluruh kode &lt;iframe&gt; atau cuma src-nya). Tautan share pendek (goo.gl) gak
+                bisa dipakai di sini — nanti petanya blank.
               </p>
             </div>
             <Button onClick={saveLocation} disabled={isSavingLocation} className="gap-2 rounded-xl">

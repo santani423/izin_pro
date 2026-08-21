@@ -7,7 +7,7 @@ import { prisma } from "@/lib/db";
 import { revalidateAdminPaths } from "@/lib/admin-guard";
 import { canAccessAdminRoute } from "@/lib/permissions";
 import { saveUploadedImage, deleteUploadedFile } from "@/lib/media";
-import type { Role } from "@prisma/client";
+import type { Role, PromoBannerVariant } from "@prisma/client";
 
 export type ActionResult = { ok: true } | { ok: false; message: string };
 
@@ -279,6 +279,163 @@ export async function reorderPromoPackagesAction(orderedIds: string[]): Promise<
     return { ok: true };
   } catch (e) {
     return { ok: false, message: errorMessage(e, "Gagal mengurutkan paket.") };
+  }
+}
+
+/* ─── Banner Promo Beranda (PromoBanner, relasional — CRUD) ───
+ * Kartu "Promo Spesial" di homepage (PromoSection), bukan konten halaman
+ * /promo di atas. Soft-delete (deletedAt) — beda dari PromoPackage yg hard
+ * delete — karena PromoBanner emang udah didesain gitu dari awal (schema). */
+export interface PromoBannerLangData {
+  eyebrow: string;
+  title: string;
+  description: string;
+  ctaLabel: string;
+}
+
+export interface PromoBannerFormData {
+  id: PromoBannerLangData;
+  en: PromoBannerLangData;
+  zh: PromoBannerLangData;
+  variant: PromoBannerVariant;
+  ctaHref: string;
+  isActive: boolean;
+  // Diisi dari uploadPromoBannerImageAction (sama pola dgn TeamMember.photoMediaId)
+  // — null = pakai kartu gradient/warna bawaan (lihat VARIANT_STYLES di PromoSection).
+  imageMediaId: string | null;
+}
+
+function revalidatePromoBanners() {
+  revalidatePromo();
+  revalidatePath("/");
+}
+
+function validateBanner(data: PromoBannerFormData): string | null {
+  if (!data.id.eyebrow.trim()) return "Eyebrow (Bahasa Indonesia) wajib diisi.";
+  if (!data.id.title.trim()) return "Judul (Bahasa Indonesia) wajib diisi.";
+  return null;
+}
+
+export async function createPromoBannerAction(data: PromoBannerFormData): Promise<ActionResult> {
+  try {
+    const session = await requirePromoEditor();
+    const error = validateBanner(data);
+    if (error) return { ok: false, message: error };
+
+    const count = await prisma.promoBanner.count({ where: { deletedAt: null } });
+    await prisma.promoBanner.create({
+      data: {
+        eyebrow: data.id.eyebrow.trim(),
+        eyebrowEn: data.en.eyebrow.trim() || null,
+        eyebrowZh: data.zh.eyebrow.trim() || null,
+        title: data.id.title.trim(),
+        titleEn: data.en.title.trim() || null,
+        titleZh: data.zh.title.trim() || null,
+        description: data.id.description.trim() || null,
+        descriptionEn: data.en.description.trim() || null,
+        descriptionZh: data.zh.description.trim() || null,
+        ctaLabel: data.id.ctaLabel.trim() || null,
+        ctaLabelEn: data.en.ctaLabel.trim() || null,
+        ctaLabelZh: data.zh.ctaLabel.trim() || null,
+        ctaHref: data.ctaHref.trim() || null,
+        imageMediaId: data.imageMediaId,
+        variant: data.variant,
+        isActive: data.isActive,
+        sortOrder: count,
+        createdById: session.user.id,
+        updatedById: session.user.id,
+      },
+    });
+    revalidatePromoBanners();
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: errorMessage(e, "Gagal menambah banner.") };
+  }
+}
+
+export async function updatePromoBannerAction(id: string, data: PromoBannerFormData): Promise<ActionResult> {
+  try {
+    const session = await requirePromoEditor();
+    const error = validateBanner(data);
+    if (error) return { ok: false, message: error };
+
+    await prisma.promoBanner.update({
+      where: { id },
+      data: {
+        eyebrow: data.id.eyebrow.trim(),
+        eyebrowEn: data.en.eyebrow.trim() || null,
+        eyebrowZh: data.zh.eyebrow.trim() || null,
+        title: data.id.title.trim(),
+        titleEn: data.en.title.trim() || null,
+        titleZh: data.zh.title.trim() || null,
+        description: data.id.description.trim() || null,
+        descriptionEn: data.en.description.trim() || null,
+        descriptionZh: data.zh.description.trim() || null,
+        ctaLabel: data.id.ctaLabel.trim() || null,
+        ctaLabelEn: data.en.ctaLabel.trim() || null,
+        ctaLabelZh: data.zh.ctaLabel.trim() || null,
+        ctaHref: data.ctaHref.trim() || null,
+        imageMediaId: data.imageMediaId,
+        variant: data.variant,
+        isActive: data.isActive,
+        updatedById: session.user.id,
+      },
+    });
+    revalidatePromoBanners();
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: errorMessage(e, "Gagal memperbarui banner.") };
+  }
+}
+
+export type UploadPromoBannerImageResult =
+  | { ok: true; mediaId: string; url: string }
+  | { ok: false; message: string };
+
+/** Cuma upload & bikin Media row — belum nautin ke PromoBanner, dipanggil
+ * sebelum createPromoBannerAction/updatePromoBannerAction (mediaId dikirim
+ * sbg bagian dari payload). Sama pola kayak uploadTeamPhotoAction. */
+export async function uploadPromoBannerImageAction(formData: FormData): Promise<UploadPromoBannerImageResult> {
+  try {
+    const session = await requirePromoEditor();
+    const file = formData.get("image") as File | null;
+    if (!file || file.size === 0) return { ok: false, message: "File gambar wajib diunggah." };
+    const media = await saveUploadedImage(file, "promo-banners", session.user.id);
+    return { ok: true, mediaId: media.id, url: media.url };
+  } catch (e) {
+    return { ok: false, message: errorMessage(e, "Gagal mengunggah gambar.") };
+  }
+}
+
+export async function deletePromoBannerAction(id: string): Promise<ActionResult> {
+  try {
+    const session = await requirePromoEditor();
+    await prisma.promoBanner.update({
+      where: { id },
+      data: { deletedAt: new Date(), updatedById: session.user.id },
+    });
+    revalidatePromoBanners();
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: errorMessage(e, "Gagal menghapus banner.") };
+  }
+}
+
+export async function reorderPromoBannersAction(orderedIds: string[]): Promise<ActionResult> {
+  try {
+    const session = await requirePromoEditor();
+    await prisma.$transaction(
+      orderedIds.map((id, index) =>
+        prisma.promoBanner.update({
+          where: { id },
+          data: { sortOrder: index, updatedById: session.user.id },
+        }),
+      ),
+    );
+    revalidatePromoBanners();
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: errorMessage(e, "Gagal mengurutkan banner.") };
   }
 }
 

@@ -6,26 +6,26 @@ import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/shared/Reveal";
 import { VideoDialog } from "@/components/shared/VideoDialog";
-import { useDictionary } from "@/contexts/LocaleContext";
-import { ABOUT_VIDEO_URL } from "@/lib/landing";
+import { DEFAULT_ABOUT_HOME_CONTENT, type AboutHomeContentData } from "@/lib/home-content";
+
+export { DEFAULT_ABOUT_HOME_CONTENT, type AboutHomeContentData };
 
 /* ─── Tentang IzinPro ─── */
-export default function AboutSection() {
-  const dict = useDictionary();
+export default function AboutSection({ content = DEFAULT_ABOUT_HOME_CONTENT }: { content?: AboutHomeContentData }) {
   return (
     <section id="tentang" className="bg-brand-surface">
       <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[2fr_3fr] lg:px-8">
         {/* Kiri — teks */}
         <Reveal>
           <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            {dict.about.heading}
+            {content.heading}
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
-            {dict.about.description}
+            {content.description}
           </p>
 
           <ul className="mt-6 space-y-3">
-            {dict.about.points.map((point) => (
+            {content.points.map((point) => (
               <li key={point} className="flex items-center gap-2.5 text-sm font-medium text-foreground">
                 <CheckCircle2
                   className="size-5 shrink-0 fill-primary text-primary-foreground"
@@ -37,8 +37,8 @@ export default function AboutSection() {
           </ul>
 
           <Button asChild className="mt-7 rounded-lg font-semibold">
-            <Link href="/tentang-kami">
-              {dict.about.button}
+            <Link href={content.buttonHref}>
+              {content.buttonLabel}
               <ArrowRight className="size-4" />
             </Link>
           </Button>
@@ -47,8 +47,8 @@ export default function AboutSection() {
         {/* Kanan — thumbnail video, klik untuk buka pop-up pemutar */}
         <Reveal delay={0.15}>
           <VideoDialog
-            videoUrl={ABOUT_VIDEO_URL}
-            title={dict.about.videoTitle}
+            source={content.video}
+            title={content.videoTitle}
           />
         </Reveal>
       </div>

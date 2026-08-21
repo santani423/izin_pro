@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import { clearBrandingCache, saveBrandAssetFile, deleteBrandAssetFile } from "@/lib/branding";
 import { LOCALES, type Locale } from "@/i18n/config";
 import { LATIN_FONT_OPTIONS, CJK_FONT_OPTIONS } from "@/lib/fonts";
+import { extractMapsEmbedSrc, isNonEmbeddableMapsUrl } from "@/lib/maps-embed";
 import type { Role } from "@prisma/client";
 
 export type ActionResult = { ok: true } | { ok: false; message: string };
@@ -80,6 +81,52 @@ export async function updateGeneralSettingsAction(data: GeneralSettingsInput): P
     return { ok: true };
   } catch (e) {
     return { ok: false, message: errorMessage(e, "Gagal menyimpan Informasi Website.") };
+  }
+}
+
+export interface ContactSettingsInput {
+  whatsapp: string;
+  email: string;
+  address: string;
+  mapsUrl: string;
+  mapsEmbedUrl: string;
+}
+
+/* Tab Kontak — dipakai LocationSection (beranda) & dkk lewat
+ * getLocalizedGeneralSettings(). whatsapp disimpan format internasional
+ * tanpa "+" (mis. "6282280007821"), sesuai format link wa.me. mapsEmbedUrl
+ * opsional (boleh kosong = LocationSection fallback ke embed otomatis dari
+ * address). */
+export async function updateContactSettingsAction(data: ContactSettingsInput): Promise<ActionResult> {
+  try {
+    await requireSettingsEditor();
+    const whatsapp = data.whatsapp.replace(/\D/g, "");
+    if (!whatsapp || !data.email.trim() || !data.address.trim() || !data.mapsUrl.trim()) {
+      return { ok: false, message: "Nomor WhatsApp, Email, Alamat, dan URL Google Maps wajib diisi." };
+    }
+    const mapsEmbedUrl = extractMapsEmbedSrc(data.mapsEmbedUrl);
+    if (mapsEmbedUrl && isNonEmbeddableMapsUrl(mapsEmbedUrl)) {
+      return {
+        ok: false,
+        message:
+          'Tautan itu cuma buat share (goo.gl), gak bisa ditampilkan sebagai peta tertanam — nanti petanya blank/gak muncul. Buka Google Maps → Bagikan → tab "Sematkan peta" (bukan "Kirim tautan") → salin kodenya, tempel di sini.',
+      };
+    }
+    await prisma.settings.update({
+      where: { id: "1" },
+      data: {
+        whatsapp,
+        email: data.email.trim(),
+        address: data.address.trim(),
+        mapsUrl: data.mapsUrl.trim(),
+        mapsEmbedUrl: mapsEmbedUrl || null,
+      },
+    });
+    revalidatePath("/admin/settings");
+    revalidatePath("/", "layout");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: errorMessage(e, "Gagal menyimpan Informasi Kontak.") };
   }
 }
 

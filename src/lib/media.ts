@@ -69,6 +69,33 @@ export async function saveUploadedImage(file: File, subDir: string, uploaderId: 
   return media;
 }
 
+// Video profil "Tentang IzinPro" — jauh lebih besar dari foto, gak lewat
+// Sharp (Sharp cuma proses gambar), jadi cuma di-validasi & disimpan apa
+// adanya (bukan Media table, lihat AboutHomeContent.videoUploadUrl).
+export const VIDEO_MAX_BYTES = 100 * 1024 * 1024; // 100MB
+export const VIDEO_ALLOWED_MIME: Record<string, string> = {
+  "video/mp4": ".mp4",
+  "video/webm": ".webm",
+  "video/ogg": ".ogv",
+  "video/quicktime": ".mov",
+};
+
+export async function saveUploadedVideo(file: File, subDir: string): Promise<{ url: string }> {
+  const ext = VIDEO_ALLOWED_MIME[file.type];
+  if (!ext) {
+    throw new Error("Format video harus MP4, WebM, MOV, atau OGG.");
+  }
+  if (file.size > VIDEO_MAX_BYTES) {
+    throw new Error("Ukuran video maksimal 100MB.");
+  }
+  const uploadDir = path.join(process.cwd(), "public", "uploads", subDir);
+  await fs.mkdir(uploadDir, { recursive: true });
+  const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
+  const buffer = Buffer.from(await file.arrayBuffer());
+  await fs.writeFile(path.join(uploadDir, fileName), buffer);
+  return { url: `/uploads/${subDir}/${fileName}` };
+}
+
 const EXT_MIME: Record<string, string> = {
   ".png": "image/png",
   ".jpg": "image/jpeg",

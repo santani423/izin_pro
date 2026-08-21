@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import { revalidateAdminPaths } from "@/lib/admin-guard";
 import { canAccessAdminRoute } from "@/lib/permissions";
 import { saveUploadedImage, deleteUploadedFile } from "@/lib/media";
+import { extractMapsEmbedSrc, isNonEmbeddableMapsUrl } from "@/lib/maps-embed";
 import type { Role } from "@prisma/client";
 
 export type ActionResult = { ok: true } | { ok: false; message: string };
@@ -207,13 +208,20 @@ export async function saveKontakLocationAction(data: {
   try {
     const session = await requireKontakEditor();
     const locationTitle = data.locationTitle.trim();
-    const mapsEmbedUrl = data.mapsEmbedUrl.trim();
+    const mapsEmbedUrl = extractMapsEmbedSrc(data.mapsEmbedUrl);
 
     if (!locationTitle) {
       return { ok: false, message: "Judul lokasi wajib diisi." };
     }
     if (!mapsEmbedUrl) {
       return { ok: false, message: "URL embed peta wajib diisi." };
+    }
+    if (isNonEmbeddableMapsUrl(mapsEmbedUrl)) {
+      return {
+        ok: false,
+        message:
+          'Tautan itu cuma buat share (goo.gl), gak bisa ditampilkan sebagai peta tertanam — nanti petanya blank/gak muncul. Buka Google Maps → Bagikan → tab "Sematkan peta" (bukan "Kirim tautan") → salin kodenya, tempel di sini.',
+      };
     }
 
     await prisma.kontakPageContent.update({

@@ -21,56 +21,20 @@ export const HERO_HIGHLIGHTS: HeroHighlight[] = [
   { icon: Users, title: "Tim Profesional", subtitle: "Berpengalaman" },
 ];
 
-/* ─── Promo ─── */
+/* ─── Promo ─── (data sekarang dari Prisma PromoBanner, lihat lib/promo-data.ts) */
 export interface LandingPromo {
   id: string;
   eyebrow: string;
   title: string;
   description: string;
   ctaLabel: string;
+  ctaHref: string | null;
+  // null = pakai kartu gradient/warna bawaan per variant (lihat VARIANT_STYLES di PromoSection)
+  imageUrl: string | null;
   variant: "discount" | "free" | "package";
 }
 
-export const LANDING_PROMOS: LandingPromo[] = [
-  {
-    id: "diskon-25",
-    eyebrow: "DISKON",
-    title: "25%",
-    description: "Untuk Pendirian PT selama bulan ini",
-    ctaLabel: "Klaim Sekarang",
-    variant: "discount",
-  },
-  {
-    id: "gratis-konsultasi",
-    eyebrow: "GRATIS",
-    title: "Konsultasi",
-    description: "untuk semua layanan",
-    ctaLabel: "Konsultasi Sekarang",
-    variant: "free",
-  },
-  {
-    id: "paket-hemat",
-    eyebrow: "PAKET HEMAT",
-    title: "Perizinan Lengkap",
-    description: "Mulai dari Rp 5.200.000",
-    ctaLabel: "Lihat Paket",
-    variant: "package",
-  },
-];
-
-/* ─── Tentang ─── */
-export const ABOUT_POINTS: string[] = [
-  "Legal & Resmi",
-  "Proses Cepat & Efisien",
-  "Konsultasi Gratis & Transparan",
-  "Layanan Terlengkap & Terpercaya",
-];
-
-export const ABOUT_DESCRIPTION =
-  "IzinPro adalah penyedia jasa layanan perizinan bisnis terpercaya yang berkomitmen memberikan layanan terbaik dengan proses cepat, transparan, dan aman.";
-
-/* Video profil IzinPro (format embed YouTube) */
-export const ABOUT_VIDEO_URL = "https://www.youtube.com/embed/kXz2t48t4zo";
+/* ─── Tentang ─── (data sekarang dari Prisma AboutHomeContent, lihat getAboutHomeContent() di (public)/page.tsx) */
 
 /* ─── Kontak (derivasi dari COMPANY_INFO agar satu sumber data) ─── */
 export interface LandingContactInfo {

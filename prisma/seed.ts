@@ -14,6 +14,7 @@ import {
   TEAM_MEMBERS,
 } from "../src/lib/constants";
 import { HERO_HIGHLIGHTS } from "../src/lib/landing";
+import { PROMO_BANNER_I18N } from "./promo-banner-i18n";
 import { TENTANG_STATS, TENTANG_VALUES, TENTANG_VISION, TENTANG_MISSION } from "../src/lib/tentang";
 import { DETAIL_ICONS } from "../src/lib/detail-icons";
 import type { LucideIcon } from "lucide-react";
@@ -406,6 +407,39 @@ async function main() {
     },
   });
   console.log("HeroContent di-seed.");
+
+  /* ═══ 3b2. AboutHomeContent (singleton) — teks section "Tentang IzinPro" di
+   * BERANDA (beda dari AboutPageContent di bawah, itu utk halaman
+   * /tentang-kami), copy asli dari AboutSection.tsx + i18n dictionaries
+   * (about.*) sebelum section ini dipindah ke DB. Video default tetap video
+   * profil YouTube yang sama seperti sebelumnya. ═══ */
+  await prisma.aboutHomeContent.create({
+    data: {
+      id: "1",
+      heading: "Tentang IzinPro",
+      headingEn: "About IzinPro",
+      headingZh: "关于 IzinPro",
+      description:
+        "IzinPro adalah penyedia jasa layanan perizinan bisnis terpercaya yang berkomitmen memberikan layanan terbaik dengan proses cepat, transparan, dan aman.",
+      descriptionEn:
+        "IzinPro is a trusted business licensing service provider committed to delivering the best service with a fast, transparent, and secure process.",
+      descriptionZh: "IzinPro 是一家值得信赖的企业办证服务提供商，致力于以快速、透明、安全的流程为客户提供最优质的服务。",
+      points: ["Legal & Resmi", "Proses Cepat & Efisien", "Konsultasi Gratis & Transparan", "Layanan Terlengkap & Terpercaya"],
+      pointsEn: ["Legal & Official", "Fast & Efficient Process", "Free & Transparent Consultation", "Complete & Trusted Services"],
+      pointsZh: ["合法合规", "流程快速高效", "免费透明咨询", "服务齐全、值得信赖"],
+      buttonLabel: "Selengkapnya Tentang Kami",
+      buttonLabelEn: "More About Us",
+      buttonLabelZh: "了解更多关于我们",
+      buttonHref: "/tentang-kami",
+      videoTitle: "Video profil IzinPro",
+      videoTitleEn: "IzinPro company profile video",
+      videoTitleZh: "IzinPro 公司简介视频",
+      videoSource: "YOUTUBE",
+      videoYoutubeUrl: "https://www.youtube.com/watch?v=kXz2t48t4zo",
+      updatedById: admin.id,
+    },
+  });
+  console.log("AboutHomeContent di-seed.");
 
   /* ═══ 3c. AboutPageContent (singleton) — teks /tentang-kami, copy asli dari
    * (public)/tentang-kami/page.tsx + src/lib/tentang.ts (biar tampilan gak
@@ -864,17 +898,31 @@ async function main() {
   }
   console.log(`${FAQS.length + KONTAK_FAQS.length} Faq di-seed.`);
 
-  /* ═══ 11. PromoBanner (3) ═══ */
+  /* ═══ 11. PromoBanner (3) — teks id/en/zh dari PROMO_BANNER_I18N
+   * (promo-banner-i18n.ts, key = tag legacy); tag & ctaHref dari PROMOS
+   * (legacy constants.ts, gak ada di dictionary). ═══ */
   for (let i = 0; i < PROMOS.length; i++) {
     const p = PROMOS[i];
+    const t = p.tag ? PROMO_BANNER_I18N[p.tag] : undefined;
+    if (!t) throw new Error(`PROMO_BANNER_I18N: gak ada terjemahan buat tag "${p.tag}"`);
     await prisma.promoBanner.create({
       data: {
         tag: p.tag,
-        title: p.title,
-        subtitle: p.subtitle,
-        description: p.description,
-        ctaLabel: p.ctaLabel,
+        eyebrow: t.id.eyebrow,
+        eyebrowEn: t.en.eyebrow,
+        eyebrowZh: t.zh.eyebrow,
+        title: t.id.title,
+        titleEn: t.en.title,
+        titleZh: t.zh.title,
+        description: t.id.description,
+        descriptionEn: t.en.description,
+        descriptionZh: t.zh.description,
+        ctaLabel: t.id.ctaLabel,
+        ctaLabelEn: t.en.ctaLabel,
+        ctaLabelZh: t.zh.ctaLabel,
         ctaHref: p.ctaHref,
+        variant: t.variant,
+        sortOrder: t.sortOrder,
         createdById: admin.id,
         updatedById: admin.id,
       },

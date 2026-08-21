@@ -12,38 +12,13 @@ import { useDictionary } from "@/contexts/LocaleContext";
 import { HERO_HIGHLIGHTS, WHATSAPP_URL } from "@/lib/landing";
 import { cn } from "@/lib/utils";
 import { trackContact } from "@/lib/meta-pixel";
+import { DEFAULT_HERO_CONTENT, type HeroContentData } from "@/lib/home-content";
+
+export { DEFAULT_HERO_CONTENT, type HeroContentData };
 
 /* Ikon badge highlight tetap hardcode per-index (gak disimpan di DB) — cocokin
  * urutannya kalau HERO_HIGHLIGHTS di landing.ts diubah. */
 const HIGHLIGHT_ICONS = HERO_HIGHLIGHTS.map((h) => h.icon);
-
-export interface HeroContentData {
-  titleLine1: string;
-  titleHighlight: string;
-  titleLine3: string;
-  subtitle: string;
-  highlights: { title: string; subtitle: string }[];
-  ctaPrimaryLabel: string;
-  ctaSecondaryLabel: string;
-  ctaSecondaryHref: string;
-  // null/undefined = pakai kartu gradient placeholder bawaan di bawah
-  imageUrl?: string | null;
-}
-
-/* Default = copy asli (dipakai kalau HeroContent belum ke-seed / gagal
- * diambil) — jangan sampai beranda tampil kosong gara-gara DB kosong. */
-export const DEFAULT_HERO_CONTENT: HeroContentData = {
-  titleLine1: "Solusi Perizinan",
-  titleHighlight: "Bisnis Anda,",
-  titleLine3: "Aman & Terpercaya",
-  subtitle:
-    "IzinPro hadir untuk membantu bisnis Anda mengurus perizinan dengan mudah, cepat, dan sesuai regulasi.",
-  highlights: HERO_HIGHLIGHTS.map(({ title, subtitle }) => ({ title, subtitle })),
-  ctaPrimaryLabel: "Konsultasikan Gratis",
-  ctaSecondaryLabel: "Lihat Semua Layanan",
-  ctaSecondaryHref: "/layanan",
-  imageUrl: null,
-};
 
 /* ─── Hero ─── */
 export default function HeroSection({ content = DEFAULT_HERO_CONTENT }: { content?: HeroContentData }) {

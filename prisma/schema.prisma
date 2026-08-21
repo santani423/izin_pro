@@ -100,6 +100,7 @@ model User {
   deletedMenuItems             MenuItem[]             @relation("MenuItemDeletedBy")
   updatedSettings              Settings[]             @relation("SettingsUpdatedBy")
   updatedHeroContents          HeroContent[]          @relation("HeroContentUpdatedBy")
+  updatedAboutHomeContents     AboutHomeContent[]     @relation("AboutHomeContentUpdatedBy")
   updatedAboutPageContents     AboutPageContent[]     @relation("AboutPageContentUpdatedBy")
   updatedTestimoniPageContents TestimoniPageContent[] @relation("TestimoniPageContentUpdatedBy")
   updatedPromoPageContents     PromoPageContent[]     @relation("PromoPageContentUpdatedBy")
@@ -301,6 +302,7 @@ model Media {
   servicesAbout     Service[]     @relation("ServiceAboutMedia")
   testimonials      Testimonial[] @relation("TestimonialPhoto")
   partners          Partner[]     @relation("PartnerLogo")
+  promoBanners      PromoBanner[] @relation("PromoBannerImage")
 
   @@map("media")
 }
@@ -534,25 +536,43 @@ model Faq {
   @@map("faqs")
 }
 
+enum PromoBannerVariant {
+  DISCOUNT
+  FREE
+  PACKAGE
+}
+
 model PromoBanner {
-  id          String    @id @default(cuid())
-  tag         String?
-  title       String
-  subtitle    String?
-  description String?   @db.Text
-  ctaLabel    String?
-  ctaHref     String?
-  startDate   DateTime?
-  endDate     DateTime?
-  isActive    Boolean   @default(true)
-  clicks      Int       @default(0)
-  deletedAt   DateTime?
-  createdById String?
-  createdBy   User?     @relation("PromoBannerCreatedBy", fields: [createdById], references: [id])
-  updatedById String?
-  updatedBy   User?     @relation("PromoBannerUpdatedBy", fields: [updatedById], references: [id])
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id             String             @id @default(cuid())
+  tag            String?
+  eyebrow        String
+  eyebrowEn      String?
+  eyebrowZh      String?
+  title          String
+  titleEn        String?
+  titleZh        String?
+  description    String?            @db.Text
+  descriptionEn  String?            @db.Text
+  descriptionZh  String?            @db.Text
+  ctaLabel       String?
+  ctaLabelEn     String?
+  ctaLabelZh     String?
+  ctaHref        String?
+  imageMediaId   String?
+  image          Media?             @relation("PromoBannerImage", fields: [imageMediaId], references: [id])
+  variant        PromoBannerVariant @default(DISCOUNT)
+  sortOrder      Int                @default(0)
+  startDate      DateTime?
+  endDate        DateTime?
+  isActive       Boolean            @default(true)
+  clicks         Int                @default(0)
+  deletedAt      DateTime?
+  createdById    String?
+  createdBy      User?              @relation("PromoBannerCreatedBy", fields: [createdById], references: [id])
+  updatedById    String?
+  updatedBy      User?              @relation("PromoBannerUpdatedBy", fields: [updatedById], references: [id])
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
 
   @@map("promo_banners")
 }
@@ -967,8 +987,12 @@ model Settings {
   // Tab Kontak
   whatsapp String // format internasional tanpa "+", mis. "6282280007821"
   email    String
-  address  String @db.Text
+  address  String  @db.Text
   mapsUrl  String
+  // Src iframe "Sematkan peta" dari Google Maps (Bagikan → Sematkan peta →
+  // salin src) buat peta di section Lokasi beranda. Kosong = fallback ke
+  // embed otomatis dari `address` (lihat LocationSection.tsx).
+  mapsEmbedUrl String? @db.Text
 
   // Tab Sosial Media (kosong = ikon disembunyikan di footer/navbar)
   socialLinkedin  String?
@@ -1058,6 +1082,53 @@ model HeroContent {
   updatedAt   DateTime @updatedAt
 
   @@map("hero_content")
+}
+
+enum AboutVideoSource {
+  YOUTUBE
+  UPLOAD
+}
+
+// Singleton konten section "Tentang IzinPro" di BERANDA (bukan halaman
+// /tentang-kami — itu di AboutPageContent di bawah). Sama pola dgn
+// HeroContent: single row id="1", *En/*Zh kosong = fallback ke Bahasa
+// Indonesia di publik. Video kolom kanan bisa YouTube (link ditempel admin
+// apa adanya, dikonversi ke embed URL saat render — lihat
+// extractYoutubeEmbedUrl() di lib/youtube.ts) atau file upload (disimpan
+// apa adanya di public/uploads/about-home, TIDAK lewat pipeline Media/Sharp
+// krn itu khusus gambar — sama alasan dgn TransactionAttachment).
+model AboutHomeContent {
+  id String @id @default("1")
+
+  heading       String
+  headingEn     String?
+  headingZh     String?
+  description   String  @db.Text
+  descriptionEn String? @db.Text
+  descriptionZh String? @db.Text
+  points        Json // string[] — daftar checklist ("Legal & Resmi", dst)
+  pointsEn      Json?
+  pointsZh      Json?
+
+  buttonLabel   String
+  buttonLabelEn String?
+  buttonLabelZh String?
+  buttonHref    String  @default("/tentang-kami") // internal — sama di semua bahasa, gak perlu diterjemahkan
+
+  videoTitle   String // judul aksesibilitas pop-up video (aria-label & <title> iframe/video)
+  videoTitleEn String?
+  videoTitleZh String?
+
+  videoSource     AboutVideoSource @default(YOUTUBE)
+  videoYoutubeUrl String? // URL asli yg ditempel admin (watch/youtu.be/shorts/embed), dikonversi saat render
+  videoUploadUrl  String? // path /uploads/about-home/xxx.mp4 kalau videoSource=UPLOAD
+
+  // Singleton, gak pernah "dibuat" lewat admin (selalu ada dari seed) -> gak ada createdBy
+  updatedById String?
+  updatedBy   User?    @relation("AboutHomeContentUpdatedBy", fields: [updatedById], references: [id])
+  updatedAt   DateTime @updatedAt
+
+  @@map("about_home_content")
 }
 
 // Singleton konten halaman /tentang-kami — sama pola dgn HeroContent

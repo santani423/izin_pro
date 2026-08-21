@@ -22,8 +22,8 @@ import { COMPANY_INFO } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import {
   saveBrandingSettingsAction, updateMaintenanceModeAction, updateWhacenterSettingsAction,
-  updateGeneralSettingsAction, updateFontSettingsAction,
-  type GeneralSettingsInput, type FontSettingsInput,
+  updateGeneralSettingsAction, updateFontSettingsAction, updateContactSettingsAction,
+  type GeneralSettingsInput, type FontSettingsInput, type ContactSettingsInput,
 } from "@/lib/actions/settings";
 import { DEFAULT_LOGO_URL, DEFAULT_FAVICON_URL } from "@/lib/branding-constants";
 import { LOCALES, LOCALE_LABELS, type Locale } from "@/i18n/config";
@@ -77,6 +77,11 @@ export default function SettingsPageClient({
   operatingHours: initialOperatingHours,
   operatingHoursEn: initialOperatingHoursEn,
   operatingHoursZh: initialOperatingHoursZh,
+  whatsapp: initialWhatsapp,
+  email: initialEmail,
+  address: initialAddress,
+  mapsUrl: initialMapsUrl,
+  mapsEmbedUrl: initialMapsEmbedUrl,
   fontFamilyId: initialFontFamilyId,
   fontFamilyEn: initialFontFamilyEn,
   fontFamilyZh: initialFontFamilyZh,
@@ -100,6 +105,11 @@ export default function SettingsPageClient({
   operatingHours: string;
   operatingHoursEn: string;
   operatingHoursZh: string;
+  whatsapp: string;
+  email: string;
+  address: string;
+  mapsUrl: string;
+  mapsEmbedUrl: string;
   fontFamilyId: string;
   fontFamilyEn: string;
   fontFamilyZh: string;
@@ -125,6 +135,13 @@ export default function SettingsPageClient({
     operatingHours: initialOperatingHours,
     operatingHoursEn: initialOperatingHoursEn,
     operatingHoursZh: initialOperatingHoursZh,
+  });
+  const [contact, setContact] = useState<ContactSettingsInput>({
+    whatsapp: initialWhatsapp,
+    email: initialEmail,
+    address: initialAddress,
+    mapsUrl: initialMapsUrl,
+    mapsEmbedUrl: initialMapsEmbedUrl,
   });
   const [fontLang, setFontLang] = useState<UmumLang>("id");
   const [font, setFont] = useState<FontSettingsInput>({
@@ -177,6 +194,22 @@ export default function SettingsPageClient({
         }
       } catch {
         swalError("Gagal menyimpan Informasi Website. Cek koneksi lalu coba lagi.");
+      }
+    });
+  };
+
+  const saveContact = () => {
+    startTransition(async () => {
+      try {
+        const res = await updateContactSettingsAction(contact);
+        if (res.ok) {
+          swalSuccess("Informasi Kontak disimpan");
+          router.refresh();
+        } else {
+          swalError(res.message);
+        }
+      } catch {
+        swalError("Gagal menyimpan Informasi Kontak. Cek koneksi lalu coba lagi.");
       }
     });
   };
@@ -555,27 +588,76 @@ export default function SettingsPageClient({
                 <Label>Nomor WhatsApp</Label>
                 <div className="flex gap-2">
                   <span className="flex items-center px-3 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-500">+62</span>
-                  <Input defaultValue="82280007821" className="rounded-xl flex-1" disabled={readOnly} />
+                  <Input
+                    value={contact.whatsapp.startsWith("62") ? contact.whatsapp.slice(2) : contact.whatsapp}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "").replace(/^0+/, "");
+                      setContact({ ...contact, whatsapp: `62${digits}` });
+                    }}
+                    className="rounded-xl flex-1"
+                    disabled={readOnly}
+                  />
                 </div>
               </div>
               <div className="space-y-1.5">
                 <Label>Alamat Email</Label>
-                <Input type="email" defaultValue={COMPANY_INFO.email} className="rounded-xl" disabled={readOnly} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Alamat Lengkap</Label>
-                <Textarea
-                  defaultValue={COMPANY_INFO.address}
-                  rows={2}
-                  className="rounded-xl resize-none"
+                <Input
+                  type="email"
+                  value={contact.email}
+                  onChange={(e) => setContact({ ...contact, email: e.target.value })}
+                  className="rounded-xl"
                   disabled={readOnly}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>URL Google Maps</Label>
-                <Input defaultValue={COMPANY_INFO.mapsUrl} className="rounded-xl" disabled={readOnly} />
+                <Label>Alamat Lengkap</Label>
+                <Textarea
+                  value={contact.address}
+                  onChange={(e) => setContact({ ...contact, address: e.target.value })}
+                  rows={2}
+                  className="rounded-xl resize-none"
+                  disabled={readOnly}
+                />
+                <p className="text-xs text-gray-400">
+                  Dipakai juga buat peta embed di section Lokasi (beranda) — ubah alamat di sini otomatis
+                  menggeser titik petanya.
+                </p>
               </div>
-              {saveButton}
+              <div className="space-y-1.5">
+                <Label>URL Google Maps</Label>
+                <Input
+                  value={contact.mapsUrl}
+                  onChange={(e) => setContact({ ...contact, mapsUrl: e.target.value })}
+                  className="rounded-xl"
+                  disabled={readOnly}
+                />
+                <p className="text-xs text-gray-400">Tautan tombol &quot;Buka di Google Maps&quot;.</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>
+                  Kode Embed Peta (opsional)
+                </Label>
+                <Textarea
+                  value={contact.mapsEmbedUrl}
+                  onChange={(e) => setContact({ ...contact, mapsEmbedUrl: e.target.value })}
+                  placeholder="https://www.google.com/maps/embed?pb=..."
+                  rows={3}
+                  className="rounded-xl resize-none font-mono text-xs"
+                  disabled={readOnly}
+                />
+                <p className="text-xs text-gray-400">
+                  Peta di section Lokasi (beranda). Dari Google Maps: Bagikan → tab &quot;Sematkan peta&quot;
+                  (bukan &quot;Kirim tautan&quot;) → tempel seluruh kode HTML-nya atau cuma URL src iframe-nya,
+                  bebas. Tautan share pendek (goo.gl) gak bisa dipakai di sini — nanti petanya blank.
+                  Kosongkan untuk peta otomatis dari Alamat Lengkap di atas.
+                </p>
+              </div>
+              {!readOnly && (
+                <Button onClick={saveContact} disabled={isPending} className="gap-2 rounded-xl">
+                  <Save size={15} />
+                  {isPending ? "Menyimpan..." : "Simpan Informasi Kontak"}
+                </Button>
+              )}
             </div>
           </TabsContent>
 

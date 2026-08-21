@@ -98,20 +98,6 @@ const id = {
     ],
   },
 
-  about: {
-    heading: "Tentang IzinPro",
-    description:
-      "IzinPro adalah penyedia jasa layanan perizinan bisnis terpercaya yang berkomitmen memberikan layanan terbaik dengan proses cepat, transparan, dan aman.",
-    points: [
-      "Legal & Resmi",
-      "Proses Cepat & Efisien",
-      "Konsultasi Gratis & Transparan",
-      "Layanan Terlengkap & Terpercaya",
-    ],
-    button: "Selengkapnya Tentang Kami",
-    videoTitle: "Video profil IzinPro",
-  },
-
   articles: {
     heading: "Artikel Terbaru",
     subtitle: "Informasi terbaru seputar perizinan usaha dan regulasi bisnis.",

@@ -5,19 +5,37 @@ import { Clock, Mail, MapPin, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/shared/Reveal";
 import { useDictionary } from "@/contexts/LocaleContext";
-import { CONTACT_INFO } from "@/lib/landing";
 
-/* Embed Google Maps tanpa API key (mode output=embed) */
-const MAPS_EMBED_URL =
-  "https://www.google.com/maps?q=Wisma+Laena+Jl+KH+Abdullah+Syafei+No+7+Jakarta+Selatan&z=15&output=embed";
-
-/* ─── Lokasi & Kontak ─── */
-export default function LocationSection({ operatingHours }: { operatingHours: string }) {
+/* ─── Lokasi & Kontak ───
+ * Semua data (alamat, telepon, email, jam, peta) berasal dari tabel
+ * Settings (getLocalizedGeneralSettings() di server) — bukan lagi
+ * konstanta statis, biar berubah begitu admin ubah di /settings > tab
+ * Kontak. Peta embed: pakai mapsEmbedUrl kalau admin sudah tempel src
+ * hasil "Bagikan → Sematkan peta" dari Google Maps (bentuk pb=..., paling
+ * akurat — nunjuk pin persis); kalau kosong, fallback ke embed otomatis
+ * dari address (mode output=embed, gak butuh API key). */
+export default function LocationSection({
+  operatingHours,
+  address,
+  phone,
+  email,
+  mapsUrl,
+  mapsEmbedUrl,
+}: {
+  operatingHours: string;
+  address: string;
+  phone: string;
+  email: string;
+  mapsUrl: string;
+  mapsEmbedUrl: string;
+}) {
   const dict = useDictionary();
+  const resolvedMapsEmbedUrl =
+    mapsEmbedUrl.trim() || `https://www.google.com/maps?q=${encodeURIComponent(address)}&z=15&output=embed`;
   const CONTACT_ITEMS = [
-    { icon: MapPin, label: dict.location.officeAddress, value: CONTACT_INFO.address },
-    { icon: Phone, label: dict.location.phoneWhatsapp, value: CONTACT_INFO.phone },
-    { icon: Mail, label: dict.location.email, value: CONTACT_INFO.email },
+    { icon: MapPin, label: dict.location.officeAddress, value: address },
+    { icon: Phone, label: dict.location.phoneWhatsapp, value: phone },
+    { icon: Mail, label: dict.location.email, value: email },
     { icon: Clock, label: dict.location.operatingHours, value: operatingHours || dict.common.officeHours },
   ];
   return (
@@ -59,7 +77,7 @@ export default function LocationSection({ operatingHours }: { operatingHours: st
           <div className="relative min-h-96 overflow-hidden rounded-2xl border border-border/60 shadow-sm">
             <iframe
               title={dict.location.mapTitle}
-              src={MAPS_EMBED_URL}
+              src={resolvedMapsEmbedUrl}
               className="block h-96 w-full border-0"
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
@@ -71,7 +89,7 @@ export default function LocationSection({ operatingHours }: { operatingHours: st
               className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border-none bg-background font-semibold shadow-md hover:bg-background/90"
             >
               <a
-                href={CONTACT_INFO.mapsUrl}
+                href={mapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
               >

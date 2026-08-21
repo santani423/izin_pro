@@ -7,11 +7,27 @@ export interface LocalizedGeneralSettings {
   tagline: string;
   description: string;
   operatingHours: string;
+  whatsapp: string;
+  phoneDisplay: string;
+  email: string;
+  address: string;
+  mapsUrl: string;
+  mapsEmbedUrl: string;
+}
+
+/* Settings.whatsapp disimpan format internasional tanpa "+" (mis.
+ * "6282280007821") buat dipakai langsung di link wa.me — versi tampilan
+ * (mis. "0822-8000-7821") diturunkan dari situ, gak ada kolom terpisah. */
+function formatWhatsappDisplay(whatsapp: string): string {
+  const digits = whatsapp.replace(/\D/g, "");
+  const local = digits.startsWith("62") ? `0${digits.slice(2)}` : digits;
+  return local.replace(/(\d{4})(?=\d)/g, "$1-");
 }
 
 /* ─── Settings.companyName/tagline/description/operatingHours sesuai locale
- * aktif ─── * Dipakai lintas komponen publik (root layout metadata, Footer,
- * MaintenancePage, LocationSection, LayananConsultSection,
+ * aktif, + kontak (whatsapp/email/address/mapsUrl — gak ada varian
+ * EN/ZH-nya) ─── * Dipakai lintas komponen publik (root layout metadata,
+ * Footer, MaintenancePage, LocationSection, LayananConsultSection,
  * PromoConsultSection) — satu query singleton, hasilnya sudah dipilihkan
  * varian EN/ZH-nya (fallback ke Bahasa Indonesia kalau admin belum isi). */
 export async function getLocalizedGeneralSettings(): Promise<LocalizedGeneralSettings> {
@@ -32,6 +48,11 @@ export async function getLocalizedGeneralSettings(): Promise<LocalizedGeneralSet
         operatingHours: true,
         operatingHoursEn: true,
         operatingHoursZh: true,
+        whatsapp: true,
+        email: true,
+        address: true,
+        mapsUrl: true,
+        mapsEmbedUrl: true,
       },
     }),
   ]);
@@ -41,5 +62,11 @@ export async function getLocalizedGeneralSettings(): Promise<LocalizedGeneralSet
     tagline: pickLocalizedText(settings?.tagline ?? "", settings?.taglineEn, settings?.taglineZh, locale),
     description: pickLocalizedText(settings?.description ?? "", settings?.descriptionEn, settings?.descriptionZh, locale),
     operatingHours: pickLocalizedText(settings?.operatingHours ?? "", settings?.operatingHoursEn, settings?.operatingHoursZh, locale),
+    whatsapp: settings?.whatsapp ?? "",
+    phoneDisplay: formatWhatsappDisplay(settings?.whatsapp ?? ""),
+    email: settings?.email ?? "",
+    address: settings?.address ?? "",
+    mapsUrl: settings?.mapsUrl ?? "",
+    mapsEmbedUrl: settings?.mapsEmbedUrl ?? "",
   };
 }

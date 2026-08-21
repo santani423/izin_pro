@@ -6,10 +6,10 @@ import SettingsPageClient from "./SettingsPageClient";
 /* ─── Halaman Pengaturan Admin ───
  * Server Component: EDITOR & AUTHOR gak boleh akses sama sekali; ADMIN boleh
  * lihat tapi view-only (gak bisa ubah/simpan); SUPER_ADMIN akses penuh.
- * Tab Kontak/Sosmed/SEO masih data mock (COMPANY_INFO) — belum disambung
- * Prisma (di luar scope). Tab Umum (Nama Perusahaan/Tagline/Deskripsi/Jam
- * Operasional, tiap-tiap ID+EN+ZH), Font, & Maintenance di bawah ini yang
- * beneran baca/simpan ke tabel Settings. */
+ * Tab Sosmed/SEO masih data mock (COMPANY_INFO) — belum disambung Prisma
+ * (di luar scope). Tab Umum, Font, Kontak (WhatsApp/Email/Alamat/Maps —
+ * dipakai LocationSection dkk lewat getLocalizedGeneralSettings()), &
+ * Maintenance di bawah ini yang beneran baca/simpan ke tabel Settings. */
 export default async function AdminSettingsPage({
   params,
 }: {
@@ -41,6 +41,11 @@ export default async function AdminSettingsPage({
       operatingHours={settings?.operatingHours ?? ""}
       operatingHoursEn={settings?.operatingHoursEn ?? ""}
       operatingHoursZh={settings?.operatingHoursZh ?? ""}
+      whatsapp={settings?.whatsapp ?? ""}
+      email={settings?.email ?? ""}
+      address={settings?.address ?? ""}
+      mapsUrl={settings?.mapsUrl ?? ""}
+      mapsEmbedUrl={settings?.mapsEmbedUrl ?? ""}
       fontFamilyId={settings?.fontFamilyId ?? DEFAULT_FONT_SLUG.id}
       fontFamilyEn={settings?.fontFamilyEn ?? DEFAULT_FONT_SLUG.en}
       fontFamilyZh={settings?.fontFamilyZh ?? DEFAULT_FONT_SLUG.zh}

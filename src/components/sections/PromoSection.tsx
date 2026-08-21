@@ -1,8 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Reveal } from "@/components/shared/Reveal";
+import { LocalizedLink as Link } from "@/components/shared/LocalizedLink";
 import { useDictionary } from "@/contexts/LocaleContext";
 import type { LandingPromo } from "@/lib/landing";
 import { cn } from "@/lib/utils";
@@ -30,11 +32,8 @@ const VARIANT_STYLES: Record<
   },
 };
 
-/* Urutan tetap 3 item — cocokin index dgn dict.promo.items (lihat i18n/dictionaries) */
-const PROMO_VARIANTS: LandingPromo["variant"][] = ["discount", "free", "package"];
-
 /* ─── Promo Spesial ─── */
-export default function PromoSection() {
+export default function PromoSection({ promos }: { promos: LandingPromo[] }) {
   const dict = useDictionary();
   return (
     <section id="promo" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
@@ -44,22 +43,35 @@ export default function PromoSection() {
       />
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-        {dict.promo.items.map((promo, index) => {
-          const variant = PROMO_VARIANTS[index];
-          const style = VARIANT_STYLES[variant];
+        {promos.map((promo, index) => {
+          const style = VARIANT_STYLES[promo.variant];
+          const hasImage = !!promo.imageUrl;
           return (
-            <Reveal key={variant} delay={index * 0.1}>
+            <Reveal key={promo.id} delay={index * 0.1}>
               <article
                 className={cn(
-                  "flex h-full min-h-44 flex-col justify-between rounded-xl p-6 shadow-sm",
-                  style.card,
+                  "relative flex h-full min-h-44 flex-col justify-between overflow-hidden rounded-xl p-6 shadow-sm",
+                  hasImage ? "text-white" : style.card,
                 )}
               >
-                <div>
+                {hasImage && (
+                  <>
+                    <Image
+                      src={promo.imageUrl!}
+                      alt=""
+                      fill
+                      sizes="(min-width: 768px) 33vw, 100vw"
+                      className="object-cover"
+                    />
+                    {/* Scrim gelap biar teks putih tetap kebaca di atas foto apa pun */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/45 to-black/15" />
+                  </>
+                )}
+                <div className="relative z-10">
                   <p
                     className={cn(
                       "text-xs font-bold uppercase tracking-widest",
-                      style.eyebrow,
+                      hasImage ? "text-white/85" : style.eyebrow,
                     )}
                   >
                     {promo.eyebrow}
@@ -72,13 +84,20 @@ export default function PromoSection() {
                   </p>
                 </div>
                 <Button
+                  asChild={!!promo.ctaHref}
                   size="sm"
                   className={cn(
-                    "mt-5 w-fit rounded-md font-semibold shadow-none",
-                    style.button,
+                    "relative z-10 mt-5 w-fit rounded-md font-semibold shadow-none",
+                    hasImage
+                      ? "bg-white/15 text-white ring-1 ring-white/40 hover:bg-white/25"
+                      : style.button,
                   )}
                 >
-                  {promo.ctaLabel}
+                  {promo.ctaHref ? (
+                    <Link href={promo.ctaHref}>{promo.ctaLabel}</Link>
+                  ) : (
+                    promo.ctaLabel
+                  )}
                 </Button>
               </article>
             </Reveal>

@@ -86,20 +86,6 @@ const en: Dictionary = {
     ],
   },
 
-  about: {
-    heading: "About IzinPro",
-    description:
-      "IzinPro is a trusted business licensing service provider committed to delivering the best service with a fast, transparent, and secure process.",
-    points: [
-      "Legal & Official",
-      "Fast & Efficient Process",
-      "Free & Transparent Consultation",
-      "Complete & Trusted Services",
-    ],
-    button: "More About Us",
-    videoTitle: "IzinPro company profile video",
-  },
-
   articles: {
     heading: "Latest Articles",
     subtitle: "The latest information on business licensing and regulations.",
