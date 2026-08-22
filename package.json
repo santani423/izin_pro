@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "build": "NODE_OPTIONS=--dns-result-order=ipv4first next build",
+    "start": "NODE_OPTIONS=--dns-result-order=ipv4first next start",
     "lint": "eslint",
     "test": "tsx --test src/lib/*.test.ts"
   },
