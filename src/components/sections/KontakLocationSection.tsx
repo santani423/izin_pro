@@ -1,8 +1,8 @@
 import { ExternalLink } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { COMPANY_INFO } from "@/lib/constants";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
+import { getLocalizedGeneralSettings } from "@/lib/general-settings";
 
 /* ─── Lokasi kantor — peta lebar + kartu alamat mengambang di kiri ─── */
 export default async function KontakLocationSection({
@@ -13,6 +13,7 @@ export default async function KontakLocationSection({
   mapsEmbedUrl: string;
 }) {
   const dict = getDictionary(await getLocale());
+  const { address, mapsUrl } = await getLocalizedGeneralSettings();
   return (
     <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
       <div className="relative overflow-hidden rounded-3xl border border-border/60 shadow-sm">
@@ -33,14 +34,14 @@ export default async function KontakLocationSection({
             {title}
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            {COMPANY_INFO.address}
+            {address}
           </p>
           <Button
             asChild
             className="mt-5 w-full justify-center gap-2 rounded-lg font-semibold lg:w-auto"
           >
             <a
-              href={COMPANY_INFO.mapsUrl}
+              href={mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
             >

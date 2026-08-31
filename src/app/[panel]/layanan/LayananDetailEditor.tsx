@@ -57,7 +57,8 @@ type SerializedPackage = Omit<ServicePackage, "price" | "originalPrice"> & {
   originalPrice: number | null;
 };
 
-type ServiceWithRelations = Service & {
+type ServiceWithRelations = Omit<Service, "basePrice"> & {
+  basePrice: number | null;
   featuredMedia: { id: string; url: string } | null;
   aboutMedia: { id: string; url: string } | null;
   packages: SerializedPackage[];
@@ -1075,7 +1076,16 @@ export default function LayananDetailEditor({
                     <Label>Judul Section<OptionalHint lang={lang} /></Label>
                     <Input
                       value={current.types?.title ?? ""}
-                      onChange={(e) => setCurrent({ types: { ...current.types!, title: e.target.value } })}
+                      onChange={(e) =>
+                        setCurrent({
+                          types: {
+                            title: e.target.value,
+                            items: current.types?.items ?? [],
+                            linkLabel: current.types?.linkLabel ?? "",
+                            linkHref: current.types?.linkHref ?? "",
+                          },
+                        })
+                      }
                       className="rounded-xl"
                     />
                   </div>
@@ -1083,7 +1093,16 @@ export default function LayananDetailEditor({
                     <Label>Label Link<OptionalHint lang={lang} /></Label>
                     <Input
                       value={current.types?.linkLabel ?? ""}
-                      onChange={(e) => setCurrent({ types: { ...current.types!, linkLabel: e.target.value } })}
+                      onChange={(e) =>
+                        setCurrent({
+                          types: {
+                            title: current.types?.title ?? "",
+                            items: current.types?.items ?? [],
+                            linkLabel: e.target.value,
+                            linkHref: current.types?.linkHref ?? "",
+                          },
+                        })
+                      }
                       className="rounded-xl"
                     />
                   </div>
@@ -1093,7 +1112,16 @@ export default function LayananDetailEditor({
                     <Label>Link Href</Label>
                     <Input
                       value={current.types?.linkHref ?? ""}
-                      onChange={(e) => setCurrent({ types: { ...current.types!, linkHref: e.target.value } })}
+                      onChange={(e) =>
+                        setCurrent({
+                          types: {
+                            title: current.types?.title ?? "",
+                            items: current.types?.items ?? [],
+                            linkLabel: current.types?.linkLabel ?? "",
+                            linkHref: e.target.value,
+                          },
+                        })
+                      }
                       className="rounded-xl"
                     />
                   </div>

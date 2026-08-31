@@ -3,14 +3,13 @@ import { Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { WhatsAppLink } from "@/components/shared/WhatsAppLink";
-import { COMPANY_INFO } from "@/lib/constants";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 import { getLocalizedGeneralSettings } from "@/lib/general-settings";
 
 /* ─── Banner konsultasi — kartu hijau muda dengan CTA & telepon ─── */
 export default async function LayananConsultSection() {
   const dict = getDictionary(await getLocale());
-  const { operatingHours } = await getLocalizedGeneralSettings();
+  const { operatingHours, whatsapp, phoneDisplay } = await getLocalizedGeneralSettings();
   const waMessage = encodeURIComponent(dict.layananConsult.waMessage);
 
   return (
@@ -34,7 +33,7 @@ export default async function LayananConsultSection() {
               className="w-full justify-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold sm:w-auto sm:gap-2 sm:px-5 sm:text-sm"
             >
               <WhatsAppLink
-                href={`https://wa.me/${COMPANY_INFO.whatsapp}?text=${waMessage}`}
+                href={`https://wa.me/${whatsapp}?text=${waMessage}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -49,10 +48,10 @@ export default async function LayananConsultSection() {
               </span>
               <div>
                 <a
-                  href={`tel:+${COMPANY_INFO.whatsapp}`}
+                  href={`tel:+${whatsapp}`}
                   className="text-sm font-bold text-foreground transition-colors hover:text-primary"
                 >
-                  {COMPANY_INFO.whatsappDisplay}
+                  {phoneDisplay}
                 </a>
                 <p className="text-xs text-muted-foreground">
                   {operatingHours || dict.common.officeHours}

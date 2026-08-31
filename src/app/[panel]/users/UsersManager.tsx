@@ -53,7 +53,7 @@ const ROLE_STYLE: Record<Role, { badge: string; avatar: string }> = {
 
 const ROLE_DESC: Record<Role, string> = {
   SUPER_ADMIN: "Akses penuh ke semua menu, termasuk Pengaturan & Pengguna",
-  ADMIN: "Akses semua menu, tapi Pengaturan hanya bisa dilihat (view-only)",
+  ADMIN: "Akses penuh ke semua menu, termasuk Pengaturan (kecuali kelola akun Admin/Super Admin lain)",
   EDITOR: "Akses semua menu kecuali Pengaturan & Pengguna",
   AUTHOR: "Hanya bisa tulis & publish artikel miliknya sendiri, tidak bisa edit milik orang lain",
 };

@@ -6,15 +6,16 @@ import { Button } from "@/components/ui/button";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { WhatsAppLink } from "@/components/shared/WhatsAppLink";
 import { Reveal } from "@/components/shared/Reveal";
-import { COMPANY_INFO } from "@/lib/constants";
+import { getLocalizedGeneralSettings } from "@/lib/general-settings";
 import {
   PANDUAN_LEGALITAS_CHIPS,
   PANDUAN_LEGALITAS_HERO,
 } from "@/lib/panduan-legalitas";
 
 /* ─── Hero panduan legalitas — breadcrumb, judul, chip benefit, CTA & foto ─── */
-export default function PanduanLegalitasHeroSection() {
+export default async function PanduanLegalitasHeroSection() {
   const hero = PANDUAN_LEGALITAS_HERO;
+  const { whatsapp } = await getLocalizedGeneralSettings();
   const waMessage = encodeURIComponent(hero.waMessage);
 
   return (
@@ -93,7 +94,7 @@ export default function PanduanLegalitasHeroSection() {
               className="mt-8 w-full justify-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold sm:w-auto sm:gap-2 sm:px-5 sm:text-sm"
             >
               <WhatsAppLink
-                href={`https://wa.me/${COMPANY_INFO.whatsapp}?text=${waMessage}`}
+                href={`https://wa.me/${whatsapp}?text=${waMessage}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >

@@ -338,6 +338,8 @@ model TeamMember {
 // Domain 4 — Bisnis Inti
 // ====================================================
 
+// GLOBAL dipakai di FAQ Beranda & fallback Detail Layanan; KONTAK di halaman
+// Kontak; SERVICE di Detail Layanan tertentu (lihat serviceId).
 enum FaqScope {
   GLOBAL
   KONTAK

@@ -30,6 +30,7 @@ export default async function AdminLayananDetailEditPage({
   // Component, harus dikonversi ke number dulu di sini.
   const plainService = {
     ...service,
+    basePrice: service.basePrice ? service.basePrice.toNumber() : null,
     packages: service.packages.map((pkg) => ({
       ...pkg,
       price: pkg.price.toNumber(),

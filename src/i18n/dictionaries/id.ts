@@ -5,11 +5,12 @@
  *
  * Cakupan: teks UI statis (navbar, footer, tombol, heading section, label
  * form, dst) di seluruh halaman publik. Konten dari database (Hero admin,
- * daftar Layanan, Testimoni, Blog, FAQ Kontak/Layanan) SENGAJA tidak masuk
- * sini — itu tetap tampil apa adanya dari admin di semua bahasa. Beberapa
- * larik statis yang murni dekoratif & tidak bisa diedit admin (mis. katalog
- * /layanan, panduan legalitas, FAQ homepage) juga sengaja dibiarkan di luar
- * scope ini untuk saat ini.
+ * daftar Layanan, Testimoni, Blog, FAQ homepage/Kontak/Layanan — dikelola di
+ * /admin/faq via model Faq, scope GLOBAL/KONTAK/SERVICE) SENGAJA tidak masuk
+ * sini — itu tetap tampil apa adanya dari admin di semua bahasa (single-
+ * language, gak ada terjemahan per-locale). Beberapa larik statis yang murni
+ * dekoratif & tidak bisa diedit admin (mis. katalog /layanan, panduan
+ * legalitas) juga sengaja dibiarkan di luar scope ini untuk saat ini.
  */
 const id = {
   common: {
@@ -153,38 +154,6 @@ const id = {
   faq: {
     heading: "Pertanyaan yang Sering Diajukan",
     subtitle: "Temukan jawaban atas pertanyaan umum tentang layanan IzinPro.",
-    items: [
-      {
-        question: "Berapa lama proses pengurusan perizinan di IzinPro?",
-        answer:
-          "Rata-rata proses berlangsung 3–7 hari kerja tergantung jenis perizinan dan kelengkapan dokumen. Kami selalu memberikan estimasi waktu yang akurat di awal konsultasi.",
-      },
-      {
-        question: "Apakah ada biaya tersembunyi dalam layanan IzinPro?",
-        answer:
-          "Tidak ada. IzinPro menerapkan prinsip transparansi penuh. Semua biaya disampaikan di awal sebelum Anda memutuskan untuk menggunakan layanan kami.",
-      },
-      {
-        question: "Dokumen apa saja yang perlu disiapkan untuk pendirian PT?",
-        answer:
-          "Dokumen dasar yang diperlukan antara lain: KTP dan NPWP para pendiri, alamat domisili perusahaan, modal dasar yang ditetapkan, dan bidang usaha yang akan dijalankan. Tim kami akan memandu Anda secara detail.",
-      },
-      {
-        question: "Apakah IzinPro bisa membantu perizinan di luar kota Jakarta?",
-        answer:
-          "Ya, IzinPro melayani klien dari seluruh Indonesia. Dengan sistem digital yang kami miliki, proses pengurusan dapat dilakukan tanpa harus hadir secara fisik ke kantor kami.",
-      },
-      {
-        question: "Bagaimana cara memulai konsultasi dengan IzinPro?",
-        answer:
-          "Sangat mudah! Hubungi kami via WhatsApp di nomor 0822-8000-7821 atau isi form kontak di website ini. Tim kami akan merespons dalam waktu maksimal 1×24 jam.",
-      },
-      {
-        question: "Apakah ada garansi jika perizinan tidak disetujui?",
-        answer:
-          "IzinPro memberikan garansi proses: jika perizinan tidak disetujui karena kesalahan dari pihak kami, kami akan menanggung biaya pengajuan ulang tanpa biaya tambahan untuk klien.",
-      },
-    ],
   },
 
   cta: {

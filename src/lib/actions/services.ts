@@ -292,10 +292,10 @@ export async function updateServiceDetailContentAction(
     if (base.process.steps.some((s) => !s.title.trim() || !s.description.trim())) {
       return { ok: false, message: "Setiap langkah proses (Bahasa Indonesia) wajib punya judul & deskripsi." };
     }
-    if (base.benefits && base.benefits.items.some((b) => !b.title.trim() || !b.description.trim())) {
+    if (base.benefits && (base.benefits.items ?? []).some((b) => !b.title.trim() || !b.description.trim())) {
       return { ok: false, message: "Setiap item manfaat (Bahasa Indonesia) wajib punya judul & deskripsi." };
     }
-    if (base.types && base.types.items.some((t) => !t.title.trim() || !t.description.trim())) {
+    if (base.types && (base.types.items ?? []).some((t) => !t.title.trim() || !t.description.trim())) {
       return { ok: false, message: "Setiap item jenis layanan (Bahasa Indonesia) wajib punya judul & deskripsi." };
     }
 

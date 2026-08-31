@@ -32,7 +32,7 @@ export default async function PublicLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [settings, session, locale] = await Promise.all([
+  const [settings, session, locale, general] = await Promise.all([
     prisma.settings.findUnique({
       where: { id: "1" },
       select: {
@@ -45,16 +45,24 @@ export default async function PublicLayout({
     }),
     auth.api.getSession({ headers: await headers() }),
     getLocale(),
+    getLocalizedGeneralSettings(),
   ]);
   const dict = getDictionary(locale);
   const fontOption = resolveFontOption(settings?.[fontSettingsKey(locale)], locale);
+  const whatsappUrl = `https://wa.me/${general.whatsapp}`;
 
   const role = session?.user.role as Role | undefined;
   const isBypassed = role === "ADMIN" || role === "SUPER_ADMIN";
 
   if (settings?.maintenanceMode && !isBypassed) {
-    const { companyName } = await getLocalizedGeneralSettings();
-    return <MaintenancePage message={settings.maintenanceMessage} dict={dict.maintenance} companyName={companyName} />;
+    return (
+      <MaintenancePage
+        message={settings.maintenanceMessage}
+        dict={dict.maintenance}
+        companyName={general.companyName}
+        whatsapp={general.whatsapp}
+      />
+    );
   }
 
   const [headerMenu, branding] = await Promise.all([
@@ -74,7 +82,7 @@ export default async function PublicLayout({
   const navItems = localizeMenuTree(headerMenu?.items ?? [], locale);
 
   return (
-    <LocaleProvider locale={locale} dict={dict}>
+    <LocaleProvider locale={locale} dict={dict} whatsappUrl={whatsappUrl}>
       {/* Meta Pixel — satu Pixel ID untuk seluruh website publik (bukan
        * area admin), dipasang sekali di sini. Lihat components/MetaPixel.tsx. */}
       <MetaPixel />

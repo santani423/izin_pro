@@ -8,7 +8,7 @@ import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { WhatsAppLink } from "@/components/shared/WhatsAppLink";
 import { Reveal } from "@/components/shared/Reveal";
 import BlogDetailFaq from "@/components/sections/BlogDetailFaq";
-import { COMPANY_INFO } from "@/lib/constants";
+import { getLocalizedGeneralSettings } from "@/lib/general-settings";
 import {
   PANDUAN_LEGALITAS_CHECKLIST,
   PANDUAN_LEGALITAS_FAQ,
@@ -47,7 +47,8 @@ function DaftarIsiCard() {
 }
 
 /* ─── Badan panduan legalitas — 5 bagian konten & sidebar ─── */
-export default function PanduanLegalitasBodySection() {
+export default async function PanduanLegalitasBodySection() {
+  const { whatsapp } = await getLocalizedGeneralSettings();
   const waHelp = encodeURIComponent(PANDUAN_LEGALITAS_HELP.waMessage);
   const PentingIcon = PANDUAN_LEGALITAS_PENTING.icon;
 
@@ -258,7 +259,7 @@ export default function PanduanLegalitasBodySection() {
               className="mt-4 w-full justify-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold sm:gap-2 sm:text-sm"
             >
               <WhatsAppLink
-                href={`https://wa.me/${COMPANY_INFO.whatsapp}?text=${waHelp}`}
+                href={`https://wa.me/${whatsapp}?text=${waHelp}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >

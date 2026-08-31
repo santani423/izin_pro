@@ -141,38 +141,6 @@ const en: Dictionary = {
   faq: {
     heading: "Frequently Asked Questions",
     subtitle: "Find answers to common questions about IzinPro's services.",
-    items: [
-      {
-        question: "How long does the licensing process take at IzinPro?",
-        answer:
-          "The process typically takes 3–7 business days, depending on the type of license and document completeness. We always provide an accurate time estimate at the start of the consultation.",
-      },
-      {
-        question: "Are there any hidden fees in IzinPro's services?",
-        answer:
-          "None at all. IzinPro applies a principle of full transparency. All costs are disclosed upfront before you decide to use our services.",
-      },
-      {
-        question: "What documents are needed to establish a PT?",
-        answer:
-          "The basic documents required include: ID cards and tax IDs of the founders, the company's registered address, the stipulated authorized capital, and the line of business to be run. Our team will guide you through the details.",
-      },
-      {
-        question: "Can IzinPro help with licensing outside of Jakarta?",
-        answer:
-          "Yes, IzinPro serves clients throughout Indonesia. With our digital system, the process can be handled without needing to visit our office in person.",
-      },
-      {
-        question: "How do I start a consultation with IzinPro?",
-        answer:
-          "It's simple! Contact us via WhatsApp at 0822-8000-7821 or fill out the contact form on this website. Our team will respond within a maximum of 1×24 hours.",
-      },
-      {
-        question: "Is there a guarantee if a license application is not approved?",
-        answer:
-          "IzinPro provides a process guarantee: if a license is not approved due to an error on our part, we will cover the cost of resubmission at no extra charge to the client.",
-      },
-    ],
   },
 
   cta: {

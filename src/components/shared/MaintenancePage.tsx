@@ -1,4 +1,3 @@
-import { COMPANY_INFO } from "@/lib/constants";
 import type { Dictionary } from "@/i18n/dictionaries/id";
 
 /* Fallback ini mencerminkan Settings.maintenanceMessage yang admin isi di
@@ -16,10 +15,12 @@ export default function MaintenancePage({
   message,
   dict,
   companyName,
+  whatsapp,
 }: {
   message?: string | null;
   dict: Dictionary["maintenance"];
   companyName: string;
+  whatsapp: string;
 }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f3fae8] via-white to-[#f0f9e8] px-4 py-16">
@@ -37,7 +38,7 @@ export default function MaintenancePage({
           {message?.trim() || DEFAULT_MESSAGE}
         </p>
         <a
-          href={`https://wa.me/${COMPANY_INFO.whatsapp}`}
+          href={`https://wa.me/${whatsapp}`}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-[#43791b] transition-colors"

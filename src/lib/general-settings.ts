@@ -13,6 +13,13 @@ export interface LocalizedGeneralSettings {
   address: string;
   mapsUrl: string;
   mapsEmbedUrl: string;
+  social: {
+    linkedin: string;
+    facebook: string;
+    instagram: string;
+    twitter: string;
+    youtube: string;
+  };
 }
 
 /* Settings.whatsapp disimpan format internasional tanpa "+" (mis.
@@ -53,6 +60,11 @@ export async function getLocalizedGeneralSettings(): Promise<LocalizedGeneralSet
         address: true,
         mapsUrl: true,
         mapsEmbedUrl: true,
+        socialLinkedin: true,
+        socialFacebook: true,
+        socialInstagram: true,
+        socialX: true,
+        socialYoutube: true,
       },
     }),
   ]);
@@ -68,5 +80,12 @@ export async function getLocalizedGeneralSettings(): Promise<LocalizedGeneralSet
     address: settings?.address ?? "",
     mapsUrl: settings?.mapsUrl ?? "",
     mapsEmbedUrl: settings?.mapsEmbedUrl ?? "",
+    social: {
+      linkedin: settings?.socialLinkedin ?? "",
+      facebook: settings?.socialFacebook ?? "",
+      instagram: settings?.socialInstagram ?? "",
+      twitter: settings?.socialX ?? "",
+      youtube: settings?.socialYoutube ?? "",
+    },
   };
 }

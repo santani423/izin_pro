@@ -23,7 +23,7 @@ export function getRolePanel(role: Role | string): AdminPanel {
  *
  * Ringkasan (lihat ROLE_DESC di UsersManager.tsx utk deskripsi lengkap):
  *   SUPER_ADMIN — semua menu, termasuk Pengaturan & Pengguna
- *   ADMIN       — semua menu, Pengaturan cuma view-only (bukan soal akses)
+ *   ADMIN       — semua menu, termasuk Pengaturan (akses penuh, bisa simpan)
  *   EDITOR      — semua menu KECUALI Pengaturan & Pengguna
  *   AUTHOR      — CUMA Dashboard, Blog & Artikel, Media Library
  */
@@ -49,7 +49,7 @@ export const ADMIN_ROUTE_ROLES: Record<string, Role[]> = {
   "/transaksi/daftar": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
   "/menu": ["SUPER_ADMIN", "ADMIN", "EDITOR"],
   "/users": ["SUPER_ADMIN", "ADMIN"],
-  "/settings": ["SUPER_ADMIN", "ADMIN"], // ADMIN boleh akses tapi view-only, diatur terpisah di page-nya
+  "/settings": ["SUPER_ADMIN", "ADMIN"], // akses penuh utk keduanya (lihat + ubah/simpan)
 };
 
 export function canAccessAdminRoute(role: Role | string, href: string): boolean {
