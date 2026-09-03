@@ -656,7 +656,7 @@ export default function AboutPageEditor({
       <LangSwitcher lang={lang} onChange={setLang} />
 
       <Tabs defaultValue="hero">
-        <TabsList className="rounded-xl mb-2 bg-gray-200 flex-wrap h-auto">
+        <TabsList className="rounded-xl mb-2 bg-gray-200">
           <TabsTrigger value="hero" className="rounded-lg">Hero</TabsTrigger>
           <TabsTrigger value="about" className="rounded-lg">Tentang</TabsTrigger>
           <TabsTrigger value="values" className="rounded-lg">Nilai-Nilai</TabsTrigger>
@@ -798,27 +798,29 @@ export default function AboutPageEditor({
               renderItem={(item, i) => {
                 const stat = a.stats[i] ?? { value: "", label: "" };
                 return (
-                  <div className="grid grid-cols-[9rem_5rem_1fr_auto] items-center gap-2 rounded-xl border border-gray-200 p-2.5">
-                    <IconPicker
-                      value={item.icon}
-                      onChange={(icon) => setStatsIcons((prev) => prev.map((x, idx) => (idx === i ? icon : x)))}
-                    />
+                  <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 p-2.5">
+                    <div className="w-24 flex-shrink-0 sm:w-36">
+                      <IconPicker
+                        value={item.icon}
+                        onChange={(icon) => setStatsIcons((prev) => prev.map((x, idx) => (idx === i ? icon : x)))}
+                      />
+                    </div>
                     <Input
                       value={stat.value}
                       onChange={(e) => updateStatField(i, "value", e.target.value)}
-                      className="rounded-lg"
+                      className="w-20 flex-shrink-0 rounded-lg"
                       placeholder="5.000+"
                     />
                     <Input
                       value={stat.label}
                       onChange={(e) => updateStatField(i, "label", e.target.value)}
-                      className="rounded-lg"
+                      className="min-w-[120px] flex-1 rounded-lg"
                       placeholder="Label"
                     />
                     <button
                       type="button"
                       onClick={() => removeStat(i)}
-                      className="p-1.5 text-gray-400 hover:text-red-500"
+                      className="flex-shrink-0 p-1.5 text-gray-400 hover:text-red-500"
                       aria-label="Hapus statistik"
                     >
                       <Trash2 size={14} />
@@ -871,7 +873,7 @@ export default function AboutPageEditor({
                 return (
                   <div className="space-y-2 rounded-xl border border-gray-200 p-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-40">
+                      <div className="w-16 flex-shrink-0 sm:w-40">
                         <IconPicker
                           value={item.icon}
                           onChange={(icon) => setValuesIcons((prev) => prev.map((x, idx) => (idx === i ? icon : x)))}

@@ -333,7 +333,7 @@ export default function KontakPageClient({
   return (
     <div className="p-6 lg:p-8 space-y-6">
       <Tabs defaultValue="banner">
-        <TabsList className="rounded-xl mb-2 bg-gray-200 flex-wrap h-auto">
+        <TabsList className="rounded-xl mb-2 bg-gray-200">
           <TabsTrigger value="banner" className="rounded-lg">Banner</TabsTrigger>
           <TabsTrigger value="info" className="rounded-lg">Info Bar</TabsTrigger>
           <TabsTrigger value="form" className="rounded-lg">Form & Sidebar</TabsTrigger>
@@ -410,39 +410,39 @@ export default function KontakPageClient({
               getId={(c) => c._key}
               onReorder={(next) => setInfoCards(next.map(stripKey))}
               renderItem={(c, i) => (
-                <div className="grid grid-cols-[9rem_1fr_1fr_1fr] items-center gap-2 rounded-xl border border-gray-200 p-2.5">
-                  <ChannelIconSelect
-                    value={c.icon}
-                    onChange={(icon) => setInfoCards((prev) => prev.map((x, idx) => (idx === i ? { ...x, icon } : x)))}
-                  />
+                <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 p-2.5">
+                  <div className="w-32 flex-shrink-0 sm:w-36">
+                    <ChannelIconSelect
+                      value={c.icon}
+                      onChange={(icon) => setInfoCards((prev) => prev.map((x, idx) => (idx === i ? { ...x, icon } : x)))}
+                    />
+                  </div>
                   <Input
                     value={c.title}
                     onChange={(e) => setInfoCards((prev) => prev.map((x, idx) => (idx === i ? { ...x, title: e.target.value } : x)))}
-                    className="rounded-lg"
+                    className="min-w-[110px] flex-1 rounded-lg"
                     placeholder="Judul"
                   />
                   <Input
                     value={c.value}
                     onChange={(e) => setInfoCards((prev) => prev.map((x, idx) => (idx === i ? { ...x, value: e.target.value } : x)))}
-                    className="rounded-lg"
+                    className="min-w-[110px] flex-1 rounded-lg"
                     placeholder="Nilai"
                   />
-                  <div className="flex items-center gap-2">
-                    <Input
-                      value={c.note}
-                      onChange={(e) => setInfoCards((prev) => prev.map((x, idx) => (idx === i ? { ...x, note: e.target.value } : x)))}
-                      className="rounded-lg"
-                      placeholder="Keterangan"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setInfoCards((prev) => prev.filter((_, idx) => idx !== i))}
-                      className="p-1.5 text-gray-400 hover:text-red-500"
-                      aria-label="Hapus kartu"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
+                  <Input
+                    value={c.note}
+                    onChange={(e) => setInfoCards((prev) => prev.map((x, idx) => (idx === i ? { ...x, note: e.target.value } : x)))}
+                    className="min-w-[110px] flex-1 rounded-lg"
+                    placeholder="Keterangan"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setInfoCards((prev) => prev.filter((_, idx) => idx !== i))}
+                    className="flex-shrink-0 p-1.5 text-gray-400 hover:text-red-500"
+                    aria-label="Hapus kartu"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
               )}
             />
@@ -493,41 +493,43 @@ export default function KontakPageClient({
               onReorder={(next) => setChannels(next.map(stripKey))}
               renderItem={(c, i) => (
                 <div className="space-y-2 rounded-xl border border-gray-200 p-3">
-                  <div className="grid grid-cols-[9rem_1fr_1fr] items-center gap-2">
-                    <ChannelIconSelect
-                      value={c.icon}
-                      onChange={(icon) => setChannels((prev) => prev.map((x, idx) => (idx === i ? { ...x, icon } : x)))}
-                    />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="w-32 flex-shrink-0 sm:w-36">
+                      <ChannelIconSelect
+                        value={c.icon}
+                        onChange={(icon) => setChannels((prev) => prev.map((x, idx) => (idx === i ? { ...x, icon } : x)))}
+                      />
+                    </div>
                     <Input
                       value={c.title}
                       onChange={(e) => setChannels((prev) => prev.map((x, idx) => (idx === i ? { ...x, title: e.target.value } : x)))}
-                      className="rounded-lg"
+                      className="min-w-[110px] flex-1 rounded-lg"
                       placeholder="Judul"
                     />
                     <Input
                       value={c.value}
                       onChange={(e) => setChannels((prev) => prev.map((x, idx) => (idx === i ? { ...x, value: e.target.value } : x)))}
-                      className="rounded-lg"
+                      className="min-w-[110px] flex-1 rounded-lg"
                       placeholder="Nilai (opsional)"
                     />
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Input
                       value={c.note}
                       onChange={(e) => setChannels((prev) => prev.map((x, idx) => (idx === i ? { ...x, note: e.target.value } : x)))}
-                      className="flex-1 rounded-lg"
+                      className="min-w-[110px] flex-1 rounded-lg"
                       placeholder="Keterangan (opsional)"
                     />
                     <Input
                       value={c.href}
                       onChange={(e) => setChannels((prev) => prev.map((x, idx) => (idx === i ? { ...x, href: e.target.value } : x)))}
-                      className="flex-1 rounded-lg"
+                      className="min-w-[140px] flex-1 rounded-lg"
                       placeholder="Link (wa.me/..., mailto:..., https://...)"
                     />
                     <button
                       type="button"
                       onClick={() => setChannels((prev) => prev.filter((_, idx) => idx !== i))}
-                      className="p-1.5 text-gray-400 hover:text-red-500"
+                      className="flex-shrink-0 p-1.5 text-gray-400 hover:text-red-500"
                       aria-label="Hapus kanal"
                     >
                       <Trash2 size={14} />

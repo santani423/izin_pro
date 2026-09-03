@@ -288,7 +288,7 @@ export default function BerandaPageClient({
   return (
     <div className="p-6 lg:p-8">
       <Tabs defaultValue="hero">
-        <TabsList className="rounded-xl mb-6 bg-gray-200 flex-wrap h-auto">
+        <TabsList className="rounded-xl mb-6 bg-gray-200">
           <TabsTrigger value="hero" className="rounded-lg">Hero</TabsTrigger>
           <TabsTrigger value="about" className="rounded-lg">Tentang IzinPro</TabsTrigger>
         </TabsList>

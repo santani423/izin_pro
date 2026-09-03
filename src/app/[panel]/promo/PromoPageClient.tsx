@@ -684,7 +684,7 @@ export default function PromoPageClient({
   return (
     <div className="p-6 lg:p-8 space-y-6">
       <Tabs defaultValue="banner">
-        <TabsList className="rounded-xl mb-2 bg-gray-200 flex-wrap h-auto">
+        <TabsList className="rounded-xl mb-2 bg-gray-200">
           <TabsTrigger value="banner" className="rounded-lg">Banner</TabsTrigger>
           <TabsTrigger value="highlight" className="rounded-lg">Highlight</TabsTrigger>
           <TabsTrigger value="packages" className="rounded-lg">Paket Promo</TabsTrigger>
@@ -765,21 +765,23 @@ export default function PromoPageClient({
               getId={(h) => h._key}
               onReorder={(next) => setHighlights(next.map(stripKey))}
               renderItem={(h, i) => (
-                <div className="grid grid-cols-[9rem_1fr_auto] items-center gap-2 rounded-xl border border-gray-200 p-2.5">
-                  <IconPicker
-                    value={h.icon}
-                    onChange={(icon) => setHighlights((prev) => prev.map((x, idx) => (idx === i ? { ...x, icon } : x)))}
-                  />
+                <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 p-2.5">
+                  <div className="w-24 flex-shrink-0 sm:w-36">
+                    <IconPicker
+                      value={h.icon}
+                      onChange={(icon) => setHighlights((prev) => prev.map((x, idx) => (idx === i ? { ...x, icon } : x)))}
+                    />
+                  </div>
                   <Input
                     value={h.label}
                     onChange={(e) => setHighlights((prev) => prev.map((x, idx) => (idx === i ? { ...x, label: e.target.value } : x)))}
-                    className="rounded-lg"
+                    className="min-w-[140px] flex-1 rounded-lg"
                     placeholder="Label"
                   />
                   <button
                     type="button"
                     onClick={() => setHighlights((prev) => prev.filter((_, idx) => idx !== i))}
-                    className="p-1.5 text-gray-400 hover:text-red-500"
+                    className="flex-shrink-0 p-1.5 text-gray-400 hover:text-red-500"
                     aria-label="Hapus highlight"
                   >
                     <Trash2 size={14} />
@@ -1000,7 +1002,7 @@ export default function PromoPageClient({
               renderItem={(w, i) => (
                 <div className="space-y-2 rounded-xl border border-gray-200 p-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-40">
+                    <div className="w-16 flex-shrink-0 sm:w-40">
                       <IconPicker
                         value={w.icon}
                         onChange={(icon) => setWhyItems((prev) => prev.map((x, idx) => (idx === i ? { ...x, icon } : x)))}
@@ -1064,7 +1066,7 @@ export default function PromoPageClient({
               renderItem={(s, i) => (
                 <div className="space-y-2 rounded-xl border border-gray-200 p-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-40">
+                    <div className="w-16 flex-shrink-0 sm:w-40">
                       <IconPicker
                         value={s.icon}
                         onChange={(icon) => setSteps((prev) => prev.map((x, idx) => (idx === i ? { ...x, icon } : x)))}
