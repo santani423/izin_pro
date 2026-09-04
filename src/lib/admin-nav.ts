@@ -2,7 +2,7 @@ import {
   LayoutDashboard, FileText, Newspaper, Image as ImageIcon, Users, Settings,
   Star, Megaphone, Package, HelpCircle, BarChart3, Inbox, Headset, UserCog,
   Building2, Menu as MenuIcon, UserCircle, Sparkles, Info, Phone, Receipt,
-  Workflow, ClipboardList, type LucideIcon,
+  Workflow, ClipboardList, MessageSquare, type LucideIcon,
 } from "lucide-react";
 
 export interface AdminNavItem {
@@ -39,6 +39,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       { label: "Halaman", href: "/pages", icon: FileText },
       { label: "Menu", href: "/menu", icon: MenuIcon },
       { label: "Blog & Artikel", href: "/blog", icon: Newspaper },
+      { label: "Komentar", href: "/komentar", icon: MessageSquare },
       { label: "Media Library", href: "/media", icon: ImageIcon },
     ],
   },

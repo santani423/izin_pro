@@ -258,13 +258,13 @@ const zh: Dictionary = {
 
   blogComment: {
     successTitle: "评论已发送！",
-    successCopy: "感谢您的评论，经管理员审核通过后将会显示。",
+    successCopy: "感谢您的评论，现已显示在本文下方。",
     sendAgain: "再发一条评论",
     nameLabel: "姓名",
     emailLabel: "邮箱",
     commentLabel: "评论内容",
     namePlaceholder: "您的姓名",
-    emailPlaceholder: "您的邮箱（不会公开显示）",
+    emailPlaceholder: "您的邮箱（选填，不会公开显示）",
     commentPlaceholder: "请在此输入您的评论...",
     sending: "发送中...",
     send: "发送评论",

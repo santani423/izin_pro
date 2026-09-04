@@ -42,60 +42,10 @@ const CLIENT_LOGOS = [
   { name: "Maybank", logo: "/images/clients/maybank.png" },
 ];
 
-/* Sumber nav header/footer — sebelumnya NAV_LINKS/FOOTER_COLUMNS di
- * landing.ts, dipindah ke sini krn Navbar/Footer sekarang baca Menu dari
- * Prisma langsung (landing.ts gak butuh data ini lagi). */
-const NAV_LINKS = [
-  { label: "Beranda", href: "/" },
-  {
-    label: "Layanan",
-    href: "/layanan",
-    children: [
-      { label: "Pendirian PT", href: "/layanan/pendirian-pt" },
-      { label: "NIB (Nomor Induk Berusaha)", href: "/layanan/nib" },
-      { label: "Izin Usaha", href: "/layanan/izin-usaha" },
-      { label: "Izin Komersial & Operasional", href: "/layanan/izin-komersial" },
-      { label: "Perizinan Lainnya", href: "/layanan/perizinan-lainnya" },
-    ],
-  },
-  { label: "Tentang Kami", href: "/tentang-kami" },
-  { label: "Panduan & Artikel", href: "/blog" },
-  { label: "Testimoni", href: "/testimoni" },
-  { label: "Promo", href: "/promo" },
-  { label: "Kontak", href: "/kontak" },
-];
-
-const FOOTER_COLUMNS = [
-  {
-    title: "Layanan Kami",
-    links: [
-      { label: "Pendirian PT", href: "/layanan/pendirian-pt" },
-      { label: "NIB & Berusaha", href: "/layanan/nib" },
-      { label: "Izin Usaha", href: "/layanan/izin-usaha" },
-      { label: "Izin Komersial & Operasional", href: "/layanan/izin-komersial" },
-      { label: "Perizinan Lainnya", href: "/layanan/perizinan-lainnya" },
-    ],
-  },
-  {
-    title: "Informasi",
-    links: [
-      { label: "Tentang Kami", href: "/tentang-kami" },
-      { label: "Panduan & Artikel", href: "/blog" },
-      { label: "Testimoni", href: "/testimoni" },
-      { label: "Promo", href: "/promo" },
-      { label: "Tracking Perizinan", href: "/tracking" },
-    ],
-  },
-  {
-    title: "Bantuan",
-    links: [
-      { label: "FAQ", href: "/faq" },
-      { label: "Syarat & Ketentuan", href: "/syarat-ketentuan" },
-      { label: "Kebijakan Privasi", href: "/kebijakan-privasi" },
-      { label: "Hubungi Kami", href: "/kontak" },
-    ],
-  },
-];
+/* Sumber nav header/footer (ID/EN/ZH) — sebelumnya didefinisikan inline di
+ * sini, dipindah ke prisma/menu-i18n.ts biar bisa dipakai bareng
+ * prisma/backfill-menu-i18n.ts (isi labelEn/labelZh utk instalasi lama). */
+import { NAV_LINKS, FOOTER_COLUMNS } from "./menu-i18n";
 import { LAYANAN_CATEGORIES } from "../src/lib/layanan";
 import { KONTAK_FAQS, KONTAK_INFO_CARDS, KONTAK_CHANNELS } from "../src/lib/kontak";
 import { PROMO_PACKAGES, PROMO_HIGHLIGHTS, PROMO_WHY, PROMO_STEPS } from "../src/lib/promo";
@@ -331,9 +281,18 @@ async function main() {
       id: "1",
       defaultLocale: "id",
       companyName: COMPANY_INFO.name,
+      companyNameEn: COMPANY_INFO.name,
+      companyNameZh: COMPANY_INFO.name,
       tagline: COMPANY_INFO.tagline,
+      taglineEn: "Your Safe & Trusted Business Licensing Solution",
+      taglineZh: "安全可靠的企业办证解决方案",
       description: COMPANY_INFO.description,
+      descriptionEn:
+        "Handle your business licensing easily, quickly, and legally with IzinPro's professional team. More than 5,000 clients have trusted us with their licensing needs.",
+      descriptionZh: "携手 IzinPro 专业团队，轻松、快速、合法地办理企业许可证。已有超过 5,000 名客户信赖我们处理办证事务。",
       operatingHours: COMPANY_INFO.hours,
+      operatingHoursEn: "Monday – Friday, 08:00 – 17:00 WIB",
+      operatingHoursZh: "周一至周五 08:00 – 17:00（西印尼时间）",
       whatsapp: COMPANY_INFO.whatsapp,
       email: COMPANY_INFO.email,
       address: COMPANY_INFO.address,
@@ -452,6 +411,8 @@ async function main() {
       heroTitleEn: "About",
       heroTitleZh: "关于",
       heroTitleHighlight: "IzinPro",
+      heroTitleHighlightEn: "IzinPro",
+      heroTitleHighlightZh: "IzinPro",
       heroSubtitleBold:
         "Solusi Perizinan Terpercaya untuk Mendukung Pertumbuhan Bisnis Anda",
       heroSubtitleBoldEn: "A Trusted Licensing Solution to Support Your Business Growth",
@@ -605,6 +566,8 @@ async function main() {
       data: {
         menuId: headerMenu.id,
         label: link.label,
+        labelEn: link.labelEn,
+        labelZh: link.labelZh,
         href: link.href,
         sortOrder: i,
         createdById: admin.id,
@@ -618,6 +581,8 @@ async function main() {
           menuId: headerMenu.id,
           parentId: parent.id,
           label: child.label,
+          labelEn: child.labelEn,
+          labelZh: child.labelZh,
           href: child.href,
           sortOrder: j,
           createdById: admin.id,
@@ -636,6 +601,8 @@ async function main() {
       data: {
         menuId: footerMenu.id,
         label: col.title,
+        labelEn: col.titleEn,
+        labelZh: col.titleZh,
         href: "#",
         sortOrder: i,
         createdById: admin.id,
@@ -649,6 +616,8 @@ async function main() {
           menuId: footerMenu.id,
           parentId: parent.id,
           label: link.label,
+          labelEn: link.labelEn,
+          labelZh: link.labelZh,
           href: link.href,
           sortOrder: j,
           createdById: admin.id,

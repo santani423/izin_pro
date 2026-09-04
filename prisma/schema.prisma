@@ -1410,14 +1410,19 @@ enum CommentStatus {
 }
 
 // Komentar pengunjung di halaman detail artikel blog — pengunjung anonim
-// (tanpa akun), sama pola dgn Inquiry (gak ada createdBy). Wajib disetujui
-// admin (status PENDING) sebelum tampil publik, biar gak langsung ke-spam.
+// (tanpa akun), sama pola dgn Inquiry (gak ada createdBy). Sejak diubah,
+// komentar baru langsung dibuat APPROVED (tampil publik seketika, gak
+// nunggu admin) — admin cuma moderasi reaktif (hapus dari /admin/komentar
+// kalau ada yg spam/gak pantas), lihat submitCommentAction di
+// actions/blog-comments.ts. Status PENDING masih dipertahankan di enum
+// buat kompatibilitas data lama & kalau suatu saat pre-moderation diaktifkan
+// lagi.
 model Comment {
   id        String        @id @default(cuid())
   postId    String
   post      BlogPost      @relation(fields: [postId], references: [id], onDelete: Cascade)
   name      String
-  email     String
+  email     String? // opsional — pengunjung boleh gak isi email pas komentar
   content   String        @db.Text
   status    CommentStatus @default(PENDING)
   createdAt DateTime      @default(now())

@@ -6,9 +6,10 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { revalidateAdminPaths } from "@/lib/admin-guard";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
-import type { Role } from "@prisma/client";
+import type { Comment, Role } from "@prisma/client";
 
 export type ActionResult = { ok: true } | { ok: false; message: string };
+export type SubmitCommentResult = { ok: true; comment: Comment } | { ok: false; message: string };
 
 function errorMessage(e: unknown, fallback: string) {
   return e instanceof Error ? e.message : fallback;
@@ -43,14 +44,17 @@ async function assertOwnsComment(
 }
 
 /* ─── Kirim komentar (form publik di halaman artikel) ───
- * TANPA auth — diisi pengunjung anonim, bukan admin. Status default
- * PENDING, baru tampil publik setelah admin approve (approveCommentAction). */
+ * TANPA auth — diisi pengunjung anonim, bukan admin. Langsung dibuat
+ * APPROVED (tampil publik seketika, gak nunggu admin) — moderasi jadi
+ * reaktif, admin hapus dari /admin/komentar kalau ada yg spam/gak pantas.
+ * Comment yg dibuat dibalikin ke caller spy BlogCommentsSection bisa
+ * langsung nambahin ke list tanpa reload (lihat BlogCommentForm.tsx). */
 export async function submitCommentAction(data: {
   postId: string;
   name: string;
   email: string;
   content: string;
-}): Promise<ActionResult> {
+}): Promise<SubmitCommentResult> {
   const dict = getDictionary(await getLocale());
   try {
     const name = data.name.trim();
@@ -58,19 +62,23 @@ export async function submitCommentAction(data: {
     const content = data.content.trim();
 
     if (name.length < 3) return { ok: false, message: dict.actions.commentNameMin };
-    if (!/^\S+@\S+\.\S+$/.test(email)) return { ok: false, message: dict.actions.commentEmailInvalid };
+    if (email && !/^\S+@\S+\.\S+$/.test(email)) return { ok: false, message: dict.actions.commentEmailInvalid };
     if (content.length < 5) return { ok: false, message: dict.actions.commentMin };
 
     const post = await prisma.blogPost.findFirst({
       where: { id: data.postId, deletedAt: null, status: "PUBLISHED" },
-      select: { id: true },
+      select: { id: true, slug: true },
     });
     if (!post) return { ok: false, message: dict.actions.commentPostNotFound };
 
-    await prisma.comment.create({ data: { postId: post.id, name, email, content } });
+    const comment = await prisma.comment.create({
+      data: { postId: post.id, name, email: email || null, content, status: "APPROVED" },
+    });
 
     revalidateAdminPaths("/blog");
-    return { ok: true };
+    revalidateAdminPaths("/komentar");
+    revalidatePath(`/blog/${post.slug}`);
+    return { ok: true, comment };
   } catch (e) {
     return { ok: false, message: errorMessage(e, dict.actions.commentGenericError) };
   }
@@ -83,6 +91,7 @@ export async function approveCommentAction(commentId: string): Promise<ActionRes
     const comment = await assertOwnsComment(session, commentId);
     await prisma.comment.update({ where: { id: commentId }, data: { status: "APPROVED" } });
     revalidateAdminPaths("/blog");
+    revalidateAdminPaths("/komentar");
     revalidatePath(`/blog/${comment.post.slug}`);
     return { ok: true };
   } catch (e) {
@@ -96,6 +105,7 @@ export async function deleteCommentAction(commentId: string): Promise<ActionResu
     const comment = await assertOwnsComment(session, commentId);
     await prisma.comment.delete({ where: { id: commentId } });
     revalidateAdminPaths("/blog");
+    revalidateAdminPaths("/komentar");
     revalidatePath(`/blog/${comment.post.slug}`);
     return { ok: true };
   } catch (e) {

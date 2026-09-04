@@ -177,7 +177,7 @@ export default function ArticleStatsPanel({ postId, postTitle }: { postId: strin
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold text-gray-900">{c.name}</p>
-                          <p className="truncate text-xs text-gray-400">{c.email}</p>
+                          {c.email && <p className="truncate text-xs text-gray-400">{c.email}</p>}
                         </div>
                         <Badge
                           variant="secondary"

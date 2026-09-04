@@ -277,13 +277,13 @@ const id = {
 
   blogComment: {
     successTitle: "Komentar Terkirim!",
-    successCopy: "Terima kasih, komentar Anda akan tampil setelah disetujui oleh admin.",
+    successCopy: "Terima kasih, komentar Anda sudah tampil di bawah artikel ini.",
     sendAgain: "Kirim Komentar Lagi",
     nameLabel: "Nama",
     emailLabel: "Email",
     commentLabel: "Komentar",
     namePlaceholder: "Nama Anda",
-    emailPlaceholder: "Email Anda (tidak ditampilkan publik)",
+    emailPlaceholder: "Email Anda (opsional, tidak ditampilkan publik)",
     commentPlaceholder: "Tulis komentar Anda di sini...",
     sending: "Mengirim...",
     send: "Kirim Komentar",

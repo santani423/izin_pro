@@ -10,21 +10,30 @@ import { Button } from "@/components/ui/button";
 import { useDictionary } from "@/contexts/LocaleContext";
 import { cn } from "@/lib/utils";
 import { submitCommentAction } from "@/lib/actions/blog-comments";
+import type { Comment } from "@prisma/client";
 
 type CommentFormValues = { nama: string; email: string; pesan: string };
 
 const inputClass =
   "h-10 w-full rounded-lg border border-border/60 bg-background px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20";
 
-/* ─── Form komentar publik di bawah artikel — komentar masuk PENDING,
- * baru tampil setelah admin approve (lihat submitCommentAction). ─── */
-export default function BlogCommentForm({ postId }: { postId: string }) {
+/* ─── Form komentar publik di bawah artikel — komentar langsung APPROVED,
+ * onSubmitted dipanggil dgn comment yg baru dibuat spy pemanggil
+ * (BlogCommentsSection) bisa langsung nambahin ke list tanpa reload
+ * (lihat submitCommentAction). ─── */
+export default function BlogCommentForm({
+  postId,
+  onSubmitted,
+}: {
+  postId: string;
+  onSubmitted?: (comment: Comment) => void;
+}) {
   const dict = useDictionary();
   const commentSchema = useMemo(
     () =>
       z.object({
         nama: z.string().min(3, dict.blogComment.validation.nameMin),
-        email: z.string().email(dict.blogComment.validation.emailInvalid),
+        email: z.union([z.literal(""), z.string().email(dict.blogComment.validation.emailInvalid)]),
         pesan: z.string().min(5, dict.blogComment.validation.commentMin),
       }),
     [dict],
@@ -47,6 +56,7 @@ export default function BlogCommentForm({ postId }: { postId: string }) {
       content: values.pesan,
     });
     if (res.ok) {
+      onSubmitted?.(res.comment);
       setSubmitted(true);
       reset();
     } else {
@@ -88,7 +98,7 @@ export default function BlogCommentForm({ postId }: { postId: string }) {
         </div>
         <div>
           <label htmlFor="comment-email" className="text-sm font-semibold text-foreground">
-            {dict.blogComment.emailLabel} <span className="text-destructive">*</span>
+            {dict.blogComment.emailLabel}
           </label>
           <input
             id="comment-email"

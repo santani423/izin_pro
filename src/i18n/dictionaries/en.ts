@@ -263,13 +263,13 @@ const en: Dictionary = {
 
   blogComment: {
     successTitle: "Comment Sent!",
-    successCopy: "Thank you, your comment will appear once approved by the admin.",
+    successCopy: "Thank you, your comment is now showing below this article.",
     sendAgain: "Send Another Comment",
     nameLabel: "Name",
     emailLabel: "Email",
     commentLabel: "Comment",
     namePlaceholder: "Your name",
-    emailPlaceholder: "Your email (not shown publicly)",
+    emailPlaceholder: "Your email (optional, not shown publicly)",
     commentPlaceholder: "Write your comment here...",
     sending: "Sending...",
     send: "Send Comment",
