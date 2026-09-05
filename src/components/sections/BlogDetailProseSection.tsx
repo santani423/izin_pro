@@ -6,9 +6,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { WhatsAppLink } from "@/components/shared/WhatsAppLink";
-import { COMPANY_INFO } from "@/lib/constants";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 import { format } from "@/i18n/format";
+import { getLocalizedGeneralSettings } from "@/lib/general-settings";
 import type { PublicBlogPost, PublicBlogPostDetail } from "@/lib/blog-data";
 
 /** Sisipkan id ke tiap <h2>/<h3> di HTML hasil Tiptap, sekalian kumpulin
@@ -46,6 +46,7 @@ export default async function BlogDetailProseSection({
   related: PublicBlogPost[];
 }) {
   const dict = getDictionary(await getLocale());
+  const { whatsapp } = await getLocalizedGeneralSettings();
   const { headings, html } = extractHeadingsAndInjectIds(post.content);
   const waMessage = encodeURIComponent(dict.blogDetailProse.waMessage);
 
@@ -104,7 +105,7 @@ export default async function BlogDetailProseSection({
             className="mt-4 w-full justify-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold sm:gap-2 sm:text-sm"
           >
             <WhatsAppLink
-              href={`https://wa.me/${COMPANY_INFO.whatsapp}?text=${waMessage}`}
+              href={`https://wa.me/${whatsapp}?text=${waMessage}`}
               target="_blank"
               rel="noopener noreferrer"
             >

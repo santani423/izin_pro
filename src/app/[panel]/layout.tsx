@@ -27,7 +27,6 @@ const PAGE_META: Record<string, { title: string; subtitle?: string }> = {
   "/klien": { title: "Klien", subtitle: "Kelola logo klien yang ditampilkan di website" },
   "/faq": { title: "FAQ", subtitle: "Kelola pertanyaan yang sering diajukan" },
   "/cta-banner": { title: "CTA Banner", subtitle: "Kelola ajakan konsultasi di berbagai halaman website" },
-  "/inquiry": { title: "Inquiry", subtitle: "Kelola pesan yang masuk dari form kontak" },
   "/settings": { title: "Pengaturan", subtitle: "Konfigurasi website dan informasi perusahaan" },
 };
 

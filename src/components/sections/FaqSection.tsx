@@ -7,10 +7,18 @@ import { Reveal } from "@/components/shared/Reveal";
 import { useDictionary } from "@/contexts/LocaleContext";
 import { cn } from "@/lib/utils";
 
-/* ─── FAQ — Pertanyaan yang Sering Diajukan ─── */
-export default function FaqSection() {
+export interface FaqSectionItem {
+  question: string;
+  answer: string;
+}
+
+/* ─── FAQ — Pertanyaan yang Sering Diajukan ───
+ * `faqs` datang dari model Faq (scope GLOBAL), dikelola admin di /admin/faq. */
+export default function FaqSection({ faqs }: { faqs: FaqSectionItem[] }) {
   const dict = useDictionary();
   const [openIndex, setOpenIndex] = useState<number | null>(0);
+
+  if (faqs.length === 0) return null;
 
   return (
     <section id="faq" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
@@ -25,7 +33,7 @@ export default function FaqSection() {
       </div>
 
       <div className="mx-auto max-w-3xl space-y-3">
-        {dict.faq.items.map((faq, index) => {
+        {faqs.map((faq, index) => {
           const isOpen = openIndex === index;
           return (
             <Reveal key={faq.question} delay={index * 0.05}>

@@ -140,35 +140,6 @@ const zh: Dictionary = {
   faq: {
     heading: "常见问题",
     subtitle: "在这里找到关于 IzinPro 服务的常见问题解答。",
-    items: [
-      {
-        question: "IzinPro 办理证照通常需要多长时间？",
-        answer:
-          "根据证照类型和资料齐全程度，办理流程通常需要 3–7 个工作日。我们会在咨询之初就提供准确的时间预估。",
-      },
-      {
-        question: "IzinPro 的服务是否存在隐藏费用？",
-        answer: "完全没有。IzinPro 坚持完全透明的原则，所有费用都会在您决定使用我们的服务之前提前告知。",
-      },
-      {
-        question: "设立有限公司（PT）需要准备哪些文件？",
-        answer:
-          "基本所需文件包括：各创办人的身份证及税号（NPWP）、公司注册地址、确定的注册资本，以及经营业务范围。我们的团队会为您详细指导。",
-      },
-      {
-        question: "IzinPro 能否协助雅加达以外地区的办证需求？",
-        answer: "可以，IzinPro 服务遍及印度尼西亚全境。借助我们的数字化系统，无需亲自到访办公室即可完成办理流程。",
-      },
-      {
-        question: "如何开始与 IzinPro 咨询？",
-        answer:
-          "非常简单！通过 WhatsApp 联系我们，号码为 0822-8000-7821，或填写本网站的联系表单。我们的团队将在最多 24 小时内回复您。",
-      },
-      {
-        question: "如果证照未获批准，是否有保障？",
-        answer: "IzinPro 提供流程保障：如因我方失误导致证照未获批准，我们将承担重新申请的费用，客户无需支付额外费用。",
-      },
-    ],
   },
 
   cta: {
@@ -287,13 +258,13 @@ const zh: Dictionary = {
 
   blogComment: {
     successTitle: "评论已发送！",
-    successCopy: "感谢您的评论，经管理员审核通过后将会显示。",
+    successCopy: "感谢您的评论，现已显示在本文下方。",
     sendAgain: "再发一条评论",
     nameLabel: "姓名",
     emailLabel: "邮箱",
     commentLabel: "评论内容",
     namePlaceholder: "您的姓名",
-    emailPlaceholder: "您的邮箱（不会公开显示）",
+    emailPlaceholder: "您的邮箱（选填，不会公开显示）",
     commentPlaceholder: "请在此输入您的评论...",
     sending: "发送中...",
     send: "发送评论",
@@ -320,8 +291,8 @@ const zh: Dictionary = {
   },
 
   kontakForm: {
-    successTitle: "信息已发送！",
-    successCopy: "感谢您的留言，我们的团队将在最多 24 个工作小时内与您联系。",
+    successTitle: "已跳转至 WhatsApp！",
+    successCopy: "我们已经在 WhatsApp 上为您准备好留言内容，点击发送即可。",
     sendAgain: "再发一条信息",
     nameLabel: "姓名",
     emailLabel: "邮箱",
@@ -334,8 +305,9 @@ const zh: Dictionary = {
     messagePlaceholder: "请在此输入您的需求或问题...",
     servicePlaceholder: "请选择服务",
     otherOption: "其他",
-    sending: "发送中...",
-    send: "发送信息",
+    sending: "正在打开 WhatsApp...",
+    send: "前往 WhatsApp",
+    whatsappUnavailable: "WhatsApp 号码暂未提供，请通过旁边的其他渠道联系我们。",
     privacyNote: "您的信息将被安全保管，不会分享给第三方。",
     validation: {
       nameMin: "姓名至少需 3 个字符",
@@ -486,11 +458,6 @@ const zh: Dictionary = {
   },
 
   actions: {
-    inquiryNameMin: "姓名至少需 3 个字符。",
-    inquiryEmailInvalid: "邮箱格式不正确。",
-    inquiryWhatsappMin: "WhatsApp 号码至少需 9 位数字。",
-    inquiryMessageMin: "留言内容至少需 10 个字符。",
-    inquiryGenericError: "发送信息失败，请稍后再试。",
     trackingEmptyCode: "请输入您的交易码。",
     trackingNotFound: "未找到该交易码，请核对后重试。",
     trackingGenericError: "查询交易失败，请稍后再试。",

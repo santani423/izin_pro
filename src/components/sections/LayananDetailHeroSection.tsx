@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/shared/Reveal";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { WhatsAppLink } from "@/components/shared/WhatsAppLink";
-import { COMPANY_INFO } from "@/lib/constants";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 import { format } from "@/i18n/format";
 import { cn } from "@/lib/utils";
+import { getLocalizedGeneralSettings } from "@/lib/general-settings";
 import type { LayananDetail } from "@/lib/hydrate-layanan-detail";
 
 /* ─── Hero detail layanan — breadcrumb, judul, highlight & kartu statistik ─── */
@@ -19,6 +19,7 @@ export default async function LayananDetailHeroSection({
   detail: LayananDetail;
 }) {
   const dict = getDictionary(await getLocale());
+  const { whatsapp } = await getLocalizedGeneralSettings();
   const waMessage = encodeURIComponent(
     format(dict.layananDetailHero.waMessageTemplate, { title: detail.title }),
   );
@@ -139,7 +140,7 @@ export default async function LayananDetailHeroSection({
             className="mt-8 w-full justify-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold sm:w-auto sm:gap-2 sm:px-5 sm:text-sm"
           >
             <WhatsAppLink
-              href={`https://wa.me/${COMPANY_INFO.whatsapp}?text=${waMessage}`}
+              href={`https://wa.me/${whatsapp}?text=${waMessage}`}
               target="_blank"
               rel="noopener noreferrer"
             >

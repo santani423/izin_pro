@@ -428,6 +428,11 @@ export default function FaqPageClient({
                       ))}
                     </SelectContent>
                   </Select>
+                  <p className="mt-1.5 text-xs text-gray-400">
+                    {form.scope === "GLOBAL" && "Tampil di FAQ Beranda, dan jadi fallback di Detail Layanan yang belum punya FAQ sendiri."}
+                    {form.scope === "KONTAK" && "Tampil di halaman Kontak."}
+                    {form.scope === "SERVICE" && "Tampil cuma di halaman Detail Layanan yang dipilih di bawah."}
+                  </p>
                 </div>
                 {form.scope === "SERVICE" && (
                   <div>

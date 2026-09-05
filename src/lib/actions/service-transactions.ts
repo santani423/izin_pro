@@ -339,56 +339,6 @@ export async function updateWorkflowStepStatusAction(
   }
 }
 
-/* ─── Pembayaran ─── */
-
-export async function recordPaymentAction(
-  transactionId: string,
-  data: { amount: number; method: string | null; paidAt: string; note: string | null },
-): Promise<ActionResult> {
-  try {
-    const session = await requireTransactionEditor();
-    if (data.amount <= 0) return { ok: false, message: "Nominal pembayaran harus lebih dari 0." };
-
-    await prisma.payment.create({
-      data: {
-        transactionId,
-        amount: data.amount,
-        method: data.method,
-        paidAt: new Date(data.paidAt),
-        note: data.note,
-        recordedById: session.user.id,
-      },
-    });
-
-    const transaction = await prisma.serviceTransaction.findUniqueOrThrow({ where: { id: transactionId } });
-    const payments = await prisma.payment.findMany({ where: { transactionId } });
-    const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
-    const grandTotal = Number(transaction.grandTotal);
-    const paymentStatus = totalPaid <= 0 ? "UNPAID" : totalPaid >= grandTotal ? "PAID" : "PARTIAL";
-
-    await prisma.serviceTransaction.update({
-      where: { id: transactionId },
-      data: {
-        paymentStatus,
-        status: paymentStatus === "PAID" && transaction.status === "WAITING_PAYMENT" ? "PAID" : transaction.status,
-        updatedById: session.user.id,
-      },
-    });
-
-    await logActivity({
-      transactionId,
-      userId: session.user.id,
-      action: "PAYMENT_RECORDED",
-      description: `Pembayaran Rp${data.amount.toLocaleString("id-ID")} dicatat`,
-    });
-
-    revalidateTransactions();
-    return { ok: true };
-  } catch (e) {
-    return { ok: false, message: errorMessage(e, "Gagal mencatat pembayaran.") };
-  }
-}
-
 /* ─── Lampiran ─── */
 
 export async function uploadTransactionAttachmentAction(formData: FormData): Promise<ActionResult> {

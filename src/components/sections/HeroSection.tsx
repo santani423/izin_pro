@@ -8,8 +8,8 @@ import { ArrowRight, BadgeCheck, CheckCircle2, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
-import { useDictionary } from "@/contexts/LocaleContext";
-import { HERO_HIGHLIGHTS, WHATSAPP_URL } from "@/lib/landing";
+import { useDictionary, useWhatsappUrl } from "@/contexts/LocaleContext";
+import { HERO_HIGHLIGHTS } from "@/lib/landing";
 import { cn } from "@/lib/utils";
 import { trackContact } from "@/lib/meta-pixel";
 import { DEFAULT_HERO_CONTENT, type HeroContentData } from "@/lib/home-content";
@@ -23,6 +23,7 @@ const HIGHLIGHT_ICONS = HERO_HIGHLIGHTS.map((h) => h.icon);
 /* ─── Hero ─── */
 export default function HeroSection({ content = DEFAULT_HERO_CONTENT }: { content?: HeroContentData }) {
   const dict = useDictionary();
+  const whatsappUrl = useWhatsappUrl();
   const prefersReducedMotion = useReducedMotion();
 
   const fadeUp = (delay: number) =>
@@ -193,7 +194,7 @@ export default function HeroSection({ content = DEFAULT_HERO_CONTENT }: { conten
               size="lg"
               className="flex-1 justify-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold sm:flex-none sm:gap-2 sm:px-5 sm:text-sm"
             >
-              <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" onClick={() => trackContact()}>
+              <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" onClick={() => trackContact()}>
                 {content.ctaPrimaryLabel}
                 <WhatsAppIcon className="size-3.5 sm:size-4" />
               </a>

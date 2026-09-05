@@ -22,7 +22,6 @@ export default async function AdminTransactionDetailPage({
         createdBy: { select: { name: true } },
         updatedBy: { select: { name: true } },
         workflowSteps: { orderBy: { order: "asc" } },
-        payments: { orderBy: { paidAt: "desc" } },
         attachments: { orderBy: { createdAt: "desc" }, include: { uploadedBy: { select: { name: true } } } },
         activityLogs: { orderBy: { createdAt: "desc" }, include: { user: { select: { name: true } } } },
       },
@@ -49,7 +48,6 @@ export default async function AdminTransactionDetailPage({
     tax: transaction.tax.toNumber(),
     grandTotal: transaction.grandTotal.toNumber(),
     package: transaction.package ? { ...transaction.package, price: transaction.package.price.toNumber() } : null,
-    payments: transaction.payments.map((p) => ({ ...p, amount: p.amount.toNumber() })),
   };
   const packagesByService = Object.fromEntries(
     services.map((s) => [s.id, s.packages.map((p) => ({ ...p, price: p.price.toNumber() }))]),

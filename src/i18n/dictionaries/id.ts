@@ -5,11 +5,12 @@
  *
  * Cakupan: teks UI statis (navbar, footer, tombol, heading section, label
  * form, dst) di seluruh halaman publik. Konten dari database (Hero admin,
- * daftar Layanan, Testimoni, Blog, FAQ Kontak/Layanan) SENGAJA tidak masuk
- * sini — itu tetap tampil apa adanya dari admin di semua bahasa. Beberapa
- * larik statis yang murni dekoratif & tidak bisa diedit admin (mis. katalog
- * /layanan, panduan legalitas, FAQ homepage) juga sengaja dibiarkan di luar
- * scope ini untuk saat ini.
+ * daftar Layanan, Testimoni, Blog, FAQ homepage/Kontak/Layanan — dikelola di
+ * /admin/faq via model Faq, scope GLOBAL/KONTAK/SERVICE) SENGAJA tidak masuk
+ * sini — itu tetap tampil apa adanya dari admin di semua bahasa (single-
+ * language, gak ada terjemahan per-locale). Beberapa larik statis yang murni
+ * dekoratif & tidak bisa diedit admin (mis. katalog /layanan, panduan
+ * legalitas) juga sengaja dibiarkan di luar scope ini untuk saat ini.
  */
 const id = {
   common: {
@@ -153,38 +154,6 @@ const id = {
   faq: {
     heading: "Pertanyaan yang Sering Diajukan",
     subtitle: "Temukan jawaban atas pertanyaan umum tentang layanan IzinPro.",
-    items: [
-      {
-        question: "Berapa lama proses pengurusan perizinan di IzinPro?",
-        answer:
-          "Rata-rata proses berlangsung 3–7 hari kerja tergantung jenis perizinan dan kelengkapan dokumen. Kami selalu memberikan estimasi waktu yang akurat di awal konsultasi.",
-      },
-      {
-        question: "Apakah ada biaya tersembunyi dalam layanan IzinPro?",
-        answer:
-          "Tidak ada. IzinPro menerapkan prinsip transparansi penuh. Semua biaya disampaikan di awal sebelum Anda memutuskan untuk menggunakan layanan kami.",
-      },
-      {
-        question: "Dokumen apa saja yang perlu disiapkan untuk pendirian PT?",
-        answer:
-          "Dokumen dasar yang diperlukan antara lain: KTP dan NPWP para pendiri, alamat domisili perusahaan, modal dasar yang ditetapkan, dan bidang usaha yang akan dijalankan. Tim kami akan memandu Anda secara detail.",
-      },
-      {
-        question: "Apakah IzinPro bisa membantu perizinan di luar kota Jakarta?",
-        answer:
-          "Ya, IzinPro melayani klien dari seluruh Indonesia. Dengan sistem digital yang kami miliki, proses pengurusan dapat dilakukan tanpa harus hadir secara fisik ke kantor kami.",
-      },
-      {
-        question: "Bagaimana cara memulai konsultasi dengan IzinPro?",
-        answer:
-          "Sangat mudah! Hubungi kami via WhatsApp di nomor 0822-8000-7821 atau isi form kontak di website ini. Tim kami akan merespons dalam waktu maksimal 1×24 jam.",
-      },
-      {
-        question: "Apakah ada garansi jika perizinan tidak disetujui?",
-        answer:
-          "IzinPro memberikan garansi proses: jika perizinan tidak disetujui karena kesalahan dari pihak kami, kami akan menanggung biaya pengajuan ulang tanpa biaya tambahan untuk klien.",
-      },
-    ],
   },
 
   cta: {
@@ -308,13 +277,13 @@ const id = {
 
   blogComment: {
     successTitle: "Komentar Terkirim!",
-    successCopy: "Terima kasih, komentar Anda akan tampil setelah disetujui oleh admin.",
+    successCopy: "Terima kasih, komentar Anda sudah tampil di bawah artikel ini.",
     sendAgain: "Kirim Komentar Lagi",
     nameLabel: "Nama",
     emailLabel: "Email",
     commentLabel: "Komentar",
     namePlaceholder: "Nama Anda",
-    emailPlaceholder: "Email Anda (tidak ditampilkan publik)",
+    emailPlaceholder: "Email Anda (opsional, tidak ditampilkan publik)",
     commentPlaceholder: "Tulis komentar Anda di sini...",
     sending: "Mengirim...",
     send: "Kirim Komentar",
@@ -341,8 +310,8 @@ const id = {
   },
 
   kontakForm: {
-    successTitle: "Pesan Terkirim!",
-    successCopy: "Terima kasih, tim kami akan menghubungi Anda maksimal 1×24 jam kerja.",
+    successTitle: "Terhubung ke WhatsApp!",
+    successCopy: "Pesan Anda sudah kami siapkan di WhatsApp — tinggal klik kirim di sana.",
     sendAgain: "Kirim Pesan Lagi",
     nameLabel: "Nama Lengkap",
     emailLabel: "Email",
@@ -355,8 +324,9 @@ const id = {
     messagePlaceholder: "Tuliskan kebutuhan atau pertanyaan Anda di sini...",
     servicePlaceholder: "Pilih layanan",
     otherOption: "Lainnya",
-    sending: "Mengirim...",
-    send: "Kirim Pesan",
+    sending: "Membuka WhatsApp...",
+    send: "Lanjut ke WhatsApp",
+    whatsappUnavailable: "Nomor WhatsApp belum tersedia. Silakan hubungi kami lewat kanal lain di samping.",
     privacyNote: "Data Anda aman dan tidak akan dibagikan kepada pihak ketiga.",
     validation: {
       nameMin: "Nama minimal 3 karakter",
@@ -513,11 +483,6 @@ const id = {
   },
 
   actions: {
-    inquiryNameMin: "Nama minimal 3 karakter.",
-    inquiryEmailInvalid: "Format email tidak valid.",
-    inquiryWhatsappMin: "Nomor WhatsApp minimal 9 digit.",
-    inquiryMessageMin: "Pesan minimal 10 karakter.",
-    inquiryGenericError: "Gagal mengirim pesan. Coba lagi sebentar lagi.",
     trackingEmptyCode: "Masukkan kode transaksi Anda.",
     trackingNotFound: "Kode transaksi tidak ditemukan. Periksa kembali penulisannya.",
     trackingGenericError: "Gagal melacak transaksi. Coba lagi sebentar lagi.",

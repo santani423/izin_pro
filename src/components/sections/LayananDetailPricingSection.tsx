@@ -5,9 +5,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/Reveal";
 import { WhatsAppLink } from "@/components/shared/WhatsAppLink";
 import { cn } from "@/lib/utils";
-import { COMPANY_INFO } from "@/lib/constants";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 import { format } from "@/i18n/format";
+import { getLocalizedGeneralSettings } from "@/lib/general-settings";
 import type { LayananDetail } from "@/lib/hydrate-layanan-detail";
 
 /* ─── Paket harga + dokumen yang diperlukan + waktu pengerjaan ─── */
@@ -19,6 +19,7 @@ export default async function LayananDetailPricingSection({
   packages: NonNullable<LayananDetail["packages"]>;
 }) {
   const dict = getDictionary(await getLocale());
+  const { whatsapp } = await getLocalizedGeneralSettings();
   const hasPackages = packages.items.length > 0;
   const hasDocuments = packages.documents.items.length > 0;
   const hasDuration =
@@ -130,7 +131,7 @@ export default async function LayananDetailPricingSection({
                         )}
                       >
                         <WhatsAppLink
-                          href={`https://wa.me/${COMPANY_INFO.whatsapp}?text=${waMessage}`}
+                          href={`https://wa.me/${whatsapp}?text=${waMessage}`}
                           target="_blank"
                           rel="noopener noreferrer"
                         >

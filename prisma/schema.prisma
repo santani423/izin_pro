@@ -57,7 +57,6 @@ model User {
   accounts        Account[]
   blogPosts       BlogPost[] @relation("BlogPostAuthor")
   uploadedMedia   Media[]    @relation("MediaUploader")
-  assignedInquiry Inquiry[]  @relation("InquiryAssignee")
   auditLogs       AuditLog[]
 
   // Jejak "dibuat oleh" / "diubah oleh" — satu pasang relasi per tabel konten
@@ -91,7 +90,6 @@ model User {
   updatedPromoPackages         PromoPackage[]         @relation("PromoPackageUpdatedBy")
   createdCtas                  Cta[]                  @relation("CtaCreatedBy")
   updatedCtas                  Cta[]                  @relation("CtaUpdatedBy")
-  updatedInquiries             Inquiry[]              @relation("InquiryUpdatedBy")
   createdMenus                 Menu[]                 @relation("MenuCreatedBy")
   updatedMenus                 Menu[]                 @relation("MenuUpdatedBy")
   deletedMenus                 Menu[]                 @relation("MenuDeletedBy")
@@ -117,7 +115,6 @@ model User {
   deletedTransactions      ServiceTransaction[]      @relation("ServiceTransactionDeletedBy")
   assignedTransactions     ServiceTransaction[]      @relation("ServiceTransactionAssignedStaff")
   updatedWorkflowSteps     TransactionWorkflowStep[] @relation("TransactionWorkflowStepUpdatedBy")
-  recordedPayments         Payment[]                 @relation("PaymentRecordedBy")
   uploadedTransactionFiles TransactionAttachment[]   @relation("TransactionAttachmentUploadedBy")
   transactionActivityLogs  TransactionActivityLog[]  @relation("TransactionActivityLogUser")
 
@@ -338,6 +335,8 @@ model TeamMember {
 // Domain 4 — Bisnis Inti
 // ====================================================
 
+// GLOBAL dipakai di FAQ Beranda & fallback Detail Layanan; KONTAK di halaman
+// Kontak; SERVICE di Detail Layanan tertentu (lihat serviceId).
 enum FaqScope {
   GLOBAL
   KONTAK
@@ -432,7 +431,6 @@ model Service {
   packages          ServicePackage[]
   faqs              Faq[]
   promoPackages     PromoPackage[]
-  inquiries         Inquiry[]
   workflowTemplates WorkflowTemplate[]
   transactions      ServiceTransaction[]
 
@@ -624,37 +622,6 @@ model Cta {
 }
 
 // ====================================================
-// Domain 5 — Interaksi Pengunjung
-// ====================================================
-
-enum InquiryStatus {
-  BARU
-  DIPROSES
-  SELESAI
-}
-
-model Inquiry {
-  id           String        @id @default(cuid())
-  name         String
-  email        String
-  whatsapp     String
-  serviceId    String? // null = kasus "Lainnya"
-  service      Service?      @relation(fields: [serviceId], references: [id])
-  message      String        @db.Text
-  status       InquiryStatus @default(BARU)
-  assignedToId String?
-  assignedTo   User?         @relation("InquiryAssignee", fields: [assignedToId], references: [id])
-  // Dibuat oleh pengunjung publik via form kontak, bukan admin -> gak ada createdBy.
-  // updatedBy nyatet admin yg terakhir ubah status/detail inquiry ini.
-  updatedById  String?
-  updatedBy    User?         @relation("InquiryUpdatedBy", fields: [updatedById], references: [id])
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-
-  @@map("inquiries")
-}
-
-// ====================================================
 // Domain 5b — Service Transaction Management (/transaksi, /tracking)
 //
 // Menggantikan Order + mock /tracking lama TOTAL — Order gak pernah punya
@@ -729,13 +696,6 @@ enum TransactionStatus {
   CANCELLED
 }
 
-enum PaymentStatus {
-  UNPAID
-  PARTIAL
-  PAID
-  REFUNDED
-}
-
 enum TransactionPriority {
   LOW
   NORMAL
@@ -772,7 +732,6 @@ model ServiceTransaction {
   tax        Decimal @default(0) @db.Decimal(12, 2)
   grandTotal Decimal @db.Decimal(12, 2)
 
-  paymentStatus PaymentStatus     @default(UNPAID)
   status        TransactionStatus @default(DRAFT)
 
   internalNotes String? @db.Text
@@ -789,13 +748,11 @@ model ServiceTransaction {
   updatedAt   DateTime  @updatedAt
 
   workflowSteps   TransactionWorkflowStep[]
-  payments        Payment[]
   attachments     TransactionAttachment[]
   activityLogs    TransactionActivityLog[]
   trackingLookups TrackingLookupLog[]
 
   @@index([status])
-  @@index([paymentStatus])
   @@map("service_transactions")
 }
 
@@ -828,22 +785,6 @@ model TransactionWorkflowStep {
 
   @@index([transactionId])
   @@map("service_transaction_workflows")
-}
-
-model Payment {
-  id            String             @id @default(cuid())
-  transactionId String
-  transaction   ServiceTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-  amount        Decimal            @db.Decimal(12, 2)
-  method        String?
-  paidAt        DateTime
-  note          String?            @db.Text
-  recordedById  String?
-  recordedBy    User?              @relation("PaymentRecordedBy", fields: [recordedById], references: [id])
-  createdAt     DateTime           @default(now())
-
-  @@index([transactionId])
-  @@map("payments")
 }
 
 /**
@@ -1305,10 +1246,10 @@ model PromoPageContent {
 }
 
 // Singleton konten seluruh halaman /kontak (banner + tiap section body) —
-// sama pola dgn PromoPageContent. Pesan yang dikirim dari form-nya TETAP di
-// tabel relasional Inquiry (sudah ada di schema), bukan di sini. FAQ section
-// juga TETAP baca dari model Faq (scope=KONTAK, sudah ada admin-nya di
-// /admin/faq) — di sini cuma judul section & kartu bantuan di sampingnya.
+// sama pola dgn PromoPageContent. Form-nya langsung buka WhatsApp (client-side,
+// gak nyimpen ke DB). FAQ section TETAP baca dari model Faq (scope=KONTAK,
+// sudah ada admin-nya di /admin/faq) — di sini cuma judul section & kartu
+// bantuan di sampingnya.
 model KontakPageContent {
   id String @id @default("1")
 
@@ -1408,14 +1349,19 @@ enum CommentStatus {
 }
 
 // Komentar pengunjung di halaman detail artikel blog — pengunjung anonim
-// (tanpa akun), sama pola dgn Inquiry (gak ada createdBy). Wajib disetujui
-// admin (status PENDING) sebelum tampil publik, biar gak langsung ke-spam.
+// (tanpa akun, gak ada createdBy). Sejak diubah,
+// komentar baru langsung dibuat APPROVED (tampil publik seketika, gak
+// nunggu admin) — admin cuma moderasi reaktif (hapus dari /admin/komentar
+// kalau ada yg spam/gak pantas), lihat submitCommentAction di
+// actions/blog-comments.ts. Status PENDING masih dipertahankan di enum
+// buat kompatibilitas data lama & kalau suatu saat pre-moderation diaktifkan
+// lagi.
 model Comment {
   id        String        @id @default(cuid())
   postId    String
   post      BlogPost      @relation(fields: [postId], references: [id], onDelete: Cascade)
   name      String
-  email     String
+  email     String? // opsional — pengunjung boleh gak isi email pas komentar
   content   String        @db.Text
   status    CommentStatus @default(PENDING)
   createdAt DateTime      @default(now())

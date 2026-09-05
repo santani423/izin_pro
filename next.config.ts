@@ -29,6 +29,25 @@ const nextConfig: NextConfig = {
     // gak ikut pola ini, itu penyebab gambar gak muncul di Landing Page.
     unoptimized: true,
   },
+  // Security header dasar utk semua rute — CSP sengaja TIDAK dimasukkan di
+  // sini: situs pakai Meta Pixel, embed Google Maps/YouTube, dan gambar
+  // upload/eksternal yg domainnya bisa nambah kapan aja (dikelola admin),
+  // jadi CSP butuh direview manual (cek console browser) sebelum dipasang,
+  // bukan ditebak dari sini.
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
+          { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

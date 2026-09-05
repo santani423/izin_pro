@@ -1,8 +1,7 @@
 "use client";
 
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
-import { useDictionary } from "@/contexts/LocaleContext";
-import { WHATSAPP_URL } from "@/lib/landing";
+import { useDictionary, useWhatsappUrl } from "@/contexts/LocaleContext";
 import { trackContact } from "@/lib/meta-pixel";
 
 /* ─── Floating Action Button WhatsApp ───
@@ -10,9 +9,10 @@ import { trackContact } from "@/lib/meta-pixel";
  */
 export default function WhatsAppFab() {
   const dict = useDictionary();
+  const whatsappUrl = useWhatsappUrl();
   return (
     <a
-      href={WHATSAPP_URL}
+      href={whatsappUrl}
       target="_blank"
       rel="noopener noreferrer"
       onClick={() => trackContact()}

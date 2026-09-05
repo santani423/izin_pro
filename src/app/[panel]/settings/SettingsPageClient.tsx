@@ -23,7 +23,9 @@ import { cn } from "@/lib/utils";
 import {
   saveBrandingSettingsAction, updateMaintenanceModeAction, updateWhacenterSettingsAction,
   updateGeneralSettingsAction, updateFontSettingsAction, updateContactSettingsAction,
+  updateSocialSettingsAction,
   type GeneralSettingsInput, type FontSettingsInput, type ContactSettingsInput,
+  type SocialSettingsInput,
 } from "@/lib/actions/settings";
 import { DEFAULT_LOGO_URL, DEFAULT_FAVICON_URL } from "@/lib/branding-constants";
 import { LOCALES, LOCALE_LABELS, type Locale } from "@/i18n/config";
@@ -54,8 +56,11 @@ const FONT_PREVIEW_TEXT: Record<UmumLang, string> = {
 };
 
 /* ─── Halaman Pengaturan Admin ───
- * readOnly=true utk role ADMIN (bisa lihat semua tab, tapi gak bisa ubah/simpan).
- * Tab Umum/Kontak/Sosmed/SEO masih mock (belum disambung Prisma). Tab
+ * SUPER_ADMIN & ADMIN sama-sama akses penuh (EDITOR/AUTHOR ketahan di
+ * page.tsx sebelum sampe sini). Prop readOnly disisakan buat dipakai lagi
+ * kalau suatu saat perlu ada role view-only, tapi gak dipassing dari
+ * page.tsx sekarang jadi default-nya false (full akses).
+ * Tab SEO masih mock (belum disambung Prisma). Tab Umum/Kontak/Sosmed/
  * Maintenance beneran baca/simpan ke tabel Settings lewat server action. */
 export default function SettingsPageClient({
   readOnly = false,
@@ -85,6 +90,11 @@ export default function SettingsPageClient({
   fontFamilyId: initialFontFamilyId,
   fontFamilyEn: initialFontFamilyEn,
   fontFamilyZh: initialFontFamilyZh,
+  socialLinkedin: initialSocialLinkedin,
+  socialFacebook: initialSocialFacebook,
+  socialInstagram: initialSocialInstagram,
+  socialX: initialSocialX,
+  socialYoutube: initialSocialYoutube,
 }: {
   readOnly?: boolean;
   maintenanceMode: boolean;
@@ -113,6 +123,11 @@ export default function SettingsPageClient({
   fontFamilyId: string;
   fontFamilyEn: string;
   fontFamilyZh: string;
+  socialLinkedin: string;
+  socialFacebook: string;
+  socialInstagram: string;
+  socialX: string;
+  socialYoutube: string;
 }) {
   const router = useRouter();
   const [saved, setSaved] = useState(false);
@@ -148,6 +163,13 @@ export default function SettingsPageClient({
     fontFamilyId: initialFontFamilyId,
     fontFamilyEn: initialFontFamilyEn,
     fontFamilyZh: initialFontFamilyZh,
+  });
+  const [social, setSocial] = useState<SocialSettingsInput>({
+    linkedin: initialSocialLinkedin,
+    facebook: initialSocialFacebook,
+    instagram: initialSocialInstagram,
+    twitter: initialSocialX,
+    youtube: initialSocialYoutube,
   });
   const [appLogoUrl, setAppLogoUrl] = useState(initialAppLogoUrl);
   const [faviconUrl, setFaviconUrl] = useState(initialFaviconUrl);
@@ -226,6 +248,22 @@ export default function SettingsPageClient({
         }
       } catch {
         swalError("Gagal menyimpan gaya font. Cek koneksi lalu coba lagi.");
+      }
+    });
+  };
+
+  const saveSocial = () => {
+    startTransition(async () => {
+      try {
+        const res = await updateSocialSettingsAction(social);
+        if (res.ok) {
+          swalSuccess("Link Sosial Media disimpan");
+          router.refresh();
+        } else {
+          swalError(res.message);
+        }
+      } catch {
+        swalError("Gagal menyimpan Link Sosial Media. Cek koneksi lalu coba lagi.");
       }
     });
   };
@@ -668,19 +706,33 @@ export default function SettingsPageClient({
                 <Share2 size={16} className="text-primary" />
                 Link Sosial Media
               </h3>
-              {[
-                { label: "LinkedIn", key: "linkedin" },
-                { label: "Facebook", key: "facebook" },
-                { label: "Instagram", key: "instagram" },
-                { label: "X (Twitter)", key: "twitter" },
-                { label: "YouTube", key: "youtube" },
-              ].map((s) => (
+              {(
+                [
+                  { label: "LinkedIn", key: "linkedin" },
+                  { label: "Facebook", key: "facebook" },
+                  { label: "Instagram", key: "instagram" },
+                  { label: "X (Twitter)", key: "twitter" },
+                  { label: "YouTube", key: "youtube" },
+                ] as const
+              ).map((s) => (
                 <div key={s.key} className="space-y-1.5">
                   <Label>{s.label}</Label>
-                  <Input placeholder={`https://www.${s.key}.com/izinpro`} className="rounded-xl" disabled={readOnly} />
+                  <Input
+                    value={social[s.key]}
+                    onChange={(e) => setSocial({ ...social, [s.key]: e.target.value })}
+                    placeholder={`https://www.${s.key}.com/izinpro`}
+                    className="rounded-xl"
+                    disabled={readOnly}
+                  />
                 </div>
               ))}
-              {saveButton}
+              <p className="text-xs text-gray-400">Kosongkan field yang tidak dipakai — ikonnya otomatis disembunyikan di footer.</p>
+              {!readOnly && (
+                <Button onClick={saveSocial} disabled={isPending} className="gap-2 rounded-xl">
+                  <Save size={15} />
+                  {isPending ? "Menyimpan..." : "Simpan Link Sosial Media"}
+                </Button>
+              )}
             </div>
           </TabsContent>
 

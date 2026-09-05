@@ -6,8 +6,8 @@ import { Headset, Minus, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
+import { useWhatsappUrl } from "@/contexts/LocaleContext";
 import { cn } from "@/lib/utils";
-import { WHATSAPP_URL } from "@/lib/landing";
 import { trackContact } from "@/lib/meta-pixel";
 
 export interface KontakFaqItem {
@@ -35,6 +35,7 @@ export default function KontakFaqSection({
   helpCard: KontakHelpCard;
 }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const whatsappUrl = useWhatsappUrl();
 
   return (
     <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
@@ -116,7 +117,7 @@ export default function KontakFaqSection({
                   className="mt-5 w-full justify-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold sm:w-auto sm:gap-2 sm:px-5 sm:text-sm"
                 >
                   <a
-                    href={WHATSAPP_URL}
+                    href={whatsappUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => trackContact()}

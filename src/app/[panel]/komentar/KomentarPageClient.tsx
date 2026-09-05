@@ -2,9 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Trash2, Eye, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
+import {
+  Search, Trash2, Check, Eye, ExternalLink, Clock, ChevronLeft, ChevronRight,
+} from "lucide-react";
 import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
-import type { Inquiry, InquiryStatus } from "@prisma/client";
+import type { Comment, CommentStatus } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,22 +23,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { updateInquiryStatusAction, deleteInquiryAction } from "@/lib/actions/inquiry";
+import { approveCommentAction, deleteCommentAction } from "@/lib/actions/blog-comments";
 
-type InquiryWithService = Inquiry & { service: { title: string } | null };
+type CommentWithPost = Comment & { post: { title: string; slug: string } };
 
-const STATUS_ORDER: InquiryStatus[] = ["BARU", "DIPROSES", "SELESAI"];
-
-const STATUS_LABEL: Record<InquiryStatus, string> = {
-  BARU: "Baru",
-  DIPROSES: "Diproses",
-  SELESAI: "Selesai",
+const STATUS_LABEL: Record<CommentStatus, string> = {
+  PENDING: "Menunggu",
+  APPROVED: "Disetujui",
 };
 
-const statusColor: Record<InquiryStatus, string> = {
-  BARU: "bg-primary/10 text-primary",
-  DIPROSES: "bg-amber-50 text-amber-600",
-  SELESAI: "bg-emerald-50 text-emerald-600",
+const STATUS_COLOR: Record<CommentStatus, string> = {
+  PENDING: "bg-amber-50 text-amber-600",
+  APPROVED: "bg-emerald-50 text-emerald-600",
 };
 
 /** Waktu relatif ringkas ("5 menit lalu", "3 jam lalu", "Kemarin", dst). */
@@ -52,7 +51,7 @@ function formatTimeAgo(date: Date): string {
   return date.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
 }
 
-const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 function Pagination({
   page,
@@ -114,7 +113,6 @@ function Pagination({
         <ChevronRight size={14} aria-hidden="true" />
       </button>
 
-      {/* Loncat langsung ke halaman tertentu */}
       <div className="flex items-center gap-1.5 ml-1">
         <span className="text-xs text-black">Ke halaman</span>
         <input
@@ -137,7 +135,6 @@ function Pagination({
         </button>
       </div>
 
-      {/* Ukuran halaman */}
       <div className="flex items-center gap-1.5 ml-1">
         <span className="text-xs text-black">per halaman</span>
         <Select
@@ -159,26 +156,38 @@ function Pagination({
   );
 }
 
-/* ─── Halaman Manajemen Inquiry Admin (tersambung Prisma) ─── */
-export default function InquiryPageClient({
-  initialInquiries,
+function getInitials(name: string) {
+  return name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+}
+
+/* ─── Halaman Manajemen Komentar Admin (lintas semua artikel) ───
+ * Beda dari panel Statistik per-artikel di /admin/blog: di sini SEMUA
+ * komentar dari SEMUA artikel dikelola dari satu tempat (cari, filter
+ * status, approve, hapus) — gak perlu buka tiap artikel satu-satu. */
+export default function KomentarPageClient({
+  initialComments,
 }: {
-  initialInquiries: InquiryWithService[];
+  initialComments: CommentWithPost[];
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<InquiryStatus | "Semua">("Semua");
-  const [detail, setDetail] = useState<InquiryWithService | null>(null);
+  const [filter, setFilter] = useState<CommentStatus | "Semua">("Semua");
+  const [detail, setDetail] = useState<CommentWithPost | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
 
-  const filtered = initialInquiries.filter((i) => {
+  const pendingCount = initialComments.filter((c) => c.status === "PENDING").length;
+
+  const filtered = initialComments.filter((c) => {
     const q = search.toLowerCase();
-    const layanan = i.service?.title ?? "Lainnya";
     const matchSearch =
-      i.name.toLowerCase().includes(q) || layanan.toLowerCase().includes(q);
-    const matchFilter = filter === "Semua" || i.status === filter;
+      c.name.toLowerCase().includes(q) ||
+      (c.email?.toLowerCase().includes(q) ?? false) ||
+      c.content.toLowerCase().includes(q) ||
+      c.post.title.toLowerCase().includes(q);
+    const matchFilter = filter === "Semua" || c.status === filter;
     return matchSearch && matchFilter;
   });
 
@@ -186,12 +195,14 @@ export default function InquiryPageClient({
   const currentPage = Math.min(page, totalPages);
   const pageItems = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  const setStatus = (id: string, status: InquiryStatus) => {
+  const approve = (comment: CommentWithPost) => {
+    setBusyId(comment.id);
     startTransition(async () => {
-      const res = await updateInquiryStatusAction(id, status);
+      const res = await approveCommentAction(comment.id);
+      setBusyId(null);
       if (res.ok) {
-        setDetail((d) => (d && d.id === id ? { ...d, status } : d));
-        swalSuccess(`Status inquiry diubah ke "${STATUS_LABEL[status]}"`);
+        setDetail((d) => (d && d.id === comment.id ? { ...d, status: "APPROVED" } : d));
+        swalSuccess("Komentar disetujui");
         router.refresh();
       } else {
         swalError(res.message);
@@ -199,13 +210,16 @@ export default function InquiryPageClient({
     });
   };
 
-  const remove = async (item: InquiryWithService) => {
-    const confirmed = await swalConfirmDelete(`Inquiry dari ${item.name}`);
+  const remove = async (comment: CommentWithPost) => {
+    const confirmed = await swalConfirmDelete(`Komentar dari ${comment.name}`);
     if (!confirmed) return;
+    setBusyId(comment.id);
     startTransition(async () => {
-      const res = await deleteInquiryAction(item.id);
+      const res = await deleteCommentAction(comment.id);
+      setBusyId(null);
       if (res.ok) {
-        swalSuccess("Inquiry dihapus");
+        setDetail((d) => (d && d.id === comment.id ? null : d));
+        swalSuccess("Komentar dihapus");
         router.refresh();
       } else {
         swalError(res.message);
@@ -221,7 +235,7 @@ export default function InquiryPageClient({
           <div className="relative flex-1">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <Input
-              placeholder="Cari nama atau layanan..."
+              placeholder="Cari nama, email, isi komentar, atau artikel..."
               className="pl-9 rounded-xl h-10"
               value={search}
               onChange={(e) => {
@@ -230,12 +244,9 @@ export default function InquiryPageClient({
               }}
             />
           </div>
-          <Button type="button" className="rounded-xl h-10 flex-shrink-0">
-            Search
-          </Button>
         </div>
         <div className="flex items-center gap-1 p-1 bg-gray-200 rounded-xl w-fit">
-          {(["Semua", ...STATUS_ORDER] as const).map((s) => (
+          {(["Semua", "PENDING", "APPROVED"] as const).map((s) => (
             <button
               key={s}
               onClick={() => {
@@ -243,81 +254,99 @@ export default function InquiryPageClient({
                 setPage(1);
               }}
               className={cn(
-                "px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all",
+                "px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap",
                 filter === s ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700",
               )}
             >
               {s === "Semua" ? "Semua" : STATUS_LABEL[s]}
+              {s === "PENDING" && pendingCount > 0 && (
+                <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">
+                  {pendingCount}
+                </span>
+              )}
             </button>
           ))}
         </div>
       </div>
 
-      {/* ─── Tabel Inquiry ─── */}
+      {/* ─── Tabel Komentar ─── */}
       <div className="bg-white rounded-2xl border border-admin-line overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-admin-line bg-gray-50/50">
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Layanan</th>
+                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Komentar</th>
+                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Artikel</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Waktu</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {pageItems.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-3">
+              {pageItems.map((c) => (
+                <tr key={c.id} className="hover:bg-gray-50/50 transition-colors">
+                  <td className="px-5 py-3.5 max-w-xs">
+                    <div className="flex items-start gap-3">
                       <div className="flex items-center justify-center w-9 h-9 rounded-full bg-primary/10 text-primary text-xs font-bold flex-shrink-0">
-                        {item.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                        {getInitials(c.name)}
                       </div>
                       <div className="min-w-0">
-                        <div className="font-medium text-gray-900 truncate">{item.name}</div>
-                        <div className="text-xs text-gray-400 truncate">{item.email}</div>
+                        <div className="font-medium text-gray-900 truncate">{c.name}</div>
+                        {c.email && <div className="text-xs text-gray-400 truncate">{c.email}</div>}
+                        <p className="mt-1 text-xs text-gray-500 line-clamp-2">{c.content}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-5 py-3.5 text-gray-500 hidden md:table-cell whitespace-nowrap">{item.service?.title ?? "Lainnya"}</td>
+                  <td className="px-5 py-3.5 text-gray-500 hidden md:table-cell max-w-[200px]">
+                    <Link
+                      href={`/blog/${c.post.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 truncate hover:text-primary hover:underline"
+                      title={c.post.title}
+                    >
+                      <span className="truncate">{c.post.title}</span>
+                      <ExternalLink size={11} className="flex-shrink-0" />
+                    </Link>
+                  </td>
                   <td className="px-5 py-3.5 hidden lg:table-cell">
                     <span className="flex items-center gap-1 text-xs text-gray-400 whitespace-nowrap">
                       <Clock size={11} />
-                      {formatTimeAgo(item.createdAt)}
+                      {formatTimeAgo(c.createdAt)}
                     </span>
                   </td>
                   <td className="px-5 py-3.5">
-                    {/* Klik pill status untuk lanjut ke status berikutnya */}
-                    <button
-                      disabled={isPending}
-                      onClick={() =>
-                        setStatus(
-                          item.id,
-                          STATUS_ORDER[(STATUS_ORDER.indexOf(item.status) + 1) % STATUS_ORDER.length],
-                        )
-                      }
-                      title="Klik untuk ubah status"
+                    <span
                       className={cn(
-                        "text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap transition-opacity hover:opacity-75 disabled:pointer-events-none disabled:opacity-50",
-                        statusColor[item.status],
+                        "text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap",
+                        STATUS_COLOR[c.status],
                       )}
                     >
-                      {STATUS_LABEL[item.status]}
-                    </button>
+                      {STATUS_LABEL[c.status]}
+                    </span>
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-end gap-1">
                       <button
-                        onClick={() => setDetail(item)}
+                        onClick={() => setDetail(c)}
                         className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/5 transition-colors"
                         aria-label="Lihat detail"
                       >
                         <Eye size={14} />
                       </button>
+                      {c.status === "PENDING" && (
+                        <button
+                          onClick={() => approve(c)}
+                          disabled={isPending && busyId === c.id}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors disabled:pointer-events-none disabled:opacity-50"
+                          aria-label="Setujui komentar"
+                        >
+                          <Check size={14} />
+                        </button>
+                      )}
                       <button
-                        onClick={() => remove(item)}
-                        disabled={isPending}
+                        onClick={() => remove(c)}
+                        disabled={isPending && busyId === c.id}
                         className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:pointer-events-none disabled:opacity-50"
                         aria-label="Hapus"
                       >
@@ -330,7 +359,7 @@ export default function InquiryPageClient({
               {pageItems.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-5 py-10 text-center text-sm text-gray-400">
-                    Tidak ada inquiry yang cocok.
+                    Tidak ada komentar yang cocok.
                   </td>
                 </tr>
               )}
@@ -339,7 +368,7 @@ export default function InquiryPageClient({
         </div>
         <div className="px-5 py-3 border-t border-admin-line">
           <p className="text-xs text-gray-400">
-            Menampilkan {pageItems.length} dari {filtered.length} inquiry
+            Menampilkan {pageItems.length} dari {filtered.length} komentar
           </p>
         </div>
       </div>
@@ -355,59 +384,67 @@ export default function InquiryPageClient({
         }}
       />
 
-      {/* ─── Dialog detail inquiry ─── */}
+      {/* ─── Dialog detail komentar ─── */}
       <Dialog open={detail !== null} onOpenChange={(o) => !o && setDetail(null)}>
         <DialogContent className="sm:max-w-md">
           {detail && (
             <>
               <DialogTitle className="text-base font-bold text-gray-900">
-                Detail Inquiry
+                Detail Komentar
               </DialogTitle>
               <div className="space-y-3 text-sm">
                 {[
                   ["Nama", detail.name],
-                  ["Email", detail.email],
-                  ["WhatsApp", detail.whatsapp],
-                  ["Layanan", detail.service?.title ?? "Lainnya"],
+                  ["Email", detail.email ?? "-"],
+                  ["Artikel", detail.post.title],
                   ["Waktu", formatTimeAgo(detail.createdAt)],
                 ].map(([label, value]) => (
                   <div key={label} className="flex gap-3">
-                    <span className="w-24 flex-shrink-0 text-gray-400">{label}</span>
+                    <span className="w-16 flex-shrink-0 text-gray-400">{label}</span>
                     <span className="font-medium text-gray-800">{value}</span>
                   </div>
                 ))}
                 <div>
-                  <span className="text-gray-400">Pesan</span>
+                  <span className="text-gray-400">Komentar</span>
                   <p className="mt-1 rounded-lg bg-gray-50 p-3 text-gray-700 leading-relaxed">
-                    {detail.message}
+                    {detail.content}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 pt-1">
                   <span className="text-gray-400">Status:</span>
-                  {STATUS_ORDER.map((s) => (
-                    <button
-                      key={s}
-                      disabled={isPending}
-                      onClick={() => setStatus(detail.id, s)}
-                      className={cn(
-                        "text-xs font-medium px-2.5 py-1 rounded-full transition-all disabled:pointer-events-none disabled:opacity-50",
-                        detail.status === s
-                          ? statusColor[s]
-                          : "bg-gray-50 text-gray-400 hover:bg-gray-100",
-                      )}
-                    >
-                      {STATUS_LABEL[s]}
-                    </button>
-                  ))}
+                  <span
+                    className={cn(
+                      "text-xs font-medium px-2.5 py-1 rounded-full",
+                      STATUS_COLOR[detail.status],
+                    )}
+                  >
+                    {STATUS_LABEL[detail.status]}
+                  </span>
                 </div>
               </div>
-              <Button
-                variant="outline"
-                className="rounded-lg"
-                onClick={() => setDetail(null)}
-              >
-                Tutup
-              </Button>
+              <div className="flex items-center justify-end gap-2 pt-1">
+                {detail.status === "PENDING" && (
+                  <Button
+                    variant="outline"
+                    className="rounded-lg gap-1.5"
+                    disabled={isPending && busyId === detail.id}
+                    onClick={() => approve(detail)}
+                  >
+                    <Check size={14} /> Setujui
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  className="rounded-lg gap-1.5 text-red-500 hover:text-red-600"
+                  disabled={isPending && busyId === detail.id}
+                  onClick={() => remove(detail)}
+                >
+                  <Trash2 size={14} /> Hapus
+                </Button>
+                <Button variant="outline" className="rounded-lg" onClick={() => setDetail(null)}>
+                  Tutup
+                </Button>
+              </div>
             </>
           )}
         </DialogContent>

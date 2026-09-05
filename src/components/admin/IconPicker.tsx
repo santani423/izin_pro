@@ -61,7 +61,7 @@ export function IconPicker({
           <span className="flex size-6 flex-shrink-0 items-center justify-center rounded-md border border-gray-200 text-primary">
             <Icon size={14} />
           </span>
-          <span className="truncate text-xs text-gray-700">{iconLabel(value)}</span>
+          <span className="hidden truncate text-xs text-gray-700 sm:inline">{iconLabel(value)}</span>
         </span>
         <ChevronDown size={14} className="flex-shrink-0 text-gray-400" />
       </Button>

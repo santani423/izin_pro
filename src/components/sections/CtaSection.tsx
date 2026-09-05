@@ -4,8 +4,7 @@ import { Headset } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
-import { useDictionary } from "@/contexts/LocaleContext";
-import { WHATSAPP_URL } from "@/lib/landing";
+import { useDictionary, useWhatsappUrl } from "@/contexts/LocaleContext";
 import { trackContact } from "@/lib/meta-pixel";
 
 interface CtaSectionProps {
@@ -18,6 +17,7 @@ interface CtaSectionProps {
 /* ─── CTA Banner ─── */
 export default function CtaSection({ title, subtitle, buttonLabel }: CtaSectionProps) {
   const dict = useDictionary();
+  const whatsappUrl = useWhatsappUrl();
   const resolvedTitle = title ?? dict.cta.defaultTitle;
   const resolvedSubtitle = subtitle ?? dict.cta.defaultSubtitle;
   const resolvedButtonLabel = buttonLabel ?? dict.cta.defaultButton;
@@ -40,7 +40,7 @@ export default function CtaSection({ title, subtitle, buttonLabel }: CtaSectionP
           size="lg"
           className="w-full shrink-0 justify-center gap-1.5 rounded-lg bg-white px-2.5 text-xs font-semibold text-brand-green-dark hover:bg-white/90 sm:w-auto sm:gap-2 sm:px-5 sm:text-sm"
         >
-          <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" onClick={() => trackContact()}>
+          <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" onClick={() => trackContact()}>
             {resolvedButtonLabel}
             <WhatsAppIcon className="size-3.5 text-primary sm:size-4" />
           </a>

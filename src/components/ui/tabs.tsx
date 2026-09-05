@@ -24,7 +24,7 @@ function Tabs({
 }
 
 const tabsListVariants = cva(
-  "group/tabs-list inline-flex w-fit items-center justify-center rounded-lg p-[3px] text-muted-foreground group-data-horizontal/tabs:h-8 group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col data-[variant=line]:rounded-none",
+  "group/tabs-list inline-flex w-max items-center justify-center rounded-lg p-[3px] text-muted-foreground group-data-horizontal/tabs:h-8 group-data-vertical/tabs:h-fit group-data-vertical/tabs:w-full group-data-vertical/tabs:flex-col data-[variant=line]:rounded-none",
   {
     variants: {
       variant: {
@@ -38,18 +38,24 @@ const tabsListVariants = cva(
   }
 )
 
+/* Banyak tab (mis. Promo & Banner ada 9) gak muat di layar sempit — daripada
+ * di-wrap jadi berbaris-baris ganjil (tiap trigger `flex-1` jadi lonjong gak
+ * rata), list-nya dibungkus scroll horizontal 1 baris aja, mirip tab strip
+ * di app mobile pada umumnya. */
 function TabsList({
   className,
   variant = "default",
   ...props
 }: TabsPrimitive.List.Props & VariantProps<typeof tabsListVariants>) {
   return (
-    <TabsPrimitive.List
-      data-slot="tabs-list"
-      data-variant={variant}
-      className={cn(tabsListVariants({ variant }), className)}
-      {...props}
-    />
+    <div className="max-w-full overflow-x-auto scrollbar-slim group-data-vertical/tabs:overflow-visible">
+      <TabsPrimitive.List
+        data-slot="tabs-list"
+        data-variant={variant}
+        className={cn(tabsListVariants({ variant }), className)}
+        {...props}
+      />
+    </div>
   )
 }
 

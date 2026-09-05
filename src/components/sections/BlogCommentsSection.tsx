@@ -1,8 +1,11 @@
+"use client";
+
+import { useState } from "react";
 import { MessageCircle } from "lucide-react";
 import type { Comment } from "@prisma/client";
 
 import BlogCommentForm from "@/components/sections/BlogCommentForm";
-import { getDictionary, getLocale } from "@/i18n/get-dictionary";
+import { useDictionary, useLocale } from "@/contexts/LocaleContext";
 import { format } from "@/i18n/format";
 
 const INTL_LOCALES: Record<string, string> = { id: "id-ID", en: "en-US", zh: "zh-CN" };
@@ -15,19 +18,23 @@ function getInitials(name: string) {
   return name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
 }
 
-/* ─── Komentar (approved only) + form komentar baru — di bawah badan
- * artikel /blog/[slug]. Komentar baru masuk PENDING, baru muncul di sini
- * setelah disetujui admin (lihat panel Statistik /admin/blog). ─── */
-export default async function BlogCommentsSection({
+/* ─── Komentar + form komentar baru — di bawah badan artikel /blog/[slug].
+ * Client Component (bukan Server Component lagi) krn komentar baru
+ * ditambahkan ke state lokal begitu submitCommentAction sukses (langsung
+ * APPROVED) — biar langsung tampil tanpa nunggu reload/revalidate
+ * (lihat BlogCommentForm.tsx & submitCommentAction). ─── */
+export default function BlogCommentsSection({
   postId,
-  comments,
+  comments: initialComments,
 }: {
   postId: string;
   comments: Comment[];
 }) {
-  const locale = await getLocale();
-  const dict = getDictionary(locale);
+  const locale = useLocale();
+  const dict = useDictionary();
   const intlLocale = INTL_LOCALES[locale];
+  const [comments, setComments] = useState(initialComments);
+
   return (
     <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
       <div className="max-w-3xl">
@@ -61,7 +68,10 @@ export default async function BlogCommentsSection({
         <div className="mt-8 rounded-2xl border border-border/60 p-5 sm:p-6">
           <h3 className="text-sm font-bold text-foreground">{dict.blogComments.leaveCommentHeading}</h3>
           <div className="mt-4">
-            <BlogCommentForm postId={postId} />
+            <BlogCommentForm
+              postId={postId}
+              onSubmitted={(comment) => setComments((prev) => [comment, ...prev])}
+            />
           </div>
         </div>
       </div>

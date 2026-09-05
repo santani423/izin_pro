@@ -4,25 +4,25 @@ import { DEFAULT_FONT_SLUG } from "@/lib/fonts";
 import SettingsPageClient from "./SettingsPageClient";
 
 /* ─── Halaman Pengaturan Admin ───
- * Server Component: EDITOR & AUTHOR gak boleh akses sama sekali; ADMIN boleh
- * lihat tapi view-only (gak bisa ubah/simpan); SUPER_ADMIN akses penuh.
- * Tab Sosmed/SEO masih data mock (COMPANY_INFO) — belum disambung Prisma
- * (di luar scope). Tab Umum, Font, Kontak (WhatsApp/Email/Alamat/Maps —
- * dipakai LocationSection dkk lewat getLocalizedGeneralSettings()), &
- * Maintenance di bawah ini yang beneran baca/simpan ke tabel Settings. */
+ * Server Component: EDITOR & AUTHOR gak boleh akses sama sekali; ADMIN &
+ * SUPER_ADMIN sama-sama akses penuh (lihat + ubah/simpan).
+ * Tab SEO masih data mock (COMPANY_INFO) — belum disambung Prisma (di luar
+ * scope). Tab Umum, Font, Kontak (WhatsApp/Email/Alamat/Maps — dipakai
+ * LocationSection dkk lewat getLocalizedGeneralSettings()), Sosmed
+ * (dipakai Footer lewat getLocalizedGeneralSettings()), & Maintenance di
+ * bawah ini yang beneran baca/simpan ke tabel Settings. */
 export default async function AdminSettingsPage({
   params,
 }: {
   params: Promise<{ panel: string }>;
 }) {
   const { panel } = await params;
-  const { role } = await requirePanelAccess(panel, "/settings");
+  await requirePanelAccess(panel, "/settings");
 
   const settings = await prisma.settings.findUnique({ where: { id: "1" } });
 
   return (
     <SettingsPageClient
-      readOnly={role === "ADMIN"}
       maintenanceMode={settings?.maintenanceMode ?? false}
       maintenanceMessage={settings?.maintenanceMessage ?? ""}
       appLogoUrl={settings?.appLogoUrl ?? null}
@@ -49,6 +49,11 @@ export default async function AdminSettingsPage({
       fontFamilyId={settings?.fontFamilyId ?? DEFAULT_FONT_SLUG.id}
       fontFamilyEn={settings?.fontFamilyEn ?? DEFAULT_FONT_SLUG.en}
       fontFamilyZh={settings?.fontFamilyZh ?? DEFAULT_FONT_SLUG.zh}
+      socialLinkedin={settings?.socialLinkedin ?? ""}
+      socialFacebook={settings?.socialFacebook ?? ""}
+      socialInstagram={settings?.socialInstagram ?? ""}
+      socialX={settings?.socialX ?? ""}
+      socialYoutube={settings?.socialYoutube ?? ""}
     />
   );
 }

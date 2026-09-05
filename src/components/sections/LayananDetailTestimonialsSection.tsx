@@ -5,8 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/Reveal";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { WhatsAppLink } from "@/components/shared/WhatsAppLink";
-import { COMPANY_INFO } from "@/lib/constants";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
+import { getLocalizedGeneralSettings } from "@/lib/general-settings";
 import type { LayananDetail } from "@/lib/hydrate-layanan-detail";
 
 /* Inisial nama untuk avatar, mis. "Budi Santoso" → "BS" */
@@ -26,6 +26,7 @@ export default async function LayananDetailTestimonialsSection({
   testimonials: LayananDetail["testimonials"];
 }) {
   const dict = getDictionary(await getLocale());
+  const { whatsapp } = await getLocalizedGeneralSettings();
   return (
     <section className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 pb-14 sm:px-6 lg:grid-cols-[1fr_320px] lg:px-8">
       <div>
@@ -88,7 +89,7 @@ export default async function LayananDetailTestimonialsSection({
           className="mt-5 w-full justify-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold sm:gap-2 sm:text-sm"
         >
           <WhatsAppLink
-            href={`https://wa.me/${COMPANY_INFO.whatsapp}`}
+            href={`https://wa.me/${whatsapp}`}
             target="_blank"
             rel="noopener noreferrer"
           >

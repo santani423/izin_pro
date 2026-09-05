@@ -19,7 +19,6 @@ import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { useDictionary } from "@/contexts/LocaleContext";
 import { cn } from "@/lib/utils";
 import { trackContact, trackLead } from "@/lib/meta-pixel";
-import { submitInquiryAction } from "@/lib/actions/inquiry";
 import { resolveDetailIcon } from "@/lib/detail-icons";
 import type { KontakChannelRaw } from "@/lib/hydrate-kontak-content";
 
@@ -80,22 +79,39 @@ export default function KontakFormSection({
     defaultValues: { layanan: "" },
   });
 
+  /* ─── Form gak nyimpen apa pun ke server — cuma nyusun pesan lalu buka
+   * chat WhatsApp resmi (dari channel "whatsapp" di sidebar) dgn teks yg
+   * udah keisi otomatis. Pengunjung yang kirim pesannya sendiri di WhatsApp. */
+  const whatsappHref = useMemo(
+    () => channels.find((c) => c.icon === "whatsapp")?.href,
+    [channels],
+  );
+
   const onSubmit = async (values: KontakFormValues) => {
     setSubmitError(null);
-    const res = await submitInquiryAction({
-      name: values.nama,
-      email: values.email,
-      whatsapp: values.whatsapp,
-      serviceId: values.layanan === LAINNYA ? null : values.layanan,
-      message: values.pesan,
-    });
-    if (res.ok) {
-      setSubmitted(true);
-      trackLead();
-      reset();
-    } else {
-      setSubmitError(res.message);
+    if (!whatsappHref) {
+      setSubmitError(dict.kontakForm.whatsappUnavailable);
+      return;
     }
+    const layananTitle =
+      values.layanan === LAINNYA
+        ? dict.kontakForm.otherOption
+        : services.find((s) => s.id === values.layanan)?.title ?? values.layanan;
+    const message = [
+      `Nama: ${values.nama}`,
+      `Email: ${values.email}`,
+      `WhatsApp: ${values.whatsapp}`,
+      `Layanan: ${layananTitle}`,
+      "",
+      values.pesan,
+    ].join("\n");
+    const [base] = whatsappHref.split("?");
+    const url = `${base}?text=${encodeURIComponent(message)}`;
+
+    setSubmitted(true);
+    trackLead();
+    reset();
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   return (

@@ -6,9 +6,8 @@ import { AlertCircle, Check, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
-import { useDictionary, useLocale } from "@/contexts/LocaleContext";
+import { useDictionary, useLocale, useWhatsappUrl } from "@/contexts/LocaleContext";
 import { cn } from "@/lib/utils";
-import { WHATSAPP_URL } from "@/lib/landing";
 import { trackContact } from "@/lib/meta-pixel";
 import { submitTrackingLookupAction } from "@/lib/actions/tracking";
 import type { PublicTrackingResult } from "@/lib/transaction-tracking";
@@ -26,6 +25,7 @@ function formatDate(d: Date | string | null, intlLocale: string) {
 export default function TrackingFormSection({ initialCode }: { initialCode?: string }) {
   const dict = useDictionary();
   const intlLocale = INTL_LOCALES[useLocale()];
+  const whatsappUrl = useWhatsappUrl();
   const [input, setInput] = useState(initialCode ?? "");
   const [result, setResult] = useState<PublicTrackingResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -106,7 +106,7 @@ export default function TrackingFormSection({ initialCode }: { initialCode?: str
             </p>
           </div>
           <Button asChild variant="outline" className="w-full justify-center gap-2 rounded-lg sm:w-auto">
-            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" onClick={() => trackContact()}>
+            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" onClick={() => trackContact()}>
               {dict.trackingForm.contactUs}
               <WhatsAppIcon className="size-4 text-primary" />
             </a>

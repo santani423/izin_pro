@@ -10,8 +10,8 @@ import {
 import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import type {
-  ServiceTransaction, TransactionWorkflowStep, Payment, TransactionAttachment,
-  TransactionActivityLog, TransactionStatus, PaymentStatus, TransactionPriority, WorkflowStepStatus,
+  ServiceTransaction, TransactionWorkflowStep, TransactionAttachment,
+  TransactionActivityLog, TransactionStatus, TransactionPriority, WorkflowStepStatus,
 } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,11 +27,10 @@ import { cn } from "@/lib/utils";
 import WorkflowTimeline, { type WorkflowTimelineStep } from "@/components/shared/WorkflowTimeline";
 import {
   TRANSACTION_STATUS_LABELS, TRANSACTION_STATUS_COLORS,
-  PAYMENT_STATUS_LABELS, PAYMENT_STATUS_COLORS,
   PRIORITY_LABELS, WORKFLOW_STEP_STATUS_LABELS,
 } from "@/lib/transaction-status";
 import {
-  updateTransactionAction, updateTransactionNotesAction, recordPaymentAction,
+  updateTransactionAction, updateTransactionNotesAction,
   updateWorkflowStepStatusAction, uploadTransactionAttachmentAction,
   deleteTransactionAttachmentAction, toggleAttachmentVisibilityAction,
   sendTransactionWhatsappAction,
@@ -45,7 +44,6 @@ type TransactionDetail = Omit<ServiceTransaction, "totalPrice" | "discount" | "t
   createdBy: { name: string } | null;
   updatedBy: { name: string } | null;
   workflowSteps: TransactionWorkflowStep[];
-  payments: (Omit<Payment, "amount"> & { amount: number })[];
   attachments: (TransactionAttachment & { uploadedBy: { name: string } | null })[];
   activityLogs: (TransactionActivityLog & { user: { name: string } | null })[];
 };
@@ -164,32 +162,6 @@ export default function TransactionDetailClient({
     });
   };
 
-  /* ─── Pembayaran ─── */
-  const [paymentOpen, setPaymentOpen] = useState(false);
-  const [paymentForm, setPaymentForm] = useState({ amount: "", method: "", paidAt: new Date().toISOString().slice(0, 10), note: "" });
-  const totalPaid = transaction.payments.reduce((sum, p) => sum + p.amount, 0);
-  const remaining = Math.max(0, transaction.grandTotal - totalPaid);
-
-  const savePayment = () => {
-    if (Number(paymentForm.amount) <= 0) return swalError("Nominal pembayaran harus lebih dari 0");
-    startTransition(async () => {
-      const res = await recordPaymentAction(transaction.id, {
-        amount: Number(paymentForm.amount),
-        method: paymentForm.method.trim() || null,
-        paidAt: paymentForm.paidAt,
-        note: paymentForm.note.trim() || null,
-      });
-      if (res.ok) {
-        swalSuccess("Pembayaran dicatat");
-        setPaymentOpen(false);
-        setPaymentForm({ amount: "", method: "", paidAt: new Date().toISOString().slice(0, 10), note: "" });
-        router.refresh();
-      } else {
-        swalError(res.message);
-      }
-    });
-  };
-
   /* ─── Workflow step ─── */
   const [activeStep, setActiveStep] = useState<TransactionWorkflowStep | null>(null);
   const [stepForm, setStepForm] = useState({ status: "PENDING" as WorkflowStepStatus, notes: "", progressPercent: 0 });
@@ -267,7 +239,6 @@ export default function TransactionDetailClient({
   };
 
   const statusColor = TRANSACTION_STATUS_COLORS[transaction.status];
-  const paymentColor = PAYMENT_STATUS_COLORS[transaction.paymentStatus];
   const timelineSteps: WorkflowTimelineStep[] = transaction.workflowSteps.map((s) => ({
     id: s.id, name: s.name, description: s.description, status: s.status,
     estimatedDays: s.estimatedDays, startedAt: s.startedAt, completedAt: s.completedAt, notes: s.notes,
@@ -296,9 +267,6 @@ export default function TransactionDetailClient({
         <div className="flex flex-wrap items-center gap-2">
           <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium", statusColor.bg, statusColor.text)}>
             {TRANSACTION_STATUS_LABELS[transaction.status]}
-          </span>
-          <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium", paymentColor.bg, paymentColor.text)}>
-            {PAYMENT_STATUS_LABELS[transaction.paymentStatus]}
           </span>
           <Badge variant="secondary" className="text-xs">{PRIORITY_LABELS[transaction.priority]}</Badge>
           <Button
@@ -347,31 +315,15 @@ export default function TransactionDetailClient({
         </div>
       </div>
 
-      {/* Payment Info */}
+      {/* Rincian Harga */}
       <div className="bg-white rounded-2xl border border-admin-line p-5 space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="flex items-center gap-2 font-bold text-gray-900"><Wallet size={16} className="text-primary" /> Informasi Pembayaran</h3>
-          <Button size="sm" className="gap-1.5 rounded-lg" onClick={() => setPaymentOpen(true)}>Catat Pembayaran</Button>
-        </div>
+        <h3 className="flex items-center gap-2 font-bold text-gray-900"><Wallet size={16} className="text-primary" /> Rincian Harga</h3>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs text-gray-400">Harga Dasar</p><p className="font-bold text-gray-900">Rp{transaction.totalPrice.toLocaleString("id-ID")}</p></div>
+          <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs text-gray-400">Diskon</p><p className="font-bold text-gray-900">Rp{transaction.discount.toLocaleString("id-ID")}</p></div>
+          <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs text-gray-400">Pajak</p><p className="font-bold text-gray-900">Rp{transaction.tax.toLocaleString("id-ID")}</p></div>
           <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs text-gray-400">Grand Total</p><p className="font-bold text-gray-900">Rp{transaction.grandTotal.toLocaleString("id-ID")}</p></div>
-          <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs text-gray-400">Sudah Dibayar</p><p className="font-bold text-emerald-600">Rp{totalPaid.toLocaleString("id-ID")}</p></div>
-          <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs text-gray-400">Sisa</p><p className="font-bold text-red-500">Rp{remaining.toLocaleString("id-ID")}</p></div>
-          <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs text-gray-400">Diskon / Pajak</p><p className="font-bold text-gray-900">Rp{transaction.discount.toLocaleString("id-ID")} / Rp{transaction.tax.toLocaleString("id-ID")}</p></div>
         </div>
-        {transaction.payments.length > 0 && (
-          <div className="divide-y divide-gray-50 rounded-xl border border-gray-100">
-            {transaction.payments.map((p) => (
-              <div key={p.id} className="flex items-center justify-between px-3.5 py-2.5 text-sm">
-                <div>
-                  <p className="font-medium text-gray-900">Rp{p.amount.toLocaleString("id-ID")} {p.method && <span className="text-gray-400">· {p.method}</span>}</p>
-                  {p.note && <p className="text-xs text-gray-400">{p.note}</p>}
-                </div>
-                <span className="text-xs text-gray-400">{formatDate(p.paidAt)}</span>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Workflow Timeline */}
@@ -605,35 +557,6 @@ export default function TransactionDetailClient({
           <div className="flex gap-2 pt-1">
             <Button variant="outline" className="flex-1 rounded-lg" onClick={() => setEditOpen(false)}>Batal</Button>
             <Button className="flex-1 rounded-lg" onClick={saveEdit} disabled={isPending}>{isPending ? "Menyimpan..." : "Simpan"}</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog: Catat pembayaran */}
-      <Dialog open={paymentOpen} onOpenChange={setPaymentOpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogTitle className="text-base font-bold text-gray-900">Catat Pembayaran</DialogTitle>
-          <div className="space-y-4">
-            <div>
-              <Label className="text-sm font-semibold text-gray-700">Nominal</Label>
-              <Input type="number" min={0} className="mt-1.5 rounded-lg" value={paymentForm.amount} onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })} placeholder={`Sisa: Rp${remaining.toLocaleString("id-ID")}`} />
-            </div>
-            <div>
-              <Label className="text-sm font-semibold text-gray-700">Metode <span className="font-normal text-gray-400">(opsional)</span></Label>
-              <Input className="mt-1.5 rounded-lg" value={paymentForm.method} onChange={(e) => setPaymentForm({ ...paymentForm, method: e.target.value })} placeholder="Transfer Bank, QRIS, dll" />
-            </div>
-            <div>
-              <Label className="text-sm font-semibold text-gray-700">Tanggal Bayar</Label>
-              <Input type="date" className="mt-1.5 rounded-lg" value={paymentForm.paidAt} onChange={(e) => setPaymentForm({ ...paymentForm, paidAt: e.target.value })} />
-            </div>
-            <div>
-              <Label className="text-sm font-semibold text-gray-700">Catatan <span className="font-normal text-gray-400">(opsional)</span></Label>
-              <Textarea rows={2} className="mt-1.5 rounded-lg resize-none" value={paymentForm.note} onChange={(e) => setPaymentForm({ ...paymentForm, note: e.target.value })} />
-            </div>
-          </div>
-          <div className="flex gap-2 pt-1">
-            <Button variant="outline" className="flex-1 rounded-lg" onClick={() => setPaymentOpen(false)}>Batal</Button>
-            <Button className="flex-1 rounded-lg" onClick={savePayment} disabled={isPending}>{isPending ? "Menyimpan..." : "Simpan"}</Button>
           </div>
         </DialogContent>
       </Dialog>

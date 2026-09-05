@@ -19,11 +19,12 @@ function errorMessage(e: unknown, fallback: string) {
   return e instanceof Error ? e.message : fallback;
 }
 
-/* Sama kayak readOnly di settings/page.tsx: cuma SUPER_ADMIN yang boleh
- * benar-benar ubah Pengaturan (ADMIN cuma bisa lihat). */
+/* SUPER_ADMIN & ADMIN boleh ubah Pengaturan (EDITOR/AUTHOR udah ketahan
+ * duluan sama canAccessAdminRoute di admin-guard.ts sebelum sampe sini). */
 async function requireSettingsEditor() {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session || (session.user.role as Role) !== "SUPER_ADMIN") {
+  const role = session?.user.role as Role | undefined;
+  if (!session || (role !== "SUPER_ADMIN" && role !== "ADMIN")) {
     throw new Error("Anda tidak punya akses untuk mengubah Pengaturan.");
   }
   return session;
@@ -127,6 +128,37 @@ export async function updateContactSettingsAction(data: ContactSettingsInput): P
     return { ok: true };
   } catch (e) {
     return { ok: false, message: errorMessage(e, "Gagal menyimpan Informasi Kontak.") };
+  }
+}
+
+export interface SocialSettingsInput {
+  linkedin: string;
+  facebook: string;
+  instagram: string;
+  twitter: string;
+  youtube: string;
+}
+
+/* Tab Sosial Media — dipakai Footer (getLocalizedGeneralSettings()).
+ * Field kosong = ikon disembunyikan (lihat komentar di schema.prisma). */
+export async function updateSocialSettingsAction(data: SocialSettingsInput): Promise<ActionResult> {
+  try {
+    await requireSettingsEditor();
+    await prisma.settings.update({
+      where: { id: "1" },
+      data: {
+        socialLinkedin: data.linkedin.trim() || null,
+        socialFacebook: data.facebook.trim() || null,
+        socialInstagram: data.instagram.trim() || null,
+        socialX: data.twitter.trim() || null,
+        socialYoutube: data.youtube.trim() || null,
+      },
+    });
+    revalidatePath("/admin/settings");
+    revalidatePath("/", "layout");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: errorMessage(e, "Gagal menyimpan Link Sosial Media.") };
   }
 }
 

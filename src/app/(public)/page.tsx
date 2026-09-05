@@ -146,14 +146,19 @@ async function getHomeServices(locale: Locale): Promise<ServiceCardData[]> {
 /* ─── Halaman Beranda (desain baru) ─── */
 export default async function HomePage() {
   const locale = await getLocale();
-  const [heroContent, aboutHomeContent, homeServices, homePromos, { textTestimonials, videoTestimonials }, { operatingHours, phoneDisplay, email, address, mapsUrl, mapsEmbedUrl }] = await Promise.all([
+  const [heroContent, aboutHomeContent, homeServices, homePromos, { textTestimonials, videoTestimonials }, { operatingHours, phoneDisplay, email, address, mapsUrl, mapsEmbedUrl }, faqRows] = await Promise.all([
     getHeroContent(locale),
     getAboutHomeContent(locale),
     getHomeServices(locale),
     getPublicPromos(locale),
     getPublicTestimonials(),
     getLocalizedGeneralSettings(),
+    prisma.faq.findMany({
+      where: { scope: "GLOBAL", isActive: true },
+      orderBy: { sortOrder: "asc" },
+    }),
   ]);
+  const faqs = faqRows.map((f) => ({ question: f.question, answer: f.answer }));
   const blogPosts = (await getPublicBlogPosts()).slice(0, 4);
 
   return (
@@ -196,7 +201,7 @@ export default async function HomePage() {
       <ClientsSection />
 
       {/* 11. FAQ */}
-      <FaqSection />
+      <FaqSection faqs={faqs} />
 
       {/* 12. CTA Banner */}
       <CtaSection />

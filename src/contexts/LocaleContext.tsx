@@ -7,24 +7,28 @@ import type { Dictionary } from "@/i18n/dictionaries/id";
 interface LocaleContextValue {
   locale: Locale;
   dict: Dictionary;
+  whatsappUrl: string;
 }
 
 const LocaleContext = createContext<LocaleContextValue | null>(null);
 
 /** Dipasang sekali di PublicLayout (Server Component sudah tahu locale
- * lewat getLocale()) — semua Client Component section di bawahnya tinggal
- * pakai useDictionary()/useLocale() tanpa perlu prop-drilling. */
+ * lewat getLocale(), & kontak lewat getLocalizedGeneralSettings()) —
+ * semua Client Component section di bawahnya tinggal pakai
+ * useDictionary()/useLocale()/useWhatsappUrl() tanpa perlu prop-drilling. */
 export function LocaleProvider({
   locale,
   dict,
+  whatsappUrl,
   children,
 }: {
   locale: Locale;
   dict: Dictionary;
+  whatsappUrl: string;
   children: ReactNode;
 }) {
   return (
-    <LocaleContext.Provider value={{ locale, dict }}>
+    <LocaleContext.Provider value={{ locale, dict, whatsappUrl }}>
       {children}
     </LocaleContext.Provider>
   );
@@ -44,4 +48,10 @@ export function useLocale(): Locale {
 
 export function useDictionary(): Dictionary {
   return useLocaleContext().dict;
+}
+
+/** URL wa.me dari Settings.whatsapp (tab Kontak /admin/settings) — dipakai
+ * semua CTA WhatsApp lintas Client Component (Hero, FAB, CTA banner, dkk). */
+export function useWhatsappUrl(): string {
+  return useLocaleContext().whatsappUrl;
 }

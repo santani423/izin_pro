@@ -141,38 +141,6 @@ const en: Dictionary = {
   faq: {
     heading: "Frequently Asked Questions",
     subtitle: "Find answers to common questions about IzinPro's services.",
-    items: [
-      {
-        question: "How long does the licensing process take at IzinPro?",
-        answer:
-          "The process typically takes 3–7 business days, depending on the type of license and document completeness. We always provide an accurate time estimate at the start of the consultation.",
-      },
-      {
-        question: "Are there any hidden fees in IzinPro's services?",
-        answer:
-          "None at all. IzinPro applies a principle of full transparency. All costs are disclosed upfront before you decide to use our services.",
-      },
-      {
-        question: "What documents are needed to establish a PT?",
-        answer:
-          "The basic documents required include: ID cards and tax IDs of the founders, the company's registered address, the stipulated authorized capital, and the line of business to be run. Our team will guide you through the details.",
-      },
-      {
-        question: "Can IzinPro help with licensing outside of Jakarta?",
-        answer:
-          "Yes, IzinPro serves clients throughout Indonesia. With our digital system, the process can be handled without needing to visit our office in person.",
-      },
-      {
-        question: "How do I start a consultation with IzinPro?",
-        answer:
-          "It's simple! Contact us via WhatsApp at 0822-8000-7821 or fill out the contact form on this website. Our team will respond within a maximum of 1×24 hours.",
-      },
-      {
-        question: "Is there a guarantee if a license application is not approved?",
-        answer:
-          "IzinPro provides a process guarantee: if a license is not approved due to an error on our part, we will cover the cost of resubmission at no extra charge to the client.",
-      },
-    ],
   },
 
   cta: {
@@ -295,13 +263,13 @@ const en: Dictionary = {
 
   blogComment: {
     successTitle: "Comment Sent!",
-    successCopy: "Thank you, your comment will appear once approved by the admin.",
+    successCopy: "Thank you, your comment is now showing below this article.",
     sendAgain: "Send Another Comment",
     nameLabel: "Name",
     emailLabel: "Email",
     commentLabel: "Comment",
     namePlaceholder: "Your name",
-    emailPlaceholder: "Your email (not shown publicly)",
+    emailPlaceholder: "Your email (optional, not shown publicly)",
     commentPlaceholder: "Write your comment here...",
     sending: "Sending...",
     send: "Send Comment",
@@ -328,8 +296,8 @@ const en: Dictionary = {
   },
 
   kontakForm: {
-    successTitle: "Message Sent!",
-    successCopy: "Thank you, our team will contact you within a maximum of 1×24 business hours.",
+    successTitle: "Connected to WhatsApp!",
+    successCopy: "We've prepared your message on WhatsApp — just hit send there.",
     sendAgain: "Send Another Message",
     nameLabel: "Full Name",
     emailLabel: "Email",
@@ -342,8 +310,9 @@ const en: Dictionary = {
     messagePlaceholder: "Write your needs or questions here...",
     servicePlaceholder: "Select a service",
     otherOption: "Other",
-    sending: "Sending...",
-    send: "Send Message",
+    sending: "Opening WhatsApp...",
+    send: "Continue on WhatsApp",
+    whatsappUnavailable: "WhatsApp number is not available yet. Please reach us via another channel alongside.",
     privacyNote: "Your data is safe and will not be shared with third parties.",
     validation: {
       nameMin: "Name must be at least 3 characters",
@@ -500,11 +469,6 @@ const en: Dictionary = {
   },
 
   actions: {
-    inquiryNameMin: "Name must be at least 3 characters.",
-    inquiryEmailInvalid: "Invalid email format.",
-    inquiryWhatsappMin: "WhatsApp number must be at least 9 digits.",
-    inquiryMessageMin: "Message must be at least 10 characters.",
-    inquiryGenericError: "Failed to send message. Please try again shortly.",
     trackingEmptyCode: "Please enter your transaction code.",
     trackingNotFound: "Transaction code not found. Please double-check it.",
     trackingGenericError: "Failed to track transaction. Please try again shortly.",
