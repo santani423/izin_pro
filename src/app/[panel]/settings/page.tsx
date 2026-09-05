@@ -28,6 +28,8 @@ export default async function AdminSettingsPage({
       appLogoUrl={settings?.appLogoUrl ?? null}
       faviconUrl={settings?.faviconUrl ?? null}
       whacenterDeviceId={settings?.whacenterDeviceId ?? ""}
+      metaPixelId={settings?.metaPixelId ?? ""}
+      metaCode={settings?.metaCode ?? ""}
       defaultLocale={(settings?.defaultLocale as "id" | "en" | "zh" | undefined) ?? "id"}
       companyName={settings?.companyName ?? ""}
       companyNameEn={settings?.companyNameEn ?? ""}

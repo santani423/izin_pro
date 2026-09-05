@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Save, Globe, Phone, Share2, Eye, Construction, AlertTriangle, ImagePlus, RefreshCcw, MessageCircle, Type } from "lucide-react";
+import { Save, Globe, Phone, Share2, Eye, Construction, AlertTriangle, ImagePlus, RefreshCcw, MessageCircle, Type, Code2 } from "lucide-react";
 import { swalSuccess, swalError } from "@/lib/swal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 import {
   saveBrandingSettingsAction, updateMaintenanceModeAction, updateWhacenterSettingsAction,
   updateGeneralSettingsAction, updateFontSettingsAction, updateContactSettingsAction,
-  updateSocialSettingsAction,
+  updateSocialSettingsAction, updateMetaIntegrationAction,
   type GeneralSettingsInput, type FontSettingsInput, type ContactSettingsInput,
   type SocialSettingsInput,
 } from "@/lib/actions/settings";
@@ -69,6 +69,8 @@ export default function SettingsPageClient({
   appLogoUrl: initialAppLogoUrl,
   faviconUrl: initialFaviconUrl,
   whacenterDeviceId: initialWhacenterDeviceId,
+  metaPixelId: initialMetaPixelId,
+  metaCode: initialMetaCode,
   defaultLocale: initialDefaultLocale,
   companyName: initialCompanyName,
   companyNameEn: initialCompanyNameEn,
@@ -102,6 +104,8 @@ export default function SettingsPageClient({
   appLogoUrl: string | null;
   faviconUrl: string | null;
   whacenterDeviceId: string;
+  metaPixelId: string;
+  metaCode: string;
   defaultLocale: Locale;
   companyName: string;
   companyNameEn: string;
@@ -135,6 +139,8 @@ export default function SettingsPageClient({
   const [maintenanceMode, setMaintenanceMode] = useState(initialMaintenanceMode);
   const [maintenanceMessage, setMaintenanceMessage] = useState(initialMaintenanceMessage);
   const [whacenterDeviceId, setWhacenterDeviceId] = useState(initialWhacenterDeviceId);
+  const [metaPixelId, setMetaPixelId] = useState(initialMetaPixelId);
+  const [metaCode, setMetaCode] = useState(initialMetaCode);
   const [umumLang, setUmumLang] = useState<UmumLang>("id");
   const [general, setGeneral] = useState<GeneralSettingsInput>({
     defaultLocale: initialDefaultLocale,
@@ -298,6 +304,26 @@ export default function SettingsPageClient({
         }
       } catch {
         swalError("Gagal menyimpan Device ID. Cek koneksi lalu coba lagi.");
+      }
+    });
+  };
+
+  const saveMetaIntegration = () => {
+    if (metaPixelId.trim() && metaCode.trim()) {
+      swalError("Isi salah satu saja: Meta Pixel ID atau Kode Meta, tidak bisa keduanya.");
+      return;
+    }
+    startTransition(async () => {
+      try {
+        const res = await updateMetaIntegrationAction(metaPixelId, metaCode);
+        if (res.ok) {
+          swalSuccess("Integrasi Meta Pixel disimpan");
+          router.refresh();
+        } else {
+          swalError(res.message);
+        }
+      } catch {
+        swalError("Gagal menyimpan integrasi Meta Pixel. Cek koneksi lalu coba lagi.");
       }
     });
   };
@@ -855,6 +881,52 @@ export default function SettingsPageClient({
                 <Button onClick={saveWhacenter} disabled={isPending} className="gap-2 rounded-xl">
                   <Save size={15} />
                   {isPending ? "Menyimpan..." : "Simpan Device ID"}
+                </Button>
+              )}
+            </div>
+
+            <div className="bg-white rounded-2xl border border-admin-line p-6 space-y-5 max-w-2xl mt-6">
+              <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                <Code2 size={16} className="text-primary" />
+                Integrasi Meta Pixel (Facebook)
+              </h3>
+              <p className="text-sm text-gray-500">
+                Isi salah satu saja: <strong>Meta Pixel ID</strong> (angka ID biasa dari Meta Events Manager) atau{" "}
+                <strong>Kode Meta</strong> (kode/script custom dari menu &quot;Instal kode secara manual&quot;). Kosongkan
+                keduanya untuk menonaktifkan Meta Pixel di seluruh website publik.
+              </p>
+              <div className="space-y-1.5">
+                <Label>Meta Pixel ID</Label>
+                <Input
+                  value={metaPixelId}
+                  onChange={(e) => setMetaPixelId(e.target.value)}
+                  placeholder="mis. 1234567890123456"
+                  className="rounded-xl font-mono"
+                  disabled={readOnly || isPending || !!metaCode.trim()}
+                />
+              </div>
+              <div className="flex items-center gap-3 text-xs font-semibold text-gray-400">
+                <span className="h-px flex-1 bg-admin-line" />
+                ATAU
+                <span className="h-px flex-1 bg-admin-line" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Kode Meta (script custom)</Label>
+                <Textarea
+                  value={metaCode}
+                  onChange={(e) => setMetaCode(e.target.value)}
+                  placeholder={"fbq('init', '1234567890123456');\nfbq('track', 'PageView');"}
+                  className="rounded-xl font-mono text-xs min-h-32"
+                  disabled={readOnly || isPending || !!metaPixelId.trim()}
+                />
+                <p className="text-xs text-gray-400">
+                  Tempel kode JavaScript saja (tanpa tag &lt;script&gt;...&lt;/script&gt;).
+                </p>
+              </div>
+              {!readOnly && (
+                <Button onClick={saveMetaIntegration} disabled={isPending} className="gap-2 rounded-xl">
+                  <Save size={15} />
+                  {isPending ? "Menyimpan..." : "Simpan Integrasi Meta"}
                 </Button>
               )}
             </div>

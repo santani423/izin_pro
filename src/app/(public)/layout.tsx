@@ -41,6 +41,8 @@ export default async function PublicLayout({
         fontFamilyId: true,
         fontFamilyEn: true,
         fontFamilyZh: true,
+        metaPixelId: true,
+        metaCode: true,
       },
     }),
     auth.api.getSession({ headers: await headers() }),
@@ -83,9 +85,9 @@ export default async function PublicLayout({
 
   return (
     <LocaleProvider locale={locale} dict={dict} whatsappUrl={whatsappUrl}>
-      {/* Meta Pixel — satu Pixel ID untuk seluruh website publik (bukan
+      {/* Meta Pixel — satu Pixel ID/kode untuk seluruh website publik (bukan
        * area admin), dipasang sekali di sini. Lihat components/MetaPixel.tsx. */}
-      <MetaPixel />
+      <MetaPixel pixelId={settings?.metaPixelId ?? null} code={settings?.metaCode ?? null} />
       {/* className="contents" -> gak nambah box baru (layout flex body gak
        * kepengaruh), tapi font-family dari sini tetap ke-inherit semua
        * elemen di bawahnya. Lihat tab Font di /admin/settings. */}

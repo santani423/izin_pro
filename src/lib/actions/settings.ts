@@ -176,6 +176,31 @@ export async function updateWhacenterSettingsAction(deviceId: string): Promise<A
   }
 }
 
+/* Tab Integrasi — Meta Pixel. Cuma boleh diisi salah satu: metaPixelId
+ * ATAU metaCode (lihat komentar di schema.prisma & components/MetaPixel.tsx).
+ * Dipasang di (public)/layout.tsx buat semua halaman publik, jadi
+ * revalidate "/", "layout" sama kayak Font/General, bukan cuma
+ * /admin/settings. */
+export async function updateMetaIntegrationAction(metaPixelId: string, metaCode: string): Promise<ActionResult> {
+  try {
+    await requireSettingsEditor();
+    const pixelId = metaPixelId.trim();
+    const code = metaCode.trim();
+    if (pixelId && code) {
+      return { ok: false, message: "Isi salah satu saja: Meta Pixel ID atau Kode Meta, tidak bisa keduanya." };
+    }
+    await prisma.settings.update({
+      where: { id: "1" },
+      data: { metaPixelId: pixelId || null, metaCode: code || null },
+    });
+    revalidatePath("/admin/settings");
+    revalidatePath("/", "layout");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: errorMessage(e, "Gagal menyimpan integrasi Meta Pixel.") };
+  }
+}
+
 export async function updateMaintenanceModeAction(
   maintenanceMode: boolean,
   maintenanceMessage: string,

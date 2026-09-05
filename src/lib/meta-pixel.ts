@@ -1,10 +1,10 @@
 "use client";
 
 /* ─── Meta Pixel — util terpusat ───
- * SATU Pixel ID untuk seluruh website (dari NEXT_PUBLIC_META_PIXEL_ID, lihat
- * components/MetaPixel.tsx). File ini cuma tempat manggil window.fbq dengan
- * aman — jangan panggil window.fbq(...) langsung dari komponen lain, selalu
- * lewat fungsi-fungsi di bawah biar event & parameternya konsisten.
+ * SATU Pixel ID/kode untuk seluruh website (dari Settings tab Integrasi,
+ * lihat components/MetaPixel.tsx). File ini cuma tempat manggil window.fbq
+ * dengan aman — jangan panggil window.fbq(...) langsung dari komponen lain,
+ * selalu lewat fungsi-fungsi di bawah biar event & parameternya konsisten.
  */
 
 export type MetaPixelContentType = "article" | "service" | "product";
