@@ -37,8 +37,7 @@ const STATUS_COLOR: Record<CommentStatus, string> = {
   APPROVED: "bg-emerald-50 text-emerald-600",
 };
 
-/** Waktu relatif ringkas ("5 menit lalu", "3 jam lalu", "Kemarin", dst) —
- * sama pola dgn InquiryPageClient.tsx biar konsisten lintas halaman admin. */
+/** Waktu relatif ringkas ("5 menit lalu", "3 jam lalu", "Kemarin", dst). */
 function formatTimeAgo(date: Date): string {
   const diffMs = Date.now() - date.getTime();
   const diffMin = Math.floor(diffMs / 60_000);

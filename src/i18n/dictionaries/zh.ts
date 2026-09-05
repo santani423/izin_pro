@@ -291,8 +291,8 @@ const zh: Dictionary = {
   },
 
   kontakForm: {
-    successTitle: "信息已发送！",
-    successCopy: "感谢您的留言，我们的团队将在最多 24 个工作小时内与您联系。",
+    successTitle: "已跳转至 WhatsApp！",
+    successCopy: "我们已经在 WhatsApp 上为您准备好留言内容，点击发送即可。",
     sendAgain: "再发一条信息",
     nameLabel: "姓名",
     emailLabel: "邮箱",
@@ -305,8 +305,9 @@ const zh: Dictionary = {
     messagePlaceholder: "请在此输入您的需求或问题...",
     servicePlaceholder: "请选择服务",
     otherOption: "其他",
-    sending: "发送中...",
-    send: "发送信息",
+    sending: "正在打开 WhatsApp...",
+    send: "前往 WhatsApp",
+    whatsappUnavailable: "WhatsApp 号码暂未提供，请通过旁边的其他渠道联系我们。",
     privacyNote: "您的信息将被安全保管，不会分享给第三方。",
     validation: {
       nameMin: "姓名至少需 3 个字符",
@@ -457,11 +458,6 @@ const zh: Dictionary = {
   },
 
   actions: {
-    inquiryNameMin: "姓名至少需 3 个字符。",
-    inquiryEmailInvalid: "邮箱格式不正确。",
-    inquiryWhatsappMin: "WhatsApp 号码至少需 9 位数字。",
-    inquiryMessageMin: "留言内容至少需 10 个字符。",
-    inquiryGenericError: "发送信息失败，请稍后再试。",
     trackingEmptyCode: "请输入您的交易码。",
     trackingNotFound: "未找到该交易码，请核对后重试。",
     trackingGenericError: "查询交易失败，请稍后再试。",

@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { auth } from "../src/lib/auth";
 import { prisma } from "../src/lib/db";
-import type { Role, WorkflowStepStatus, TransactionStatus, PaymentStatus } from "@prisma/client";
+import type { Role, WorkflowStepStatus, TransactionStatus } from "@prisma/client";
 
 import {
   COMPANY_INFO,
@@ -962,8 +962,8 @@ async function main() {
 
   /* ═══ 12c. KontakPageContent (singleton) — teks Hero + tiap section body
    * /kontak, copy asli dari (public)/kontak/page.tsx + lib/kontak.ts. Daftar
-   * FAQ-nya sendiri udah di-seed di Faq (scope KONTAK) di atas, pesan yang
-   * dikirim pengunjung disimpan di Inquiry (bukan di sini). ═══ */
+   * FAQ-nya sendiri udah di-seed di Faq (scope KONTAK) di atas. Form-nya
+   * langsung buka WhatsApp (client-side, gak nyimpen ke DB). ═══ */
   await prisma.kontakPageContent.create({
     data: {
       id: "1",
@@ -1314,40 +1314,6 @@ async function main() {
     `${blogCategoryNames.length} Category + ${BLOG_TAG_NAMES.length} Tag + ${BLOG_POSTS.length} BlogPost di-seed.`,
   );
 
-  /* ═══ 15. Inquiry (6, dari mock admin/inquiry inline SEED) ═══ */
-  const now = new Date();
-  const minutesAgo = (n: number) => new Date(now.getTime() - n * 60_000);
-  const INQUIRY_SERVICE_SLUG: Record<string, string> = {
-    "Pendirian PT": "pendirian-pt",
-    "NIB Online": "nib",
-    "Izin Usaha": "izin-usaha",
-    "Izin Komersial": "izin-komersial",
-  };
-  const inquiries = [
-    { name: "Andi Setiawan", email: "andi.s@gmail.com", whatsapp: "0812-1111-2233", layanan: "Pendirian PT", pesan: "Halo, saya ingin mendirikan PT untuk usaha kuliner. Kira-kira butuh dokumen apa saja dan berapa lama prosesnya?", ago: 5, status: "BARU" as const },
-    { name: "Siti Nurhaliza", email: "siti.nur@yahoo.com", whatsapp: "0813-2222-3344", layanan: "NIB Online", pesan: "Saya butuh NIB untuk toko online saya. Apakah bisa dibantu prosesnya sampai selesai?", ago: 60, status: "DIPROSES" as const },
-    { name: "Budi Santoso", email: "budi.santoso@gmail.com", whatsapp: "0821-3333-4455", layanan: "Izin Usaha", pesan: "Usaha bengkel saya belum ada izin resmi. Mohon info paket dan biayanya.", ago: 180, status: "SELESAI" as const },
-    { name: "Rina Wijaya", email: "rina.w@outlook.com", whatsapp: "0856-4444-5566", layanan: "Izin Komersial", pesan: "Perusahaan kami mau ekspansi dan butuh izin komersial baru. Bisa konsultasi dulu?", ago: 300, status: "SELESAI" as const },
-    { name: "Deni Hermawan", email: "deni.hermawan@gmail.com", whatsapp: "0877-5555-6677", layanan: "Pendirian PT", pesan: "Mau tanya paket pendirian PT yang termasuk virtual office ada tidak ya?", ago: 60 * 24, status: "DIPROSES" as const },
-    { name: "Maya Kusuma", email: "maya.k@gmail.com", whatsapp: "0898-6666-7788", layanan: "Lainnya", pesan: "Saya ingin mengurus sertifikasi halal untuk produk makanan ringan. Apakah IzinPro melayani ini?", ago: 60 * 27, status: "BARU" as const },
-  ];
-  for (const inq of inquiries) {
-    const slug = INQUIRY_SERVICE_SLUG[inq.layanan];
-    await prisma.inquiry.create({
-      data: {
-        name: inq.name,
-        email: inq.email,
-        whatsapp: inq.whatsapp,
-        serviceId: slug ? serviceIdBySlug[slug] ?? null : null,
-        message: inq.pesan,
-        status: inq.status,
-        createdAt: minutesAgo(inq.ago),
-        updatedById: admin.id,
-      },
-    });
-  }
-  console.log(`${inquiries.length} Inquiry di-seed.`);
-
   /* ═══ 16. Page (8, dari mock admin/pages inline SEED) ═══ */
   const pages = [
     { slug: "/", title: "Beranda", heroTitle: "Urus Perizinan Bisnis Tanpa Ribet", heroSubtitle: "Layanan pengurusan legalitas & perizinan usaha yang cepat, transparan, dan terpercaya." },
@@ -1456,7 +1422,6 @@ async function main() {
     customerEmail: string;
     customerPhone: string;
     status: TransactionStatus;
-    paymentStatus: PaymentStatus;
     completedCount: number;
     currentStepStatus?: WorkflowStepStatus;
     daysAgo: number;
@@ -1489,7 +1454,6 @@ async function main() {
         tax: 0,
         grandTotal,
         status: opts.status,
-        paymentStatus: opts.paymentStatus,
         createdById: adminId,
         updatedById: adminId,
         createdAt,
@@ -1515,70 +1479,60 @@ async function main() {
       },
     });
 
-    if (opts.paymentStatus !== "UNPAID") {
-      const amount = opts.paymentStatus === "PAID" ? grandTotal : Math.round(grandTotal * 0.5);
-      await prisma.payment.create({
-        data: { transactionId: transaction.id, amount, method: "Transfer Bank", paidAt: createdAt, recordedById: adminId },
-      });
-      await prisma.transactionActivityLog.create({
-        data: { transactionId: transaction.id, userId: adminId, action: "PAYMENT_RECORDED", description: `Pembayaran Rp${amount.toLocaleString("id-ID")} dicatat`, createdAt },
-      });
-    }
-
     return transaction;
   }
 
   await seedDemoTransaction({
     template: pendirianPtTemplate, serviceId: pendirianPtId, packageId: pendirianPtPackages[0]?.id ?? null,
     customerName: "Budi Santoso", customerEmail: "budi.santoso@gmail.com", customerPhone: "0821-3333-4455",
-    status: "COMPLETED", paymentStatus: "PAID", completedCount: 9, daysAgo: 30,
+    status: "COMPLETED", completedCount: 9, daysAgo: 30,
   });
   await seedDemoTransaction({
     template: pendirianPtTemplate, serviceId: pendirianPtId, packageId: pendirianPtPackages[0]?.id ?? null,
     customerName: "Siti Nurhaliza", customerEmail: "siti.nur@yahoo.com", customerPhone: "0813-2222-3344",
-    status: "PROCESSING", paymentStatus: "PARTIAL", completedCount: 4, currentStepStatus: "IN_PROGRESS", daysAgo: 10,
+    status: "PROCESSING", completedCount: 4, currentStepStatus: "IN_PROGRESS", daysAgo: 10,
   });
   await seedDemoTransaction({
     template: pendirianPtTemplate, serviceId: pendirianPtId, packageId: pendirianPtPackages[1]?.id ?? null,
     customerName: "Rina Wijaya", customerEmail: "rina.w@outlook.com", customerPhone: "0856-4444-5566",
-    status: "ON_HOLD", paymentStatus: "PAID", completedCount: 2, currentStepStatus: "REVISION", daysAgo: 15,
+    status: "ON_HOLD", completedCount: 2, currentStepStatus: "REVISION", daysAgo: 15,
   });
   await seedDemoTransaction({
     template: pendirianPtTemplate, serviceId: pendirianPtId, packageId: null,
     customerName: "Deni Hermawan", customerEmail: "deni.hermawan@gmail.com", customerPhone: "0877-5555-6677",
-    status: "CANCELLED", paymentStatus: "UNPAID", completedCount: 1, daysAgo: 20,
+    status: "CANCELLED", completedCount: 1, daysAgo: 20,
   });
   await seedDemoTransaction({
     template: pendirianPtTemplate, serviceId: pendirianPtId, packageId: pendirianPtPackages[0]?.id ?? null,
     customerName: "Maya Kusuma", customerEmail: "maya.k@gmail.com", customerPhone: "0898-6666-7788",
-    status: "DRAFT", paymentStatus: "UNPAID", completedCount: 0, daysAgo: 1,
+    status: "DRAFT", completedCount: 0, daysAgo: 1,
   });
   await seedDemoTransaction({
     template: merkTemplate, serviceId: pendaftaranMerkId, packageId: merkPackages[0]?.id ?? null,
     customerName: "Andi Setiawan", customerEmail: "andi.s@gmail.com", customerPhone: "0812-1111-2233",
-    status: "WAITING_PAYMENT", paymentStatus: "UNPAID", completedCount: 0, daysAgo: 3,
+    status: "WAITING_PAYMENT", completedCount: 0, daysAgo: 3,
   });
   await seedDemoTransaction({
     template: merkTemplate, serviceId: pendaftaranMerkId, packageId: merkPackages[0]?.id ?? null,
     customerName: "Novi Anggraini", customerEmail: "novi.a@gmail.com", customerPhone: "0815-7777-8899",
-    status: "PAID", paymentStatus: "PAID", completedCount: 1, daysAgo: 7,
+    status: "PAID", completedCount: 1, daysAgo: 7,
   });
   await seedDemoTransaction({
     template: merkTemplate, serviceId: pendaftaranMerkId, packageId: merkPackages[0]?.id ?? null,
     customerName: "Fajar Ramadhan", customerEmail: "fajar.r@gmail.com", customerPhone: "0817-2223-4455",
-    status: "PROCESSING", paymentStatus: "PARTIAL", completedCount: 3, currentStepStatus: "IN_PROGRESS", daysAgo: 45,
+    status: "PROCESSING", completedCount: 3, currentStepStatus: "IN_PROGRESS", daysAgo: 45,
   });
   await seedDemoTransaction({
     template: merkTemplate, serviceId: pendaftaranMerkId, packageId: merkPackages[0]?.id ?? null,
     customerName: "Lestari Putri", customerEmail: "lestari.p@gmail.com", customerPhone: "0819-3334-5566",
-    status: "REVISION", paymentStatus: "PAID", completedCount: 2, currentStepStatus: "REVISION", daysAgo: 60,
+    status: "REVISION", completedCount: 2, currentStepStatus: "REVISION", daysAgo: 60,
   });
   await seedDemoTransaction({
     template: merkTemplate, serviceId: pendaftaranMerkId, packageId: merkPackages[0]?.id ?? null,
     customerName: "Hendra Gunawan", customerEmail: "hendra.g@gmail.com", customerPhone: "0821-4445-6677",
-    status: "COMPLETED", paymentStatus: "PAID", completedCount: 7, daysAgo: 400,
+    status: "COMPLETED", completedCount: 7, daysAgo: 400,
   });
-  console.log("10 ServiceTransaction dummy di-seed (workflow + payment + activity log).");
+  console.log("10 ServiceTransaction dummy di-seed (workflow + activity log).");
 
   console.log("Selesai — semua data mock berhasil di-migrasi ke database.");
 }

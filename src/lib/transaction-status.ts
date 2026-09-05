@@ -1,4 +1,4 @@
-import type { WorkflowStepStatus, TransactionStatus, PaymentStatus, TransactionPriority } from "@prisma/client";
+import type { WorkflowStepStatus, TransactionStatus, TransactionPriority } from "@prisma/client";
 
 /* ─── Label & warna status modul Transaksi — satu sumber kebenaran dipakai
  * WorkflowTemplateEditor, WorkflowTimeline, ServiceTransactionsManager,
@@ -44,20 +44,6 @@ export const TRANSACTION_STATUS_COLORS: Record<TransactionStatus, { text: string
   REVISION: { text: "text-orange-700", bg: "bg-orange-50" },
   COMPLETED: { text: "text-emerald-700", bg: "bg-emerald-50" },
   CANCELLED: { text: "text-red-700", bg: "bg-red-50" },
-};
-
-export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
-  UNPAID: "Belum Dibayar",
-  PARTIAL: "Dibayar Sebagian",
-  PAID: "Lunas",
-  REFUNDED: "Dikembalikan",
-};
-
-export const PAYMENT_STATUS_COLORS: Record<PaymentStatus, { text: string; bg: string }> = {
-  UNPAID: { text: "text-red-700", bg: "bg-red-50" },
-  PARTIAL: { text: "text-amber-700", bg: "bg-amber-50" },
-  PAID: { text: "text-emerald-700", bg: "bg-emerald-50" },
-  REFUNDED: { text: "text-gray-500", bg: "bg-gray-100" },
 };
 
 export const PRIORITY_LABELS: Record<TransactionPriority, string> = {

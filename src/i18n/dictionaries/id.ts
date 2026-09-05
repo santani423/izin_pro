@@ -310,8 +310,8 @@ const id = {
   },
 
   kontakForm: {
-    successTitle: "Pesan Terkirim!",
-    successCopy: "Terima kasih, tim kami akan menghubungi Anda maksimal 1×24 jam kerja.",
+    successTitle: "Terhubung ke WhatsApp!",
+    successCopy: "Pesan Anda sudah kami siapkan di WhatsApp — tinggal klik kirim di sana.",
     sendAgain: "Kirim Pesan Lagi",
     nameLabel: "Nama Lengkap",
     emailLabel: "Email",
@@ -324,8 +324,9 @@ const id = {
     messagePlaceholder: "Tuliskan kebutuhan atau pertanyaan Anda di sini...",
     servicePlaceholder: "Pilih layanan",
     otherOption: "Lainnya",
-    sending: "Mengirim...",
-    send: "Kirim Pesan",
+    sending: "Membuka WhatsApp...",
+    send: "Lanjut ke WhatsApp",
+    whatsappUnavailable: "Nomor WhatsApp belum tersedia. Silakan hubungi kami lewat kanal lain di samping.",
     privacyNote: "Data Anda aman dan tidak akan dibagikan kepada pihak ketiga.",
     validation: {
       nameMin: "Nama minimal 3 karakter",
@@ -482,11 +483,6 @@ const id = {
   },
 
   actions: {
-    inquiryNameMin: "Nama minimal 3 karakter.",
-    inquiryEmailInvalid: "Format email tidak valid.",
-    inquiryWhatsappMin: "Nomor WhatsApp minimal 9 digit.",
-    inquiryMessageMin: "Pesan minimal 10 karakter.",
-    inquiryGenericError: "Gagal mengirim pesan. Coba lagi sebentar lagi.",
     trackingEmptyCode: "Masukkan kode transaksi Anda.",
     trackingNotFound: "Kode transaksi tidak ditemukan. Periksa kembali penulisannya.",
     trackingGenericError: "Gagal melacak transaksi. Coba lagi sebentar lagi.",

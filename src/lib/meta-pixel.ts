@@ -55,7 +55,7 @@ export function trackContact() {
   callFbq("track", "Contact");
 }
 
-/** Submit form kontak/inquiry yang BERHASIL saja. */
+/** Submit form kontak yang BERHASIL saja. */
 export function trackLead() {
   callFbq("track", "Lead");
 }

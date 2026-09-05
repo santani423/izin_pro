@@ -7,7 +7,7 @@ import {
   Plus, Search, ChevronLeft, ChevronRight, Trash2, Eye,
 } from "lucide-react";
 import { swalSuccess, swalError, swalConfirmDelete } from "@/lib/swal";
-import type { ServiceTransaction, TransactionStatus, PaymentStatus } from "@prisma/client";
+import type { ServiceTransaction, TransactionStatus } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -15,10 +15,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import {
-  TRANSACTION_STATUS_LABELS, TRANSACTION_STATUS_COLORS,
-  PAYMENT_STATUS_LABELS, PAYMENT_STATUS_COLORS,
-} from "@/lib/transaction-status";
+import { TRANSACTION_STATUS_LABELS, TRANSACTION_STATUS_COLORS } from "@/lib/transaction-status";
 import { deleteTransactionAction } from "@/lib/actions/service-transactions";
 
 type TransactionRow = Omit<ServiceTransaction, "totalPrice" | "discount" | "tax" | "grandTotal"> & {
@@ -103,7 +100,6 @@ export default function ServiceTransactionsManager({
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>(ALL);
-  const [paymentFilter, setPaymentFilter] = useState<string>(ALL);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
 
@@ -116,8 +112,7 @@ export default function ServiceTransactionsManager({
       t.customerEmail.toLowerCase().includes(q) ||
       t.service.title.toLowerCase().includes(q);
     const matchesStatus = statusFilter === ALL || t.status === statusFilter;
-    const matchesPayment = paymentFilter === ALL || t.paymentStatus === paymentFilter;
-    return matchesQuery && matchesStatus && matchesPayment;
+    return matchesQuery && matchesStatus;
   });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -164,19 +159,6 @@ export default function ServiceTransactionsManager({
               {Object.entries(TRANSACTION_STATUS_LABELS).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Select
-            items={{ [ALL]: "Semua Pembayaran", ...PAYMENT_STATUS_LABELS }}
-            value={paymentFilter}
-            onValueChange={(v) => { if (v) { setPaymentFilter(v); setPage(1); } }}
-          >
-            <SelectTrigger className="h-10 w-44 rounded-xl border-border/60 bg-background pl-3 font-medium hover:border-primary/40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent alignItemWithTrigger={false} align="start">
-              <SelectItem value={ALL}>Semua Pembayaran</SelectItem>
-              {Object.entries(PAYMENT_STATUS_LABELS).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
-            </SelectContent>
-          </Select>
         </div>
         <Button asChild size="sm" className="gap-1.5 rounded-xl flex-shrink-0">
           <Link href={`/${panel}/transaksi/daftar/baru`}>
@@ -194,7 +176,6 @@ export default function ServiceTransactionsManager({
                 <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Layanan</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Pembayaran</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Staff</th>
                 <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
               </tr>
@@ -202,7 +183,6 @@ export default function ServiceTransactionsManager({
             <tbody className="divide-y divide-gray-50">
               {pageItems.map((t) => {
                 const statusColor = TRANSACTION_STATUS_COLORS[t.status as TransactionStatus];
-                const paymentColor = PAYMENT_STATUS_COLORS[t.paymentStatus as PaymentStatus];
                 return (
                   <tr key={t.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-5 py-3.5">
@@ -220,11 +200,6 @@ export default function ServiceTransactionsManager({
                     <td className="px-5 py-3.5">
                       <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", statusColor.bg, statusColor.text)}>
                         {TRANSACTION_STATUS_LABELS[t.status as TransactionStatus]}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5 hidden lg:table-cell">
-                      <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", paymentColor.bg, paymentColor.text)}>
-                        {PAYMENT_STATUS_LABELS[t.paymentStatus as PaymentStatus]}
                       </span>
                     </td>
                     <td className="px-5 py-3.5 text-sm text-gray-500 hidden lg:table-cell">
@@ -254,7 +229,7 @@ export default function ServiceTransactionsManager({
               })}
               {pageItems.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-5 py-10 text-center text-sm text-gray-400">
+                  <td colSpan={6} className="px-5 py-10 text-center text-sm text-gray-400">
                     {initialTransactions.length === 0 ? "Belum ada transaksi." : "Tidak ada transaksi yang cocok."}
                   </td>
                 </tr>

@@ -120,7 +120,7 @@ export default function AdminHeader({ title, subtitle }: AdminHeaderProps) {
   };
 
   const notifications = [
-    { id: 1, text: "Inquiry baru dari Budi Santoso", time: "5 menit lalu", unread: true },
+    { id: 1, text: "Transaksi baru dibuat", time: "5 menit lalu", unread: true },
     { id: 2, text: "Artikel berhasil dipublish", time: "1 jam lalu", unread: true },
     { id: 3, text: "Media baru diupload", time: "3 jam lalu", unread: false },
   ];

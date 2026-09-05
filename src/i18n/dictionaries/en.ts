@@ -296,8 +296,8 @@ const en: Dictionary = {
   },
 
   kontakForm: {
-    successTitle: "Message Sent!",
-    successCopy: "Thank you, our team will contact you within a maximum of 1×24 business hours.",
+    successTitle: "Connected to WhatsApp!",
+    successCopy: "We've prepared your message on WhatsApp — just hit send there.",
     sendAgain: "Send Another Message",
     nameLabel: "Full Name",
     emailLabel: "Email",
@@ -310,8 +310,9 @@ const en: Dictionary = {
     messagePlaceholder: "Write your needs or questions here...",
     servicePlaceholder: "Select a service",
     otherOption: "Other",
-    sending: "Sending...",
-    send: "Send Message",
+    sending: "Opening WhatsApp...",
+    send: "Continue on WhatsApp",
+    whatsappUnavailable: "WhatsApp number is not available yet. Please reach us via another channel alongside.",
     privacyNote: "Your data is safe and will not be shared with third parties.",
     validation: {
       nameMin: "Name must be at least 3 characters",
@@ -468,11 +469,6 @@ const en: Dictionary = {
   },
 
   actions: {
-    inquiryNameMin: "Name must be at least 3 characters.",
-    inquiryEmailInvalid: "Invalid email format.",
-    inquiryWhatsappMin: "WhatsApp number must be at least 9 digits.",
-    inquiryMessageMin: "Message must be at least 10 characters.",
-    inquiryGenericError: "Failed to send message. Please try again shortly.",
     trackingEmptyCode: "Please enter your transaction code.",
     trackingNotFound: "Transaction code not found. Please double-check it.",
     trackingGenericError: "Failed to track transaction. Please try again shortly.",
